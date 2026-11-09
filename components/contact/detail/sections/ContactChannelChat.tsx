@@ -44,7 +44,8 @@ interface ContactChannelChatProps {
     contactId: string;
     contactName?: string;
     // Restrict to one channel (the WhatsApp tab); omit to show all channels
-    // with a toggle (the Conversations tab).
+    // with a toggle. The Conversations tab is a table since BE-1.2
+    // (ContactConversationsTab) and only reuses StartConversationPanel.
     channelType?: ChatChannel;
 }
 
@@ -212,33 +213,37 @@ interface StartConversationPanelProps {
     contactName?: string;
     channelType?: ChatChannel;
     onStarted: () => void;
+    // Open straight on the form (the Conversations tab's dialog) instead of
+    // the "No conversations yet" empty state; Cancel then calls onCancel.
+    startOpen?: boolean;
+    onCancel?: () => void;
 }
 
-const StartConversationPanel = ({
+export const StartConversationPanel = ({
     contactId,
     contactName,
     channelType,
     onStarted,
+    startOpen = false,
+    onCancel,
 }: StartConversationPanelProps) => {
     const { data: accounts } = useAccounts(channelType);
     const createConversation = useCreateConversation();
 
-    // Agent-initiated channels only - a web-widget conversation can't be
-    // started by staff, so widget accounts stay out of the picker.
+    // Only the channels POST /omnichannels/conversations can start with a
+    // contact: WhatsApp and Email. Web widget is visitor-initiated, and the
+    // API answers 400 "unsupported for this channel" for SMS.
     const eligibleAccounts = useMemo(
         () =>
             (accounts || []).filter(
-                (a) =>
-                    a.channel_type === "whatsapp" ||
-                    a.channel_type === "sms" ||
-                    a.channel_type === "email"
+                (a) => a.channel_type === "whatsapp" || a.channel_type === "email"
             ),
         [accounts]
     );
 
     const [accountId, setAccountId] = useState("");
     const [message, setMessage] = useState("");
-    const [isComposerOpen, setIsComposerOpen] = useState(false);
+    const [isComposerOpen, setIsComposerOpen] = useState(startOpen);
 
     // Default to the only connected account when there's exactly one.
     const effectiveAccountId =
@@ -269,7 +274,12 @@ const StartConversationPanel = ({
             setIsComposerOpen(false);
             onStarted();
         } catch (error) {
-            handleError(error, "Failed to start the conversation");
+            // handleError only logs and returns the message; without the toast
+            // a refusal (e.g. "Selected contact has no WhatsApp phone number")
+            // looked like nothing happened.
+            notify.error("Failed to start the conversation", {
+                description: handleError(error, "Start conversation"),
+            });
         }
     };
 
@@ -282,7 +292,7 @@ const StartConversationPanel = ({
                     description={
                         channelType
                             ? `Start a ${CHANNEL_LABELS[channelType]} conversation with this contact from a connected account.`
-                            : "Start a conversation with this contact from a connected WhatsApp, SMS or email account."
+                            : "Start a conversation with this contact from a connected WhatsApp or email account."
                     }
                     action={{
                         label: "Start conversation",
@@ -330,7 +340,7 @@ const StartConversationPanel = ({
                 <AppButton
                     variantStyle="outline"
                     color="gray"
-                    onClick={() => setIsComposerOpen(false)}
+                    onClick={() => (onCancel ? onCancel() : setIsComposerOpen(false))}
                     disabled={createConversation.isPending}
                 >
                     Cancel

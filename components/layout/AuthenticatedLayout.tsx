@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import WhatsAppFloatingButton from './WhatsAppFloatingButton';
+import { ImportProgressDock } from '@/components/import-history/ImportProgressDock';
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -90,6 +91,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           <main className="flex-1">{children}</main>
         </div>
       </SidebarProvider>
+      {/* Imports being followed (FE-1), on every signed-in page. */}
+      <ImportProgressDock />
     </div>
   );
 }

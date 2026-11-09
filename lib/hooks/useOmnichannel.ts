@@ -87,6 +87,7 @@ import {
   fetchConversationSalesReading,
 } from "../api/omnichannel";
 import { ConversationViewer, ConversationListItem } from "../types/omnichannel";
+import { CONVERSATION_PAGE_SIZE } from "../utils/conversationMessages";
 
 // Account Management Hooks
 // includeInactive defaults to false so every existing caller (new-conversation
@@ -401,7 +402,8 @@ export function useConversation(conversationId: string) {
     queryKey: ['omnichannels', 'conversations', conversationId],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchConversation(token, conversationId);
+      // The newest page. Older pages (useOlderMessages) must use the same size.
+      return fetchConversation(token, conversationId, { limit: CONVERSATION_PAGE_SIZE });
     },
     staleTime: 1000 * 5,
     // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy

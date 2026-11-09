@@ -31,12 +31,7 @@ vi.mock('../api/whatsapp-marketing', async (importOriginal) => ({
   fetchBroadcastRecipients: async (
     _token: string,
     id: string,
-    _page: number,
-    _limit: number,
-    _search?: string,
-    _status?: string,
-    sortBy?: string,
-    sortOrder?: string
+    { sortBy, sortOrder }: { sortBy?: string; sortOrder?: string } = {}
   ) => {
     api.calls.push(`${id} ${sortBy ?? '-'} ${sortOrder ?? '-'}`);
     return answer(0, { success: true, data: { recipients: [], total: 0 } });
@@ -80,7 +75,7 @@ const makeClient = () =>
 
 /* eslint-disable react-hooks/rules-of-hooks -- mocked: they return their options */
 const recipientsOptions = (id: string, sortOrder?: 'asc' | 'desc') =>
-  useBroadcastRecipients(id, 1, 5, '', undefined, sortOrder && 'status', sortOrder) as unknown as QueryObserverOptions;
+  useBroadcastRecipients(id, { page: 1, limit: 5, search: '', sortBy: sortOrder && 'status', sortOrder }) as unknown as QueryObserverOptions;
 const listOptions = () =>
   useBroadcasts(1, 25, '', undefined, 'created_at', 'desc') as unknown as QueryObserverOptions;
 const detailOptions = (id: string) => useBroadcastDetail(id) as unknown as QueryObserverOptions;

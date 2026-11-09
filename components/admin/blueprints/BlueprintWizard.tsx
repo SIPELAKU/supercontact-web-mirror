@@ -11,7 +11,6 @@ import {
     Sparkles,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
-import { AppInput } from "@/components/ui/app-input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { notify } from "@/lib/notifications";
 import {
@@ -24,6 +23,9 @@ import type {
     BlueprintSummary,
 } from "@/lib/types/IndustryBlueprint";
 import { BEHAVIOUR_MODULES, moduleLabel } from "./moduleLabels";
+import { installButtonLabel, previewCanInstall } from "./previewInstall";
+import { blankOptional, missingRequired } from "./blueprintVariables";
+import BlueprintVariableField from "./BlueprintVariableField";
 
 type Step = "industry" | "details" | "preview" | "done";
 
@@ -92,12 +94,16 @@ export default function BlueprintWizard({
         setVariables((prev) => ({ ...defaults, ...prev }));
     }, [detail]);
 
-    const missingVariables = useMemo(() => {
-        if (!detail) return [];
-        return (detail.variables || [])
-            .filter((v) => !(variables[v.key] || "").trim())
-            .map((v) => v.key);
-    }, [detail, variables]);
+    // Optional blanks only warn; a required one (NAMA_PERUSAHAAN) blocks the
+    // preview - nearly every module uses it.
+    const missingVariables = useMemo(
+        () => blankOptional(detail?.variables || [], variables),
+        [detail, variables]
+    );
+    const requiredMissing = useMemo(
+        () => missingRequired(detail?.variables || [], variables),
+        [detail, variables]
+    );
 
     const declaredModules = useMemo(() => moduleNames(detail?.modules), [detail]);
 
@@ -230,23 +236,19 @@ export default function BlueprintWizard({
                         <p className="mb-3 text-sm text-muted-foreground">
                             Dipakai untuk mengisi teks di artikel, macro, dan balasan.
                             Yang dikosongkan akan tetap terlihat sebagai{" "}
-                            <code className="rounded bg-muted px-1">{"{{tanda}}"}</code> di teksnya,
-                            bukan hilang diam-diam.
+                            <code className="rounded bg-muted px-1">{"{{TANDA}}"}</code> di teksnya,
+                            bukan hilang diam-diam. Data khusus artikel Knowledge Base (alamat,
+                            link Maps, promo, dan lainnya) diisi setelah pemasangan, di tab
+                            Checklist Aktivasi.
                         </p>
                         <div className="grid gap-3 sm:grid-cols-2">
                             {(detail.variables || []).map((v) => (
-                                <div key={v.key}>
-                                    <label className="mb-1 block text-xs font-medium">
-                                        {v.label || v.key}
-                                    </label>
-                                    <AppInput
-                                        value={variables[v.key] || ""}
-                                        placeholder={v.example || v.key}
-                                        onChange={(e) =>
-                                            setVariables({ ...variables, [v.key]: e.target.value })
-                                        }
-                                    />
-                                </div>
+                                <BlueprintVariableField
+                                    key={v.key}
+                                    variable={v}
+                                    value={variables[v.key] || ""}
+                                    onChange={(value) => setVariables({ ...variables, [v.key]: value })}
+                                />
                             ))}
                         </div>
                     </section>
@@ -307,13 +309,20 @@ export default function BlueprintWizard({
                             <ChevronLeft className="mr-1 h-4 w-4" />
                             Kembali
                         </AppButton>
-                        <AppButton
-                            onClick={runPreview}
-                            disabled={modules.size === 0 || install.isPending}
-                        >
-                            Lihat pratinjau
-                            <ChevronRight className="ml-1 h-4 w-4" />
-                        </AppButton>
+                        <div className="flex items-center gap-3">
+                            {requiredMissing.length > 0 && (
+                                <span className="text-xs text-red-600">
+                                    Isi {requiredMissing.map((v) => v.label || v.key).join(", ")} dulu
+                                </span>
+                            )}
+                            <AppButton
+                                onClick={runPreview}
+                                disabled={modules.size === 0 || requiredMissing.length > 0 || install.isPending}
+                            >
+                                Lihat pratinjau
+                                <ChevronRight className="ml-1 h-4 w-4" />
+                            </AppButton>
+                        </div>
                     </div>
                 </div>
             )}
@@ -347,10 +356,10 @@ export default function BlueprintWizard({
                         </AppButton>
                         <AppButton
                             onClick={runInstall}
-                            disabled={install.isPending || preview.totals.created === 0}
+                            disabled={install.isPending || !previewCanInstall(preview)}
                         >
                             <Sparkles className="mr-1.5 h-4 w-4" />
-                            Pasang {preview.totals.created} item
+                            {installButtonLabel(preview)}
                         </AppButton>
                     </div>
                 </div>

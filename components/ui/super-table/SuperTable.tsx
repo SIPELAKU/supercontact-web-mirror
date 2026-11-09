@@ -376,12 +376,16 @@ export function SuperTable<TData extends object>(
   }, [isLazy, batchesLoaded, listToken, restoreTarget, position]);
 
   // A restart puts the list back at batch 1, so the depth remembered before it
-  // no longer describes the list; the next scroll records the new one.
+  // no longer describes the list; the next scroll records the new one. The
+  // view goes back to the top with it - left deep down, it would sit past the
+  // end of batch 1 and pull the next batches straight back in.
   const prevRestartKey = React.useRef(props.restartKey);
   React.useEffect(() => {
     if (prevRestartKey.current === props.restartKey) return;
     prevRestartKey.current = props.restartKey;
     position.forget();
+    const el = instanceRef.current?.refs?.tableContainerRef?.current;
+    if (el) el.scrollTop = 0;
   }, [props.restartKey, position]);
 
   const handleNearEnd = useNearEndOfScroll({

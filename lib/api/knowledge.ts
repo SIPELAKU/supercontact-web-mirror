@@ -8,6 +8,7 @@
 import { fetchWithTimeout } from "./api-client";
 import type {
   KbCategory,
+  KbCategoryBulkDeleteReport,
   KbSection,
   KbArticle,
   KbArticleSummary,
@@ -107,6 +108,20 @@ export async function deleteKbCategory(token: string, id: string): Promise<void>
     headers: authHeaders(token),
   });
   await handle<unknown>(res, "Failed to delete category");
+}
+
+// All or nothing: one unknown or foreign id fails the whole request and
+// nothing is deleted. Sections and articles go with their category.
+export async function bulkDeleteKbCategories(
+  token: string,
+  categoryIds: string[],
+): Promise<KbCategoryBulkDeleteReport> {
+  const res = await fetchWithTimeout(`${API_BASE}/categories/bulk-delete`, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ category_ids: categoryIds }),
+  });
+  return handle<KbCategoryBulkDeleteReport>(res, "Failed to delete categories");
 }
 
 // ---- Sections ----------------------------------------------------------------
@@ -335,14 +350,18 @@ export async function attachQuestionToKbArticle(
   return handle<KbArticle>(res, "Failed to attach the question to the article");
 }
 
+// `articleIds` limits the fill to those articles (BE 1.157.0); without it the
+// values go into every article that carries the placeholders. Title and
+// excerpt are filled along with the body.
 export async function fillKbPlaceholders(
   token: string,
   values: Record<string, string>,
+  articleIds?: string[],
 ): Promise<{ articles_updated: number; variables_applied: string[]; articles_remaining: number }> {
   const res = await fetchWithTimeout(`${API_BASE}/articles/fill-placeholders`, {
     method: "POST",
     headers: jsonHeaders(token),
-    body: JSON.stringify({ values }),
+    body: JSON.stringify(articleIds ? { values, article_ids: articleIds } : { values }),
   });
   return handle(res, "Failed to fill placeholders");
 }

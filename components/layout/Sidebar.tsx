@@ -477,14 +477,17 @@ export default function Sidebar() {
                         )}
 
                         {/* Submenu */}
+                        {/* Grid rows 0fr -> 1fr animates to the list's own
+                            height; a fixed max-height cap clips long groups. */}
                         {!isCollapsed && item.children && (
                           <div
                             id={submenuId}
                             className={cn(
-                              "ml-8 space-y-1 overflow-hidden transition-all duration-300",
-                              isOpen ? "mt-1 max-h-96 opacity-100" : "max-h-0 opacity-0",
+                              "ml-8 grid transition-all duration-300",
+                              isOpen ? "mt-1 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
                             )}
                           >
+                            <div className="min-h-0 space-y-1 overflow-hidden">
                             {item.children.map((subItem) => {
                               const subActive = subItem.path === activePath;
                               return (
@@ -504,6 +507,7 @@ export default function Sidebar() {
                                 </Link>
                               );
                             })}
+                            </div>
                           </div>
                         )}
                       </div>

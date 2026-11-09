@@ -7,42 +7,19 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Contact, updateLead, UpdateLeadData, User } from "@/lib/api";
-import { useContacts } from "@/lib/hooks/useContacts";
+import { updateLead, UpdateLeadData, User } from "@/lib/api";
 import { useUsers } from "@/lib/hooks/useUsers";
 import { Lead } from "@/lib/models/types";
-import { Paper, createTheme, ThemeProvider } from "@mui/material";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppTextarea } from "@/components/ui/app-textarea";
-import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { logger } from "../../lib/utils/logger";
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
-import ContactPickerDialog from "./ContactPickerDialog";
+import { LockedContactField, LOCKED_FIELD_LABELS } from "./LockedContactField";
 import { useActiveSalesChannels } from "@/lib/hooks/useCommercialContext";
-
-// MUI Theme for consistent styling
-const muiTheme = createTheme({
-  palette: {
-    primary: {
-      main: '#5479EE',
-    },
-  },
-  components: {
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: {
-          borderRadius: '8px',
-          height: '48px',
-          backgroundColor: 'white',
-        },
-      },
-    },
-  },
-});
 
 //export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Closed - Won" | "Closed - Lost";
 export const leadStatusOptions = [
@@ -95,17 +72,12 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [selectedContactId, setSelectedContactId] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
-  const [contactSearch, setContactSearch] = useState("");
-  const [showContactPicker, setShowContactPicker] = useState(false);
   const queryClient = useQueryClient();
   // lead_assignee: Staff only see themselves, Admin / Manager see everyone.
   const { data: usersResponse } = useUsers(1, 10, undefined, undefined, undefined, "lead_assignee");
   const { data: salesChannelPage } = useActiveSalesChannels({ enabled: open });
-  const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -147,11 +119,6 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         setSelectedUserId(lead.user.id);
         setAssignedToName(lead.user.fullname);
       }
-
-      // Set selected contact
-      if (lead.contact) {
-        setSelectedContactId(lead.contact.id);
-      }
     }
   }, [lead]);
 
@@ -166,61 +133,6 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
       });
     }
   };
-
-  // Contact search
-  const handleContactSearchChange = useCallback((event: any, value: string, reason: string) => {
-    if (reason === 'input') {
-      updateField("name", value);
-      setSelectedContactId("");
-
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-
-      debounceTimerRef.current = setTimeout(() => {
-        setContactSearch(value);
-      }, 300);
-    }
-  }, [updateField]);
-
-  const handleContactSelect = (contact: Contact | null) => {
-    if (!contact) {
-      setSelectedContactId("");
-      setForm((prev) => ({
-        ...prev,
-        name: "",
-        email: "",
-        phone_number: "",
-        company: "",
-      }));
-      return;
-    }
-
-    setSelectedContactId(contact.id);
-    setForm((prev) => ({
-      ...prev,
-      name: contact.name,
-      email: contact.email,
-      phone_number: (contact as any).phone_number || (contact as any).phone || "",
-      company: contact.company,
-    }));
-  };
-
-  const contacts = useMemo(() => {
-    const rawContacts = contactsResponse?.data?.contacts || [];
-    if (!contactSearch) return rawContacts;
-
-    const query = contactSearch.toLowerCase();
-    return rawContacts.filter(c =>
-      (c.name || '').toLowerCase().includes(query) ||
-      (c.email || '').toLowerCase().includes(query) ||
-      (c.company || '').toLowerCase().includes(query)
-    );
-  }, [contactsResponse, contactSearch]);
-
-  const MAX_DROPDOWN_ITEMS = 10;
-  const hasMoreContacts = contacts.length > MAX_DROPDOWN_ITEMS;
-  const displayContacts = contacts.slice(0, MAX_DROPDOWN_ITEMS);
 
   const handleUserSelect = (user: User) => {
     setSelectedUserId(user.id);
@@ -242,10 +154,8 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!form.name.trim()) newErrors.name = "Name is required";
-    if (!form.email.trim()) newErrors.email = "Email is required";
-    if (!form.phone_number.trim()) newErrors.phone_number = "Phone number is required";
-    if (!form.company.trim()) newErrors.company = "Company is required";
+    // Name, email, phone and company are the contact's own and read-only
+    // here (BO request 2026-11-04), so they are not validated.
     if (!form.industry) newErrors.industry = "Industry is required";
     if (!form.companySize) newErrors.companySize = "Company size is required";
     if (!form.officeLocation.trim()) newErrors.officeLocation = "Office location is required";
@@ -272,12 +182,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
       const token = await getToken();
       if (!token) throw new Error('No authentication token');
 
+      // No contact fields: the lead's contact cannot be changed here, and the
+      // API never stored name/email/phone/company on the lead anyway.
       const updateData: UpdateLeadData = {
-        contact_id: selectedContactId || lead.contact?.id || "",
-        name: form.name,
-        email: form.email,
-        phone_number: form.phone_number,
-        company: form.company,
         industry: form.industry,
         company_size: form.companySize.replace(/\s*-\s*/g, "-"),
         office_location: form.officeLocation,
@@ -364,114 +271,11 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
           <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-              {/* Name with Autocomplete */}
-              <div className="space-y-2 relative">
-                <Label className="text-sm font-medium text-gray-700">Name</Label>
-                <ThemeProvider theme={muiTheme}>
-                  <AppAutocomplete<Contact, false, false, true>
-                    freeSolo
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                    options={displayContacts}
-                    filterOptions={(x) => x}
-                    getOptionLabel={(option) => {
-                      if (typeof option === 'string') return option;
-                      return `${option.name}${option.company ? ` - ${option.company}` : ''}`;
-                    }}
-                    value={contacts.find(c => c.id === selectedContactId) || form.name}
-                    onChange={(event, newValue) => {
-                      if (typeof newValue === 'string') {
-                        updateField("name", newValue);
-                        setSelectedContactId("");
-                      } else if (newValue) {
-                        handleContactSelect(newValue);
-                      } else {
-                        handleContactSelect(null);
-                      }
-                    }}
-                    loading={isLoadingContacts}
-                    onInputChange={handleContactSearchChange}
-                    renderOption={(props, option) => (
-                      <li {...props} key={typeof option === 'string' ? option : option.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">{typeof option === 'string' ? option : option.name}</span>
-                          {typeof option !== 'string' && option.company && (
-                            <span className="text-sm text-gray-500">{option.company}</span>
-                          )}
-                        </div>
-                      </li>
-                    )}
-                    PaperComponent={({ children, ...paperProps }) => (
-                      <Paper {...paperProps} sx={{ borderRadius: '8px', boxShadow: 3 }}>
-                        {children}
-                        {hasMoreContacts && (
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setShowContactPicker(true);
-                            }}
-                            className="px-4 py-2.5 text-center text-sm font-semibold text-[#5479EE] cursor-pointer hover:bg-[#EEF2FF] border-t border-gray-200"
-                          >
-                            Show More ({contacts.length - MAX_DROPDOWN_ITEMS}+ more results)
-                          </div>
-                        )}
-                      </Paper>
-                    )}
-                    placeholder="Search existing contacts or enter new name"
-                    error={!!errors.name}
-                    helperText={errors.name || "Search by name, email, or company"}
-                  />
-                </ThemeProvider>
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Email</Label>
-                <AppInput
-                  type="email"
-                  placeholder="Enter email address"
-                  value={form.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  error={!!errors.email}
-                  helperText={errors.email}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                />
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
-                <AppInput
-                  type="text"
-                  placeholder="Enter phone number"
-                  value={form.phone_number}
-                  onChange={(e) => updateField("phone_number", e.target.value)}
-                  error={!!errors.phone_number}
-                  helperText={errors.phone_number}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                />
-              </div>
-
-              {/* Company */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Company</Label>
-                <AppInput
-                  type="text"
-                  placeholder="Enter company name"
-                  value={form.company}
-                  onChange={(e) => updateField("company", e.target.value)}
-                  error={!!errors.company}
-                  helperText={errors.company}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                />
-              </div>
+              {/* The lead's contact: read-only once the lead exists (BO request
+                  2026-11-04). Edit the contact itself in Contacts. */}
+              {(["name", "email", "phone_number", "company"] as const).map((key) => (
+                <LockedContactField key={key} label={LOCKED_FIELD_LABELS[key]} value={form[key] || "-"} />
+              ))}
 
               {/* Industry */}
               <div className="space-y-2">
@@ -684,16 +488,6 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
           </form>
         </DialogContent>
       </Dialog>
-
-      <ContactPickerDialog
-        open={showContactPicker}
-        onClose={() => setShowContactPicker(false)}
-        onSelect={(contact) => {
-          handleContactSelect(contact);
-          setShowContactPicker(false);
-        }}
-        initialSearch={contactSearch}
-      />
     </>
   );
 }

@@ -9,6 +9,1214 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.130.1] - 2026-11-06
+
+### Detail Versi 1.130.1
+
+#### 🎨 Judul Import History dan Keterangan Widget Language
+
+- **Deskripsi:**
+  - **Import History:** judul kini menyebut modulnya: *Import History: Contacts*, *Subscribers*, *Mailing Lists*, *Recipients*, atau *Groups*, supaya tidak tertukar. Judul yang sama dipakai saat dibuka dari widget progres.
+  - **Settings › Web Widget › Widget Language:** keterangan kini menjelaskan bahwa pilihan ini mengubah tombol dan pesan bawaan widget, bukan artikel. Artikel tetap dalam bahasa saat ditulis.
+  - **Dialog duplikat:** tombol mengikuti checkbox. Tidak dicentang: **Skip** dan **Replace**, hanya untuk baris ini. Dicentang: **Skip all** dan **Replace all**.
+  - **Technical Notes:** `ImportHistoryModal` kini menerima prop `view`, menggantikan `module`, `targetFilter`, dan `storageKey`. `IMPORT_VIEWS[view].history.label`. `importDuplicateActionLabel`. `job_id` di respons `POST /{module}/bulk` kini wajib, karena API v1.165.0 selalu mengirimnya.
+
+- **🧪 Testing:** 3 tes baru, 1 tes toleransi `job_id` dihapus; 4/4 mutasi tertangkap; 96 file / 1050 tes lolos; tsc bersih. Judul dan tombol dicek di Chrome headless dengan API tiruan.
+
+---
+
+## [1.130.0] - 2026-11-06
+
+### Detail Versi 1.130.0
+
+#### ✨ "Terapkan ke Semua" dan Dialog Duplikat di Semua Modul (T1, T2.8)
+
+- **Deskripsi:**
+  - **Masalah:** import berhenti di setiap baris yang bentrok, jadi file dengan banyak bentrok harus dijawab satu per satu. Di Subscribers dan Recipients, baris yang cocok dengan kontak lama dilewati diam-diam.
+  - **Perbaikan:**
+    - Checkbox **Apply to all remaining duplicates in this file** di dialog duplikat: **Skip all** dan **Replace all** berlaku untuk semua sisa baris bentrok di file itu, termasuk semua bagian `(Part i/n)`. **Update selected** nonaktif saat checkbox dicentang.
+    - Checkbox kembali kosong untuk setiap baris baru.
+    - Status `Waiting for Review`, tombol Review, dan dialog duplikat kini berlaku di Subscribers dan Recipients. Judul dialog mengikuti modul.
+    - Hitungan **Updated** tampil di Import History semua modul.
+    - Widget progres Subscribers dan Mailing List aktif, karena API kini mengembalikan `job_id`.
+  - **Technical Notes:**
+    - `importDuplicateAnswer` mengirim `apply_to_all: true` hanya untuk `skip` dan `replace`
+    - `uploadImportParts` membuat satu `import_group_id` per file dan mengirimnya di setiap bagian
+    - Setelah "apply to all", kartu bagian lain langsung dimuat ulang, supaya tidak menawarkan baris yang sudah terjawab
+    - `BulkJob`: `import_group_id`, `duplicate_policy`
+  - **Rilis:** butuh API v1.165.0. Di API yang lebih lama, checkbox diabaikan sehingga dialog tetap muncul lagi.
+
+- **🧪 Testing:** 5 tes baru; 7/7 mutasi tertangkap; 96 file / 1048 tes lolos; tsc bersih. Lolos tes manual terhadap DEV v1.165.0.
+
+---
+
+## [1.129.0] - 2026-11-06
+
+### Detail Versi 1.129.0
+
+#### ✨ Satu Alur Import untuk Contacts, Subscribers, dan Recipients (T2)
+
+- **Deskripsi:**
+  - **Masalah:** ketiga modul punya modal import sendiri (sekitar 2.100 baris) dengan perilaku berbeda. Hanya Contact yang punya langkah Check, template dari aturan yang sama, dan widget progres. Di Subscribers, duplikat dalam file dilewati diam-diam. Di Subscribers dan Recipients, satu email tidak valid bisa menggagalkan satu bagian file.
+  - **Perbaikan:**
+    - Satu komponen `ImportFileModal` untuk kelima halaman: Contacts, Subscribers, Detail Mailing List, Recipients, dan Detail Group. Yang berbeda hanya pengaturan di `IMPORT_VIEWS`.
+    - Langkah **Check** berjalan di semua modul: duplikat dalam file harus diselesaikan, dan baris tidak valid ditandai lalu tidak dikirim.
+    - **Kolom wajib:** Contact butuh nama dan email atau nomor HP, Subscribers butuh nama dan email, Recipients butuh nama dan nomor HP.
+    - **Template** dari aturan yang sama untuk ketiga modul. Recipients sebelumnya belum punya template.
+    - **Subscribers** kini menawarkan kolom Position, Company, dan Address seperti modul lain.
+    - **Widget progres** ikut memantau Recipients dan Detail Group. Kartu membuka Import History di tampilan halaman asal import.
+    - Modal memakai `AppDialog`: tombol Esc, fokus keyboard, dan footer yang selalu terlihat. Modal tidak bisa ditutup selama upload berjalan.
+    - Kalau bagian file berikutnya gagal, wizard kembali ke langkah awal. Sebelumnya wizard terbuka lagi di Preview, sehingga file yang sama bisa terkirim ulang.
+  - **Perubahan perilaku:**
+    - **Recipients:** file besar kini beberapa job `(Part i/n)`, bukan satu job, dan rollback dilakukan per bagian.
+    - **Subscribers:** duplikat dalam file dilihat dari email atau nomor HP, bukan email saja, dan muncul di langkah Check.
+    - **Contact:** tampilan modal sedikit lebih lebar, dan di pilihan Maps To, Company tampil sebelum Position.
+  - **Menunggu API:**
+    - Widget progres untuk Subscribers dan Detail Mailing List, setelah API `POST /subscribers/bulk` mengembalikan `job_id` (selesai di 1.130.0).
+    - Dialog duplikat terhadap kontak lama untuk Subscribers dan Recipients (T2.8).
+  - **Technical Notes:**
+    - `lib/utils/importModules.ts`: `IMPORT_VIEWS`, `importJobBody`, `missingMappings`, `importFieldOptions`
+    - `lib/utils/importRules.ts` (dari `contactImportRules.ts`): aturan field bersama, kolom wajib per modul, tiga template
+    - `components/import-history/`: `ImportFileModal`, `ImportUploadStep`, `ImportMappingStep`, `ImportPreviewStep`. `ImportCheckStep` dan `FileDuplicateDialog` dipindah ke sini
+    - `mapFileRows` di `importFileRead.ts`, `useImportDataChanged`, `watchedView` (data lama di localStorage dianggap Contacts)
+    - Dihapus: `ImportContactModal`, `ImportSubscriberModal`, `ImportWaRecipientModal`, `uploadImportJob`, `sendImportPart`, `ImportUploadError`, `components/import-history/importModules.ts`, prop `zIndex` di `AppDialog`
+    - API `/recipients/bulk/{job_id}/rows` tidak lagi dipakai web
+
+- **🧪 Testing:** 20 tes baru bersih (tes untuk fungsi yang dihapus ikut dihapus); 21/21 mutasi tertangkap; 96 file / 1043 tes lolos; tsc bersih; lint file baru bersih. Alur modal kelima halaman dijalankan di Chrome headless dengan API tiruan. Semua modul lolos tes manual di DEV v1.165.0.
+
+---
+
+## [1.128.1] - 2026-11-06
+
+### Detail Versi 1.128.1
+
+#### 🐛 Header Kolom Actions Tidak Terpotong
+
+- **Deskripsi:**
+  - **Masalah:** teks **Actions** di header tabel terpotong di tepi kanan, di tabel yang memakai `rowActions` (Contacts, Subscribers, dan lainnya).
+  - **Root Cause:** kolom `mrt-row-actions` dibuat selebar 56px, cukup untuk satu tombol ⋮, tapi teks header butuh 52px ditambah padding 24px. Teksnya keluar 8px dari sel.
+  - **Perbaikan:** kolom aksi di `SuperTable` kini 80px untuk semua tabel, sama seperti tabel yang memakai `renderRowActions`.
+  - **Impact:** kolom aksi tabel `rowActions` melebar 24px.
+
+- **🧪 Testing:** tanpa tes unit karena hanya ukuran kolom. Diukur di Chrome headless dengan data tiruan: di Contacts dan Subscribers, teks kini berakhir 16px sebelum tepi sel, sebelumnya 8px melewati tepi sel. tsc bersih; 96 file / 1043 tes lolos.
+
+---
+
+## [1.128.0] - 2026-11-06
+
+### Detail Versi 1.128.0
+
+#### ✨ Pilihan Kolom Tersimpan di Semua Tabel (T4)
+
+- **Deskripsi:**
+  - **Masalah:** kolom yang disembunyikan lewat **View options › Columns** kembali tampil semua setelah halaman di-refresh. Fitur simpannya sudah ada, tapi baru dipakai tabel Knowledge Articles.
+  - **Perbaikan:** pilihan kolom kini tersimpan di browser untuk semua tabel yang punya menu kolom (61 tabel), terpisah per tabel. Tabel bisa memilih tidak ikut dengan `features.rememberColumnVisibility: false`.
+  - **Perilaku yang perlu diketahui:**
+    - Pilihan tersimpan **per browser, bukan per user**, dan tetap ada setelah logout, sama seperti Knowledge Articles sebelumnya.
+    - Kolom yang disembunyikan bisa terlihat sekejap saat halaman dimuat, karena pilihannya baru dibaca setelah halaman tampil di browser.
+  - **Technical Notes:**
+    - `columnVisibilityStorage.ts`: `remembersColumns` (butuh `tableId`, menu kolom aktif, dan tidak `false`) dan `saveColumnVisibility`
+    - Tabel yang pilihannya masih kosong tidak menulis key `st_cv_*`, jadi tabel yang tidak pernah diubah tidak menambah isi localStorage
+    - Tabel dengan `columnVisibility: false` tidak membaca atau menulis pilihan
+    - Baris `rememberColumnVisibility: true` di Knowledge Articles dihapus karena sudah menjadi bawaan
+
+- **🧪 Testing:** 8 tes baru (`columnVisibilityStorage.test.ts`); 7/7 mutasi tertangkap; 95 file / 1023 tes lolos; tsc bersih; build OK.
+
+---
+
+## [1.127.1] - 2026-11-06
+
+### Detail Versi 1.127.1
+
+#### 🐛 Tombol Save di Web Widget Menempel ke Dasar Layar (T3)
+
+- **Deskripsi:**
+  - **Masalah:** di `/settings/web-widget`, bar **Save Settings** berhenti 32px di atas dasar layar, dan isi form masih terlihat di bawahnya.
+  - **Root Cause:** posisi `sticky` dihitung setelah dikurangi padding kolom yang di-scroll (`md:p-8` di `SettingsContent`).
+  - **Perbaikan:** `lg:-bottom-8` pada bar, hanya di layar `lg` ke atas karena di bawah ukuran itu yang di-scroll adalah halamannya. Padding `SettingsContent` tidak diubah karena dipakai semua halaman Settings.
+  - **Impact:** berlaku selama form terlihat di layar. Di akhir form, bar berhenti di tepi bawah kartu form lalu ikut ter-scroll, karena di bawahnya masih ada kartu lain.
+
+- **🧪 Testing:** CSS saja, tanpa tes unit. Diukur di Chrome headless dengan tiruan struktur yang sama: celah 32px menjadi 0px saat form terlihat. Halaman aslinya menunggu tes manual.
+
+---
+
+## [1.127.0] - 2026-11-05
+
+### Detail Versi 1.127.0
+
+#### ✨ Chat Langsung di Pesan Terbaru, Pesan Lama Dimuat saat Scroll (FE-8)
+
+- **Deskripsi:**
+  - **Masalah:**
+    - Setiap kali daftar pesan berubah, layar digeser **pelan-pelan** ke bawah (`scrollIntoView({ behavior: "smooth" })`). Gambar yang selesai dimuat setelahnya menambah tinggi chat, jadi layar berhenti di tengah, bukan di pesan terbaru.
+    - Pesan baru selalu menarik layar ke bawah, walaupun staff sedang membaca pesan lama.
+    - Hanya 50 pesan terbaru (halaman 1) yang bisa dilihat.
+  - **Perbaikan (`MessageList`, berlaku di semua tempat yang memakainya):**
+    - Chat dibuka **langsung di pesan terbaru, tanpa animasi**, dan tetap di bawah saat gambar selesai dimuat.
+    - Pesan baru: kalau staff sedang di bawah (jarak < 120px), layar ikut turun dengan halus. Kalau sedang membaca pesan lama, layar **tidak** ditarik; muncul tombol **New messages ↓**.
+    - Staff mengirim balasan dari Workspace: selalu turun ke pesan terbaru (sinyal dari composer, bukan tebakan; balasan bot AI tidak dihitung). Tempat lain tanpa sinyal ini menganggap setiap pesan keluar sebagai balasan staff.
+  - **Perbaikan (Workspace):**
+    - Scroll sampai atas memuat 50 pesan sebelumnya (spinner kecil di atas). **Posisi layar tidak meloncat**: pesan yang sedang dibaca tetap di tempatnya.
+    - Semua pesan termuat: tulisan **Beginning of conversation**, tidak ada request lagi. Gagal memuat: *Couldn't load older messages. Try again*.
+    - Pesan lama yang sudah dimuat tidak hilang saat WebSocket memuat ulang halaman 1, termasuk pesan yang bergeser keluar dari halaman 1 karena ada pesan baru. Pesan dobel (halaman yang bergeser) dibuang berdasarkan `id`.
+    - Pindah chat: pesan lama chat sebelumnya dibuang, chat baru dibuka di pesan terbaru.
+  - **Technical Notes:**
+    - `lib/utils/conversationMessages.ts` (murni): `mergeConversationMessages`, `hasOlderMessages`, `isNearBottom`, `messageListSnapshot`, `messageScrollAction` (jump / keep / follow / notify / none), `CONVERSATION_PAGE_SIZE = 50`
+    - `fetchConversation(token, id, { page, limit })`: parameter opsional; `useConversation` kini mengirim `limit=50` secara eksplisit supaya ukuran halamannya sama dengan halaman lama. Tipe `ConversationWithMessages.total_messages`
+    - `lib/hooks/useOlderMessages.ts`: `useOlderMessages` (halaman 2, 3, …; reset per percakapan; jawaban untuk percakapan sebelumnya diabaikan) dan `useConversationMessages` (gabungan + pesan yang sudah tampil)
+    - `MessageList`: props opsional `onLoadOlder`, `hasOlder`, `isLoadingOlder`, `loadOlderFailed`, `replySentKey`; `useLayoutEffect` + `ResizeObserver` + `IntersectionObserver`. `WorkspaceComposer` mendapat `onReplySent`
+    - Muat pesan lama baru aktif di Workspace. ConversationPanel, ConversationView, TicketConversationPanel, ContactChannelChat, dan ContactConversationDrawer mendapat perilaku scroll baru, tapi tetap hanya halaman 1
+
+- **🧪 Testing:** 13 tes baru (`conversationMessages.test.ts`); 13/14 mutasi tertangkap (1 setara); 86 file / 936 tes lolos; tsc bersih. API dicek di `origin/dev` v1.164.1: `page` ≥ 1, `limit` ≤ 100, halaman 1 = terbaru, `total_messages`
+
+---
+
+## [1.126.4] - 2026-11-05
+
+### Detail Versi 1.126.4
+
+#### 🔧 Tabel Penerima Broadcast WA: Filter Dikirim sebagai Satu Objek
+
+- **Deskripsi:**
+  - **Masalah:** filter tabel *Recipients Status* (modal statistik broadcast) disambungkan satu per satu sebagai parameter berurutan: `useBroadcastRecipients(id, page, limit, search, status, sortBy, sortOrder)` → `fetchBroadcastRecipients(token, id, page, limit, search, status, sortBy, sortOrder)`, 8 parameter yang urutannya mudah tertukar. Satu filter baru berarti mengubah 3 file di 4 tempat. Rencana ini disepakati 25 Okt dan dikerjakan atas permintaan developer.
+  - **Perbaikan:**
+    - Modal menyimpan `state.filters` tabel apa adanya. Hook dan API menerima satu objek query `{ page, limit, search, sortBy, sortOrder, filters }`.
+    - Setiap filter yang terisi dikirim dengan id-nya sebagai query param (`status=read`). Filter baru cukup satu baris di `filters` tabel, ditambah dukungan API; tidak perlu parameter baru di hook atau API.
+    - Tampilan dan request tidak berubah: tetap `page`, `limit`, `is_limit=true`, `search`, `status`, `sort_by`, `sort_order`.
+  - **Technical Notes:**
+    - `lib/utils/filterParams.ts` (murni, bisa dipakai tabel lain): `activeFilters` (filter kosong dibuang, multiselect digabung koma, urutan kunci tetap supaya cache key stabil) dan `appendFilterParams`
+    - tipe `BroadcastRecipientsQuery` (`lib/types/whatsapp-marketing.ts`); query key hook berisi objek query dengan filter yang terisi saja
+    - id filter harus sama dengan nama query param API. Filter yang nilainya objek (misalnya rentang tanggal) tidak punya bentuk umum dan perlu dipetakan dulu
+    - export CSV/Excel di kartu statistik (`fetchAllBroadcastRecipients`) tidak berubah
+
+- **🧪 Testing:** 7 tes baru `filterParams.test.ts` + 1 tes API (filter generik); tes API dan tes reload lama diubah ke objek query dan tetap lolos; mutasi 10/10 (1 setara, `append` vs `set`); 94 file / 1001 tes lolos; tsc bersih
+
+---
+
+## [1.126.3] - 2026-11-05
+
+### Detail Versi 1.126.3
+
+#### 🐛 Import Recipient & Subscribers: CSV Dibaca Apa Adanya (permintaan developer)
+
+- **Deskripsi:**
+  - **Masalah:** bug baca CSV yang diperbaiki untuk Contact di 1.126.2 juga ada di import **Recipient** (WhatsApp Marketing) dan **Subscribers** (Email Marketing): nomor HP `0812…` kehilangan 0 dan tersimpan sebagai `+812…` (broadcast WA ke nomor yang salah), dan huruf non-ASCII dari CSV UTF-8 rusak (`José` → `JosÃ©`).
+  - **Perbaikan:** kedua modal memakai `importFileReadArgs` yang sama dengan Contact: `.csv` dibaca sebagai teks UTF-8 (kalau sah) dengan semua sel tetap teks; CSV non-UTF-8 dan `.xlsx` seperti sebelumnya. Alur kirim dan tampilan kedua modal tidak berubah.
+  - **Catatan ruang lingkup:** pengecualian dari aturan "Contact saja", atas permintaan developer 5 Nov. Import Companies (Data Intelligence, masih disembunyikan) membaca CSV dengan cara lama dan tidak diubah.
+
+#### 🔧 Langkah Check: Label Kelompok Duplikat yang Digabung Otomatis (FE-6)
+
+- **Deskripsi:**
+  - **Masalah:** kelompok yang barisnya saling melengkapi (misalnya satu baris punya Position, baris lain punya Address) diberi label *Identical, kept once*, padahal barisnya tidak sama.
+  - **Perbaikan:** label menjadi **Same contact, merged automatically**, teks dialog *"No value in these rows contradicts another, so they are merged into one row automatically."*, dan tombolnya selalu **Merge into one row** (sebelumnya *Keep once*). Cara menggabung tidak berubah.
+
+- **🧪 Testing:** tidak ada logika baru (helper sama dengan 1.126.2, sudah dikunci tes); 93 file / 993 tes lolos; tsc bersih. Simulasi merge dengan branch FE-9 (`git merge-tree`): hanya `CHANGELOG.md` yang konflik
+
+---
+
+## [1.126.2] - 2026-11-05
+
+### Detail Versi 1.126.2
+
+#### 🐛 Import Contact: CSV Dibaca Apa Adanya (UTF-8, Nol di Depan Nomor HP)
+
+- **Deskripsi:**
+  - **Masalah:**
+    - **Nomor HP kehilangan 0 di depan.** SheetJS mengubah sel CSV yang berupa angka menjadi number, jadi `081234567890` terbaca `81234567890`, lalu API menyimpannya sebagai `+81234567890` (nomor Jepang). Akibatnya juga, duplikat di dalam file antara `0812…` dan `+62 812…` tidak terdeteksi. Bug ini sudah ada sebelum branch ini.
+    - **Huruf non-ASCII rusak.** CSV tanpa BOM dibaca sebagai Windows-1252, jadi file UTF-8 (Google Sheets, kebanyakan editor) membuat `tökö` menjadi `tÃ¶kÃ¶`. Nama atau alamat seperti `José` ikut tersimpan rusak tanpa error. Pada email, satu alamat rusak membuat **seluruh part** ditolak 422 (`Invalid email format: budi@tÃ¶kÃ¶.com`).
+  - **Perbaikan:**
+    - File `.csv` dibaca sebagai teks UTF-8 kalau isinya UTF-8 yang sah, dan semua sel tetap teks (`raw: true`). CSV yang bukan UTF-8 (Excel lama, "CSV (Comma delimited)") tetap dibaca seperti sebelumnya, juga dengan semua sel sebagai teks. File `.xlsx`/`.xls` tidak berubah.
+    - Aturan email (`isImportEmail`) mengikuti email-validator untuk karakter non-ASCII: di domain hanya huruf dan tanda gabung (bukan di awal), jadi `¶` dan simbol lain ditolak; di bagian lokal karakter kontrol/format (zero-width space dan sejenisnya) dan tanda gabung di awal ditolak. Baris seperti ini sekarang muncul sebagai invalid di langkah Check, bukan menggagalkan import. Angka non-ASCII di domain juga ditolak (API menerima sebagian, menolak sebagian), karena lebih ketat hanya menandai baris invalid.
+  - **Technical Notes:**
+    - `lib/utils/importFileRead.ts` (murni): `decodeUtf8`, `importFileReadArgs(fileName, bytes)` → argumen `XLSX.read`; dipakai `ImportContactModal.parseFile`
+    - Recipient dan Subscribers membaca CSV dengan cara lama dan punya bug yang sama; tidak diubah (aturan ruang lingkup), dicatat di `TUGAS_FE_2026-11-05.md`
+
+- **🧪 Testing:** 5 tes baru `importFileRead.test.ts`; 12 contoh email baru. **49 contoh email dicocokkan langsung ke `EmailStr` API** (pydantic 2.12.5 + email-validator 2.3.0 di `.venv` BE): 0 beda. Mutasi: aturan email 7/7, pembacaan file 5/5; 93 file / 993 tes lolos; tsc bersih
+
+---
+
+## [1.126.1] - 2026-11-05
+
+### Detail Versi 1.126.1
+
+#### 🔧 Widget Progres: Import yang Selesai Tidak Lagi Menampilkan Bar (FE-1)
+
+- **Deskripsi:**
+  - **Masalah:** kartu import yang sudah selesai tetap menampilkan bar progres dan `12 / 12`, sehingga tidak jelas apakah import masih berjalan, apalagi saat informasi dari API datang terlambat (job menunggu worker).
+  - **Perbaikan:** begitu semua bagian file selesai, bar diganti keterangan:
+    - semua Completed: ikon centang hijau, **Import completed** · N rows;
+    - berakhir lain: ikon silang abu-abu, **Import failed** / **Import stopped** / **Import rolled back**, atau **Import ended: Failed, Stopped** kalau bagiannya berakhir berbeda.
+    - Baris di bawahnya tetap hitungan *Created · Updated · Skipped · Failed*. Selama berjalan atau menunggu jawaban duplikat, kartu tetap seperti sebelumnya.
+  - **Technical Notes:** `importDockCard` mendapat `headline` (null selama berjalan); status berakhir pindah dari `summary` ke `headline`
+
+- **🧪 Testing:** tes `importJobState.test.ts` diperbarui (+1 tes); 5/5 mutasi tertangkap; tsc bersih
+
+---
+
+## [1.126.0] - 2026-11-05
+
+### Detail Versi 1.126.0
+
+#### ✨ Import Contact: Menjawab Baris yang Bentrok (FE-3, FE-4)
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.164.0, import Contact berhenti (`Waiting for Review`) di baris yang cocok dengan kontak lama tapi datanya berbeda. Web hanya bisa Stop atau Rollback (1.125.1), belum bisa menjawab barisnya.
+  - **Perbaikan:**
+    - Dialog **Duplicate contact found — row N**:
+      - baris dari file (nama · email · nomor, nama file, "row N of total");
+      - kontak lama (`ExistingContactSummary`);
+      - tabel pilihan per field yang bentrok (`ConflictChoiceTable`, Existing / New, tanpa pilihan awal);
+      - daftar *Also filled in* untuk field kosong yang ikut terisi.
+    - Tombol:
+      - **Skip**: kontak tidak berubah.
+      - **Replace all**: semua nilai dari file.
+      - **Update selected**: per field. Aktif setelah semua field dipilih.
+      - Setelah dijawab, import lanjut ke baris berikutnya.
+    - Dibuka dari:
+      - **kartu merah widget progres**: part pertama yang menunggu;
+      - tombol **Review** di Import History Contacts, di samping Stop dan Rollback.
+    - Jawaban yang sudah didahului tab atau user lain (409): toast *"This row was already answered"* dan job dimuat ulang. Kontak yang berubah selama job menunggu (422 `missing`): pesan merah yang menyebut field-nya, tinggal Replace all atau Skip.
+    - Menutup dialog tidak menjawab apa pun; job tetap menunggu.
+    - Nomor baris dihitung dari baris yang **dikirim** ke job itu (setelah langkah Check dan pemotongan per 2.000), jadi isi baris ikut ditampilkan supaya mudah dicari di file.
+  - **Technical Notes:**
+    - `lib/utils/importDuplicate.ts` (murni): `readPendingDuplicate`, `importDuplicateAnswer`, `canSubmitImportDuplicate`, `fillableValues`, `readImportDuplicateError`
+    - tipe `ImportPendingDuplicate` (`lib/utils/contactDuplicate.ts`); `BulkJob.pending_duplicate`
+    - API `answerImportDuplicate` (`POST /{module}/bulk/{job_id}/duplicate-resolution`) + hook `useAnswerImportDuplicate`: job baru langsung masuk cache widget, daftar Import History ditandai stale
+    - `importJobActions` mendapat `review` (`ImportHistoryAction`); kartu widget mendapat `openLabel`. Dialog widget tertutup sendiri kalau baris dijawab di tempat lain, supaya tidak muncul lagi saat job berhenti di baris berikutnya
+
+- **🧪 Testing:** 11 tes baru (`importDuplicate.test.ts`, bentuk data dari API v1.164.0) + tes tombol Review; 15/15 mutasi tertangkap; 92 file / 987 tes lolos; tsc bersih
+
+---
+
+## [1.125.2] - 2026-11-05
+
+### Detail Versi 1.125.2
+
+#### 🐛 Import Contact: Kiriman 2.000 Baris dan Aturan Email Mengikuti API (FE-5, FE-6)
+
+- **Deskripsi:**
+  - **Ukuran kiriman (FE-5 + FE-9):**
+    - **Masalah:** `kontak_10000.csv` dibalas **413** oleh nginx DEV (batas body 1 MiB, 10.000 kontak ±1,08 MB), dan BE mencatat kiriman 10.000 baris dibalas **502** karena memori API.
+    - **Perbaikan:** Contact kini mengikuti `IMPORT_CHUNK_SIZE` = **2.000 baris** per job (keputusan user, menggantikan 1.000 baris yang sempat dipasang khusus Contact). File 10.000 baris = 5 job, 25.000 baris = 13 job `(Part i/13)`. Baris `IMPORT_CHUNK_SIZE` sama persis dengan branch FE-9 (`fix/import-chunk-2000`), jadi tidak konflik saat digabung.
+  - **Aturan email (FE-6, hasil BE-7):**
+    - **Masalah:** satu email yang ditolak API membuat **seluruh kiriman** ditolak 422. Pola lama meloloskan `a@toko.local`, `a@toko.test`, `a..b@mail.com`, `.a@mail.com`, dan `a.@mail.com`, yang ditolak `EmailStr` API.
+    - **Perbaikan:** `isImportEmail` menyalin aturan email-validator 2.3.0 (di balik `EmailStr`, tanpa cek DNS): maksimal 254 karakter; bagian lokal tanpa titik di awal/akhir/berurutan dan hanya karakter yang diizinkan; domain wajib bertitik, label tanpa tanda hubung di awal/akhir dan maksimal 63 karakter, TLD diakhiri huruf; domain khusus `arpa`, `invalid`, `local`, `localhost`, `onion`, `test` ditolak. Domain unicode tetap diterima. Celah 2 dan 3 BE-7 (nomor HP tanpa angka, kunci nomor HP) ternyata sudah benar di 1.124.0.
+  - **Technical Notes:**
+    - `lib/utils/contactImportRules.ts`: `isImportEmail` menggantikan `EMAIL_PATTERN`
+    - `CONTACT_IMPORT_PART_ROWS` dihapus; `uploadImportParts` memakai `chunkSize` default
+
+- **🧪 Testing:** 3 tes email baru (37 contoh, termasuk semua contoh BE-7); tes `uploadImportParts` disesuaikan ke 2.000 baris; 16/16 mutasi email tertangkap; 91 file / 976 tes lolos; tsc bersih
+
+---
+
+## [1.125.1] - 2026-11-05
+
+### Detail Versi 1.125.1
+
+#### 🔧 Import History & Widget Mengikuti API v1.164.0 (sebagian FE-4)
+
+- **Deskripsi:**
+  - **Masalah:** API DEV v1.164.1 sudah menghentikan import Contact di baris yang bentrok dengan kontak lama (`Waiting for Review`) dan mengisi field kosong kontak lama secara otomatis (`updated_rows`). Di web, job yang menunggu tampil dengan chip abu-abu **tanpa tombol apa pun**, jadi tidak bisa di-Stop atau di-Rollback (Q-8). Kontak yang diubah import juga tidak terhitung di mana pun.
+  - **Perbaikan:**
+    - Import History: status `Waiting for Review` tampil sebagai chip **merah** dengan tooltip, dan mendapat tombol **Stop** dan **Rollback**. Continue setelah Stop menanyakan baris yang sama lagi (perilaku API).
+    - Import History **Contacts**: hitungan **Updated: N** di samping Created/Skipped/Failed (Q-2, termasuk pengisian otomatis). Recipient dan Subscribers tidak berubah.
+    - Widget progres: *Updated N* ikut di ringkasan kartu, hanya kalau ada.
+    - Tombol **Review** (menjawab baris) belum ada, karena ikut FE-3.
+  - **Technical Notes:**
+    - `importJobActions(status)` (murni, `components/import-history/importJobState.ts`) menentukan tombol per status; `ImportHistoryModal` merender dari daftar itu dan `ACTION_BUTTONS`. Tombol untuk status lain sama persis dengan sebelumnya (dikunci tes)
+    - tipe `BulkJob` mendapat `updated_rows?`; `importDockCard` mendapat `updated`
+
+- **🧪 Testing:** 3 tes baru (`importJobState.test.ts`), termasuk tombol semua status lama; 8/8 mutasi tertangkap; 91 file / 973 tes lolos; tsc bersih
+
+---
+
+## [1.125.0] - 2026-11-05
+
+### Detail Versi 1.125.0
+
+#### ✨ Widget Progres Import di Pojok Kanan Bawah (FE-1)
+
+- **Deskripsi:**
+  - **Masalah:** progres import Contact hanya terlihat di modal Import History. Setelah modal ditutup atau pindah halaman, user tidak tahu import sudah sampai mana.
+  - **Perbaikan:**
+    - Setelah Import Contact dimulai, file itu tampil sebagai **kartu di pojok kanan bawah, di semua halaman yang butuh login**: nama file, bar progres, `processed / total`, dan *Created · Skipped* (plus *Failed* kalau ada).
+    - Satu file = **satu kartu**, juga kalau file dipecah jadi beberapa bagian (FE-5): progres dan hitungannya dijumlahkan, dengan keterangan *"3 parts"*.
+    - Warna bar: **hijau** selama berjalan dan saat semua bagian Completed, **abu-abu** kalau berakhir dengan cara lain (Failed, Stopped, Rolled Back, statusnya disebut). Status `Waiting for Review` (BE-1, API v1.164.0) sudah disiapkan: bar **merah** dan **titik merah** berisi jumlah bagian yang menunggu.
+    - Klik kartu membuka **Import History** modul itu. **×** hanya berhenti memantau; import tetap berjalan di server.
+    - Kartu **disembunyikan selama Import History modul yang sama terbuka**, karena modal sudah menampilkan hal yang sama.
+    - Kartu tetap ada setelah **reload** atau pindah halaman (localStorage `smartsales_import_watch`, maksimal 5 file).
+    - Kalau job yang dipantau selesai (Completed / Rolled Back) saat halaman Contacts terbuka, **daftar kontak dimuat ulang**.
+  - **Polling:** hanya selama ada job yang dipantau dan **masih bergerak** (Uploading, Queued, Processing, Waiting for Review, rollback). Interval mengikuti pilihan Auto-refresh di Import History Contacts (`import_interval_contact`); kalau Off, 5 detik. Tidak polling saat tab browser tidak aktif dan saat Import History modul itu terbuka (modal sudah polling). Setelah semua job selesai atau ditutup, **tidak ada request lagi**. Job yang sudah tidak ada di API (404/403) otomatis berhenti dipantau.
+  - **Technical Notes:**
+    - `lib/store/importWatch.ts` (zustand + persist): daftar `{ id, module, fileName, jobIds }`, `historyOpen[module]`, `dataVersion[module]`
+    - `lib/hooks/useWatchedImportJobs.ts`: `useQueries` per job + `usePolling`; job selesai dideteksi dengan `freshlyFinishedJobs` yang sudah ada
+    - `components/import-history/importJobState.ts` (murni): `ACTIVE_IMPORT_STATUSES`, `isActiveImportJob`, `importDockCard`, `dockIntervalMs`
+    - `ImportProgressDock` (dipasang sekali di `AuthenticatedLayout`) + `ImportProgressCard`. Dock tidak tahu soal Contact: modul diambil dari `IMPORT_HISTORY_CONFIG` (`components/import-history/importModules.ts`, sekarang hanya `contacts`)
+    - API: `fetchImportJob` (`GET /{module}/bulk/{job_id}`); error dari `readResponse` kini membawa `status`
+    - `ImportHistoryModal` hanya melapor `historyOpen` saat terbuka. Tampilan dan perilakunya di Recipient/Subscribers tidak berubah
+    - tipe `BulkJob.status` mendapat `"Waiting for Review"`
+
+- **🧪 Testing:** 11 tes baru (`importJobState.test.ts` 7, `importWatch.test.ts` 4); 12/12 mutasi tertangkap
+
+---
+
+## [1.124.0] - 2026-11-05
+
+### Detail Versi 1.124.0
+
+#### ✨ Import Contact: Langkah Check Sebelum Import (FE-6, permintaan BO)
+
+- **Deskripsi:**
+  - **Masalah:** isi file langsung dikirim. Baris yang sama di dalam file (email atau nomor HP sama) dan baris yang ditolak API baru ketahuan setelah import, dan baris tanpa nama hilang tanpa alasan yang jelas.
+  - **Perbaikan:** langkah baru **Check** di antara Map Columns dan Preview, sepenuhnya di browser (tanpa request):
+    - **Duplikat di dalam file**: baris dengan email sama (huruf besar/kecil diabaikan) **atau** nomor HP sama (format diabaikan, `0812…` = `+62812…`) dikelompokkan, juga berantai (A–B email sama, B–C nomor sama → satu kelompok). Kelompok yang isinya sama persis selesai otomatis (*Identical, kept once*). Kelompok yang berbeda dibuka lewat **Resolve**: dialog *Duplicate rows in file* dengan satu kolom per baris, pilih nilai per field yang berbeda, lalu **Merge into one row**, atau **Remove all rows**. Pilihan tidak terisi dari awal, dan masih bisa diubah lewat **Change** sampai Import.
+    - **Baris tidak valid** (aturan disalin dari API v1.163.3): nama wajib dan 3–255 karakter, format email, karakter dan panjang nomor HP, Company 3–255, Position maks. 255, Address min. 6. Daftarnya tampil dengan alasan per baris (*Show*), dan baris itu tidak dikirim.
+    - **Baris tanpa email dan tanpa nomor HP** dilewati **tanpa peringatan**, tapi dicatat: info abu-abu di Check dan toast setelah import (keputusan user 5 Nov). Baris dengan email saja atau nomor saja tetap dikirim.
+    - Tombol **Preview** baru aktif setelah semua kelompok yang butuh pilihan selesai. Preview menampilkan **persis** baris yang akan dikirim.
+    - Di Map Columns, kolom **Email atau Phone Number** kini wajib dipetakan (tanpa keduanya semua baris akan dilewati).
+  - **Technical Notes:**
+    - `lib/utils/contactImportRules.ts` (murni): `CONTACT_IMPORT_RULES` (satu daftar untuk validasi dan petunjuk template), `normalizeImportPhone` (salinan `normalize_phone_number_unchecked`), `validateContactImportRow`, `hasContactInfo`, `contactIdentity`, `contactCompareValue`, `suggestContactField` (dipindah dari modal tanpa perubahan), `CONTACT_FILE_RULES`
+    - `lib/utils/importFileDuplicates.ts` (murni, tidak tahu soal Contact): `checkImportFile`, `findDuplicateGroups` (union-find), `differingFields`, `mergeGroup`, `isGroupResolved`, `groupStatus`, `fileCheckSummary`, `applyFileResolutions`
+    - komponen: `ImportCheckStep`, `FileDuplicateDialog`. `AppDialog` mendapat prop opsional `zIndex` supaya dialog tampil di atas modal import (`z-9999`); dialog lain tidak berubah
+    - beberapa kolom yang dipetakan ke Name kini digabung tanpa spasi berlebih kalau salah satunya kosong
+
+#### ✨ Import Contact: Template Dibuat Otomatis (FE-7, permintaan BO)
+
+- **Deskripsi:**
+  - **Masalah:** Download Template mengunduh file statis dengan kolom *Phone* dan satu contoh, tanpa penjelasan format.
+  - **Perbaikan:** template `contacts_import_template.xlsx` dibuat saat diklik, dengan sheet **Contacts** (kolom Name, Email, Phone Number, Company, Position, Address, langsung terpetakan otomatis, plus 3 contoh yang lolos Check) dan sheet **Guide** (wajib atau tidak, format, dan contoh per kolom, plus aturan per baris: email atau nomor minimal satu, kontak sama kalau email atau nomor sama).
+  - **Technical Notes:** `lib/utils/importTemplate.ts` (`importTemplateSheets` murni + `downloadImportTemplate`, memakai `columnWidths` dari `exportRows`), dibangun dari `CONTACT_IMPORT_RULES`, sehingga petunjuk dan validasi tidak bisa berbeda. `public/documents/template_contacts.xlsx` dihapus (tidak dipakai di tempat lain). Template Recipient dan Subscriber tidak berubah
+
+#### 🔧 Import Contact Dikirim Seperti Subscriber (FE-5, arahan BE untuk BUG-7)
+
+- **Deskripsi:**
+  - **Perubahan:** setiap potongan 10.000 baris kini **job sendiri** (`POST /contacts/bulk`, `finished: true`), bernama `<file> (Part i/n)` di Import History, seperti Subscribers. Contact tidak lagi memakai `/contacts/bulk/{job_id}/rows`. Ini mengubah keputusan "satu file = satu job" (1.122.0) **untuk Contact saja**: rollback per bagian.
+  - Kalau satu bagian gagal, pesan menyebut bagian yang sudah masuk, misalnya *"Part 2 of 3 failed: … Part 1 was imported and is in Import History. Import the remaining rows again."*, dan bagian yang sudah masuk tetap dipantau.
+  - **Technical Notes:** ditambah `uploadImportParts`, `partFileName`, `ImportPartsError` (`lib/utils/importJobUpload.ts`) dan `startImportJob` (`lib/api/import-jobs.ts`). `uploadImportJob` / `sendImportPart` (cara `/rows`) **tidak diubah** dan tetap dipakai Import Recipient
+
+#### ♻️ Komponen Duplikat Bisa Dipakai Ulang (FE-2)
+
+- **Deskripsi:** dialog *Contact already exists* (Add Contact, Omnichannel) disusun ulang dari `ConflictChoiceTable` (kolom sebanyak sumber), `ExistingContactSummary`, dan hook `useDuplicateChoices`, yang juga dipakai dialog duplikat di file (FE-6) dan nanti dialog duplikat saat import (FE-3). **Tidak ada perubahan perilaku**: body `keep` ke API tetap sama.
+  - **Technical Notes:** `components/contact/duplicates/`, `lib/hooks/useDuplicateChoices.ts`; `missingChoices` dan `DUPLICATE_SOURCES` di `lib/utils/contactDuplicate.ts`
+
+- **🧪 Testing:** 36 tes baru (`importJobParts.test.ts` 7, `contactImportRules.test.ts` 11, `importFileDuplicates.test.ts` 14, `importTemplate.test.ts` 4), termasuk isi file tes manual `kontak_validasi_17.csv`; semua mutasi tertangkap (FE-5 6/6, aturan 16/16, duplikat 16/16), tes union-find mencakup baris yang menyambung dua kelompok dan baris berulang dengan email + nomor sama; tes `uploadImportJob` lama lolos tanpa diubah; seluruh suite 91 file / 970 tes lolos; `tsc` bersih
+
+---
+
+## [1.123.1] - 2026-11-05
+
+### Detail Versi 1.123.1
+
+#### 🐛 Import Dikirim per 2.000 Baris (FE-9)
+
+- **Deskripsi:**
+  - **Masalah:** kiriman 10.000 baris dibalas **502** di DEV (file 33.333 baris, 5 Nov), sehingga file besar gagal di kiriman pertama. Kiriman 5.000 baris lolos. Dugaan BE: memori API hampir penuh (`TUGAS_BE_2026-11-05.md` bagian 1). Selain itu, nginx DEV menolak body di atas 1 MiB (413), dan 10.000 kontak ±1,08 MB.
+  - **Perbaikan:** semua import mengirim **2.000 baris per kiriman** (keputusan user 5 Nov, sementara sampai memori API dinaikkan):
+    - **Contact** dan **Recipient**: tetap satu job per file, dikirim per 2.000 baris (`/rows`).
+    - **Subscribers**: satu job per 2.000 baris, `"<file> (Part i/n)"` di Import History. Pesan biru di Preview muncul untuk file di atas 2.000 baris dan menyebut *2,000 rows*.
+  - **Technical Notes:**
+    - `IMPORT_CHUNK_SIZE` (`lib/utils/importJobUpload.ts`) dari `10_000` ke `2_000`, satu angka untuk ketiga modul
+    - `ImportSubscriberModal` memakai `chunkRows()` + `IMPORT_CHUNK_SIZE`, bukan `CHUNK_SIZE = 10000` sendiri
+    - komentar yang menyebut 10,000 diperbarui (`ImportWaRecipientModal`, `lib/api/import-jobs.ts`). Komentar di `ImportContactModal` ikut diganti di branch FE-5 (`feat/contact-import-check`), supaya kedua branch tidak konflik
+
+- **🧪 Testing:** 1 tes baru (`chunkRows` default: 4.500 → 2.000 + 2.000 + 500); tes `uploadImportJob` lama tetap lolos tanpa diubah; 85 file / 924 tes lolos; tsc bersih
+
+---
+
+## [1.123.0] - 2026-11-04
+
+### Detail Versi 1.123.0
+
+#### ✨ Web Widget: Teks Bawaan Mengikuti Bahasa Widget (FE-7.2)
+
+- **Deskripsi:**
+  - **Masalah:** API mengisi Home Headline, Home Subtext, Handoff Label, Response Time Label, dan Greeting Message dengan teks Inggris saat widget dibuat, sehingga widget berbahasa Indonesia tampil campur Inggris. Sejak API v1.163.0 (BE-7.2) kolom-kolom itu disimpan **kosong** dan teks Inggris lama dibersihkan. Widget versi lama menyembunyikan label waktu balas dan gelembung sapaan kalau kolomnya kosong, jadi keduanya **hilang** di DEV. Placeholder di Settings juga menyesatkan (*Hi there 👋*, *How can we help you today?*).
+  - **Perbaikan:**
+    - Kolom kosong = **teks bawaan sesuai bahasa widget**, kolom berisi = tulisan tenant di semua bahasa:
+
+      | Kolom | Bahasa Indonesia | English |
+      |---|---|---|
+      | Home Headline | Ada yang bisa kami bantu? | How can we help? |
+      | Home Subtext | Greeting Message tenant, kalau tidak: Pilih opsi di bawah atau kirim pesan kepada kami. | … Choose an option below or send us a message. |
+      | Handoff Label | Bicara dengan agen | Talk to a human |
+      | Response Time Label | Biasanya langsung membalas | Usually replies instantly |
+      | Greeting Message (gelembung sapaan) | Halo! Ada yang bisa kami bantu? | Hi! How can we help? |
+
+    - Label waktu balas di header (*Online · …*) dan gelembung sapaan pertama di chat **selalu tampil** lagi.
+    - **Settings › Web Widget:** placeholder kelima kolom sama persis dengan yang tampil di widget dan langsung berganti saat Widget Language diganti, sebelum Save. Placeholder Home Subtext mengikuti Greeting Message kalau terisi. Setiap kolom diberi teks bantuan *Leave blank for the default in the widget's language*. Form tidak lagi mengisi teks Inggris otomatis, dan Greeting Message boleh kosong.
+    - Pilihan Widget Language **"Automatic (visitor/browser)"** diganti menjadi *"Automatic (embed code, default Indonesian)"*: widget memang tidak membaca bahasa browser, melainkan `data-locale` di kode embed dengan default Bahasa Indonesia.
+  - **Technical Notes:**
+    - satu sumber teks: `lib/utils/widgetHomeTexts.ts` (`WIDGET_HOME_TEXTS`, `widgetLocale`, `widgetText`, `widgetHomeSubtext`), dibundel ke `widget/src/widget.ts` dan dipakai placeholder Settings. String `homeHeadline` / `homeSubtext` / `handoffDefault` dihapus dari paket bahasa widget
+    - teks Inggris sama dengan yang dulu disimpan API, jadi widget berbahasa Inggris tampil seperti sebelumnya
+    - kalau tenant mengosongkan Response Time Label atau Greeting Message, teks bawaan yang tampil. Keduanya tidak bisa disembunyikan lagi (keputusan 4 Nov)
+
+#### 🐛 Workspace: Assignee Langsung Ikut Pemilik Chat (ASG-1)
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.163.0 (ASG-1), chat widget otomatis jadi milik staff yang pertama membalas. Panel kanan Workspace membaca pemilik dari baris daftar (polling 30 detik), bukan dari detail percakapan. Balasan dari Workspace sendiri sudah me-refresh daftar, tapi balasan dari tempat lain (drawer percakapan di detail kontak, atau agen lain lewat WebSocket) hanya me-refresh detail, sehingga kolom **Assignee** bisa tertinggal sampai daftar ter-polling.
+  - **Perbaikan:** Assignee dan agen default QA review membaca pemilik dari detail percakapan lebih dulu. Unassign (null) di detail juga langsung tampil.
+  - **Technical Notes:** helper `assigneeId` di `workspaceHelpers.ts`, pola yang sama dengan `profileContactId`. Tipe `Conversation` mendapat `assigned_user_id`
+
+- **🧪 Testing:** 9 tes baru (`widgetHomeTexts.test.ts` 6, `workspaceHelpers.test.ts` 3); 7/7 mutasi tertangkap; seluruh suite 85 file / 923 tes lolos; `tsc` bersih; `build:widget` OK
+
+---
+
+## [1.122.0] - 2026-11-04
+
+### Detail Versi 1.122.0
+
+#### ✨ Import Contact & Recipient Memakai Job di Background (FE-3, FE-4)
+
+- **Deskripsi:**
+  - **Masalah:** Import Contact dan Import Recipient mengirim seluruh isi file dalam satu request yang diproses langsung. File besar rawan timeout, tidak ada progres, dan import tidak bisa di-stop atau di-rollback. Sejak API v1.162.0 kedua import berjalan sebagai job di background, seperti Subscribers, dan format response-nya berubah, sehingga toast *"Successfully imported N contacts"* tidak benar lagi (data baru muncul setelah job selesai).
+  - **Perbaikan:**
+    - File dikirim **bertahap, 10.000 baris per kiriman**, tapi **satu file tetap satu job**: kiriman pertama membuat job, sisanya ditambahkan ke job yang sama (`/{job_id}/rows`), dan kiriman terakhir menandai `finished: true`. Satu file = satu baris di riwayat dan rollback sekali klik.
+    - Tombol **Import** terkunci selama pengiriman, sehingga file tidak bisa terkirim dua kali.
+    - Setelah terkirim, toast *Contact/Recipient import started* muncul dan **Import History terbuka otomatis**.
+    - Kalau pengiriman gagal di tengah (misalnya kiriman 2 dari 3), pesannya *"Upload stopped at part 2 of 3. Nothing was imported. Please import the file again."* Selama status Uploading belum ada data yang dibuat, dan API menghapus job yang tidak selesai dikirim setelah 30 menit tanpa progres (cron tiap 15 menit). Kalau API menolak di kiriman pertama, error validasinya tampil per field seperti sebelumnya.
+    - Import Recipient dari halaman **detail Group Broadcasting** memakai alur yang sama (`target: broadcast_group`).
+
+#### ✨ Import History di Contacts, Recipients, dan Detail Group (FE-5)
+
+- **Deskripsi:**
+  - **Perbaikan:**
+    - Tombol **Import History** di halaman **Contacts**, **Recipients**, dan **detail Group Broadcasting**, dengan tabel, status, progres, auto-refresh, dan tombol aksi (Stop / Continue / Rollback / Replay) yang sama persis dengan Subscribers.
+    - Riwayat Recipients menampilkan import ke Recipients **dan** ke Group (keputusan user), karena API tidak bisa menyaring per group. Riwayat di detail Group menampilkan import ke semua group.
+    - Status baru **Uploading**: tanpa tombol aksi, dengan tooltip bahwa job yang tidak selesai dikirim akan terhapus otomatis dalam sekitar 45 menit.
+    - Riwayat **hanya di-polling saat modal terbuka**, dan baru diminta saat modal dibuka (permintaan user 4 Nov). Sebelumnya polling tetap berjalan di belakang setelah modal ditutup, termasuk di Subscribers dan Mailing List.
+    - Saat job **selesai atau di-rollback**, list modul itu ikut diperbarui (Contacts, Recipients, anggota Group, Subscribers/Mailing List). Kalau job selesai saat modal tertutup, list diperbarui begitu modal dibuka lagi. Job yang sudah selesai sebelum modal pertama kali dibuka **tidak** memicu reload, sehingga tabel tidak meloncat ke atas.
+
+#### 🔧 Riwayat Subscribers Hanya Job Subscriber (FE-6)
+
+- **Deskripsi:**
+  - Riwayat import di halaman Subscribers sekarang memakai `target: subscriber` saja, tidak lagi `subscriber` + `contact`. Import Contact punya riwayat sendiri di halaman Contacts.
+
+- **Technical Notes:**
+  - `lib/api/import-jobs.ts`: satu API untuk ketiga modul (`fetchImportJobs`, `actionImportJob`, `sendImportPart`), menggantikan `fetchBulkJobs` / `actionBulkJob` yang khusus Subscribers
+  - `lib/hooks/useImportJobs.ts`: `useImportJobs(module, query)`, `useImportJobAction(module)`, `importJobsKey`, menggantikan `useBulkJobs` / `useActionBulkJob` / `bulkJobsKey`
+  - `lib/utils/importJobUpload.ts`: `uploadImportJob` (potongan, `/rows`, `finished`), `ImportUploadError` (part ke berapa + detail validasi), `describeUploadError`
+  - `ImportHistoryModal` dipindah ke `components/import-history/` (bersama `importProgress`), dengan prop `module` dan `onDataChanged`. `usePolling` dan `useImportJobs` (`enabled`) hanya aktif saat `open`. Invalidasi khusus Subscribers dipindah ke halaman pemanggil. Helper baru `finishedJobs.ts` (`freshlyFinishedJobs`): snapshot pertama hanya mencatat, perubahan berikutnya ke Completed / Rolled Back dilaporkan sekali
+  - tipe `BulkJob`: status `Uploading` + `broadcast_group_ids`
+  - `useBulkCreateWaRecipients` dan tipe `BulkCreateWaRecipient*` dihapus (tidak terpakai). Tes alur Recipients memodelkan import sebagai job yang selesai lalu me-restart list
+- **🧪 Testing:** 12 tes baru (`importJobUpload.test.ts` 8, `finishedJobs.test.ts` 4); tes alur Recipients disesuaikan; 11/11 mutasi tertangkap; seluruh suite 84 file / 914 tes lolos; `tsc` bersih
+
+---
+
+## [1.121.1] - 2026-11-04
+
+### Detail Versi 1.121.1
+
+#### 🔒 Leads: Data Kontak Tidak Bisa Diubah dari Form Lead
+
+- **Deskripsi:**
+  - **Masalah:** form **Add Lead** dan **Detail Lead** (update) membiarkan user mengubah email, phone, dan company, serta di form update juga nama/kontak lead. Padahal API (`POST /leads`, `PUT /leads/{id}`) tidak menyimpan field-field itu; lead hanya menyimpan `contact_id`. Perubahannya hilang tanpa pesan, dan yang tampil tetap data kontak. Form Add Lead juga mewajibkan email, phone (minimal 10 digit), dan company, sehingga kontak tanpa phone tidak bisa dijadikan lead walaupun data itu tidak dipakai.
+  - **Perbaikan (permintaan BO):**
+    - **Add Lead:** Name tetap untuk mencari dan memilih kontak (wajib). **Email, Phone Number, dan Company terkunci** (abu-abu), terisi otomatis dari kontak yang dipilih, dengan teks *From the contact. Edit it in Contacts.* Sebelum kontak dipilih, field tampil *Select a contact first*.
+    - **Detail Lead (update):** **Name, Email, Phone Number, dan Company terkunci**, sehingga kontak lead tidak bisa diganti lagi.
+    - Email, phone, dan company **tidak lagi wajib** (keputusan user): lead tetap bisa dibuat untuk kontak yang datanya belum lengkap. Field yang kosong tampil "-".
+    - Placeholder pencarian di Add Lead menjadi *Search existing contacts*, tanpa "or enter new name", karena lead memang harus memakai kontak yang sudah ada.
+  - **Technical Notes:**
+    - komponen bersama `components/lead-management/LockedContactField.tsx` (+ `LOCKED_FIELD_LABELS`), dengan gaya yang sama seperti `LockedField` di form Deal
+    - `CreateLeadData` sekarang hanya `contact_id` (wajib) + field lead; `UpdateLeadData` tanpa field kontak dan tanpa `contact_id`. Body request tidak lagi mengirim name/email/phone/company yang selama ini diabaikan API
+    - `lead-detail-modal.tsx`: pencarian kontak yang tidak terpakai lagi dihapus (`useContacts`, debounce, `ContactPickerDialog`, autocomplete, tema MUI)
+  - **🧪 Testing:** manual (form, tanpa tes DOM); `tsc` bersih; seluruh suite 82 file / 902 tes tetap lolos
+
+---
+
+## [1.121.0] - 2026-11-04
+
+### Detail Versi 1.121.0
+
+#### ✨ Add Contact & Omnichannel: Dialog Kontak Duplikat
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.158.0 (BE-1.3), `POST /contacts` menolak kontak yang emailnya atau nomor HP-nya sudah dipakai kontak lain dengan **409** `DUPLICATE_CONTACT`, dan meminta user memilih. Web menampilkan 409 itu sebagai toast error, sehingga user tidak bisa melanjutkan. Selain itu, saat kontak lama hanya dilengkapi (nama + email sama, tanpa field yang bentrok), web tetap menampilkan *Contact added!*, padahal tidak ada kontak baru.
+  - **Perbaikan:**
+    - 409 membuka dialog **Contact already exists** yang berisi alasannya (nama + email sama / email sama dengan nama lain / nomor HP sama) dan data kontak lama (nama, email, HP, source, tanggal dibuat).
+    - Setiap field yang bentrok tampil sebagai baris **Existing / New** dengan pilihan. Tidak ada yang terpilih dari awal; tombol **Merge into existing** baru aktif setelah semua baris dipilih, supaya tidak ada data yang tertimpa tanpa disadari. Tipe Pelanggan dan Wilayah tampil sebagai nama, bukan ID.
+    - **Merge into existing** mengirim ulang data form dengan pilihan tadi. Tidak ada pilihan membuat kontak terpisah, supaya tidak ada kontak dobel. Ini keputusan produk, walaupun API masih menerima `create_new`.
+    - Kalau kontak lama berubah sejak dialog dibuka (API membalas 409 lagi), dialog memuat data terbaru, pilihan dikosongkan, dan muncul peringatan *The existing contact has changed*.
+    - **Cancel** menutup dialog tanpa menyimpan apa pun. Form tetap terbuka dengan isinya.
+    - Kontak lama yang dilengkapi tampil sebagai *Contact already exists — Empty fields of the existing contact were filled in*, bukan *Contact added!*.
+    - Berlaku di **Add Contact** (Contacts) dan form kontak baru di **Omnichannel**.
+  - **Technical Notes:**
+    - `lib/utils/contactDuplicate.ts`: `readCreateContactResponse` memilah jawaban API (`created` / `merged` / `duplicate` / `error`), plus `missingDuplicateChoices` dan label field/nilai
+    - `createContact` di `lib/api/contacts.ts` tidak melempar error untuk jawaban API; hook bersama `useCreateContact` (`lib/hooks/useCreateContact.ts`) menyimpan body untuk dikirim ulang dengan `duplicate_resolution: {contact_id, keep}`
+    - komponen `components/contact/modal/DuplicateContactDialog.tsx` dipakai kedua form
+    - AddContactModal: detail error yang berbentuk objek tidak lagi membuat `.map` crash, dan tombol tidak tertahan loading saat token hilang
+  - **🧪 Testing:** 12 tes baru (`contactDuplicate.test.ts`); 7/7 mutasi tertangkap; seluruh suite 82 file / 902 tes lolos; `tsc` bersih
+
+#### 🐛 Contacts: Perubahan pada Kontak yang Sudah Tampil Tidak Muncul di Tabel
+
+- **Deskripsi:**
+  - **Masalah:** setelah merge ke kontak lama, misalnya HP Budi dilengkapi, tabel Contacts tetap menampilkan nilai lama ("-") sampai halaman di-reload. Hal yang sama terjadi setelah **Edit** kontak. Ditemukan saat tes FE-1.3, tapi bug ini sudah ada sebelumnya.
+  - **Root Cause:** tabel Contacts memuat data bertahap (lazy) dan hanya mengganti satu batch kalau jumlah baris atau ID baris pertama/terakhirnya berubah (`useLazyRows`). Perubahan pada kontak yang sudah tampil tidak mengubah keduanya, sehingga data baru dari API diabaikan. Ini celah SuperTable yang sama dengan yang dulu diperbaiki di tabel WA Marketing (1.106.2).
+  - **Perbaikan:** setelah setiap perubahan (Add/merge, Edit, Delete, Delete All, Duplicate, Tag, Import), batch pertama diambil ulang lebih dulu, lalu tabel dimulai ulang dari situ lewat `restartKey`. Akibatnya tabel kembali ke atas setelah menyimpan.
+  - **Technical Notes:** `restartList` (menggantikan `reloadCurrentPage`) dan state `listVersion` di `ContactClient.tsx`, diteruskan sebagai `restartKey` lewat `ContactTable`. Urutannya fetch dulu baru restart, sama seperti `useListRefresh`, supaya restart memakai data yang segar
+  - **🧪 Testing:** manual (komponen, tanpa tes DOM)
+
+---
+
+## [1.120.0] - 2026-11-04
+
+### Detail Versi 1.120.0
+
+#### ✨ Detail Kontak: Tab Conversations Jadi Tabel Semua Percakapan
+
+- **Deskripsi:**
+  - **Masalah:** tab **Conversations** di detail kontak hanya menampilkan **satu percakapan per channel**, tanpa tanggal. Kontak yang chat lewat widget berkali-kali (misalnya 3 chat widget + 1 WhatsApp) hanya terlihat satu percakapan widget, sehingga riwayat lain tidak bisa dibuka dari halaman kontak.
+  - **Perbaikan:**
+    - Tab Conversations menjadi **tabel semua percakapan** kontak di semua channel, termasuk yang Solved/Closed/Archived. Kolomnya: Channel, Account, Status, First message, Messages, Agent, Created, Last message.
+    - Urutan default **terbaru di atas**. Kolom **Created** bisa dibalik jadi terlama; kolom lain tidak bisa diurutkan karena API hanya mendukung urutan ini.
+    - Ada filter **Channel** dan paging bernomor (10/25/50 per halaman).
+    - Percakapan widget yang masuk ke kontak ini lewat email ketikan pengunjung (`identity_verified: false`) diberi badge **Email not verified**, dengan tooltip penjelasan.
+    - **Klik baris** membuka **drawer di kanan**: riwayat chat lengkap dan kotak balas, dengan realtime seperti di Workspace. Setelah membalas, kolom Last message dan Messages di tabel ikut diperbarui.
+    - Kalau user tidak punya akses membuka percakapan (`can_open_conversation: false`), baris tetap tampil tapi tidak bisa diklik, dan muncul keterangan *You don't have access to open conversations*.
+    - Tombol **Start conversation** tetap ada (di atas tabel dan di tampilan kosong) untuk memulai chat WhatsApp/SMS/Email baru, dengan form yang sama seperti sebelumnya.
+    - Tab **WhatsApp tidak berubah**.
+  - **Technical Notes:**
+    - API v1.158.0 (BE-1.2): `GET /contacts/{id}/conversations?page&limit&channel_type&sort` (`created_at_desc` / `created_at_asc`); `fetchContactConversations` di `lib/api/contacts.ts`, `useContactConversations` + `contactConversationsKey` di `lib/hooks/useContacts.ts`; tipe `ContactConversationItem` / `ContactConversationListResponse` di `lib/types/omnichannel.ts`
+    - `nextContactConversationQuery` (`components/contact/detail/sections/contactConversations.ts`) memetakan state tabel ke query API: filter, urutan, atau jumlah baris baru kembali ke halaman 1; state yang sama tidak memicu request ulang
+    - drawer `ContactConversationDrawer.tsx` memakai `MessageList`, `MessageInput`, `useConversation`, dan `useOmnichannelRealtime` yang sudah ada
+    - `StartConversationPanel` di `ContactChannelChat.tsx` diekspor dan mendapat prop `startOpen` / `onCancel` untuk dialog
+    - label channel dan warna status memakai `CHANNEL_META` / `STATUS_META` Workspace, jadi sama dengan Workspace
+  - **🧪 Testing:** 9 tes baru (`contactConversations.test.ts`); 7/7 mutasi tertangkap; seluruh suite 81 file / 891 tes lolos; `tsc` bersih; lint bersih
+
+#### 🐛 Start Conversation: Gagal Tanpa Pesan, dan Akun SMS Ikut Ditawarkan
+
+- **Deskripsi:**
+  - **Masalah:** saat **Send** di form Start conversation ditolak API, layar tidak menampilkan apa-apa, sehingga terlihat seperti tombol tidak berfungsi. Ditemukan saat tes FE-1.2, tapi bug ini sudah ada di tab lama (juga di tab WhatsApp).
+  - **Root Cause:**
+    - `handleError` hanya menulis error ke console dan mengembalikan pesannya. Form memanggilnya tanpa toast, jadi penolakan seperti *Selected contact has no WhatsApp phone number* (kontak dari widget biasanya hanya punya email) tidak pernah terlihat.
+    - Pilihan **Send from** ikut menawarkan akun SMS, padahal `POST /omnichannels/conversations` hanya bisa memulai percakapan dengan kontak lewat WhatsApp atau Email. Untuk SMS, API selalu membalas 400 *Conversation creation with contact is unsupported for this channel*.
+  - **Perbaikan:**
+    - Penolakan API tampil sebagai toast merah *Failed to start the conversation* dengan pesan dari API.
+    - Pilihan **Send from** hanya berisi akun WhatsApp dan Email. Teks tampilan kosong ikut disesuaikan: *WhatsApp or email account*.
+  - **Technical Notes:** `StartConversationPanel` di `ContactChannelChat.tsx`, yang dipakai tab Conversations dan tab WhatsApp
+  - **🧪 Testing:** manual (komponen, tanpa tes DOM)
+
+---
+
+## [1.119.0] - 2026-11-04
+
+### Detail Versi 1.119.0
+
+#### ✨ Contacts: Kolom dan Filter Source
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.158.0 (BE-1.1) setiap kontak menyimpan `source`, yaitu channel yang membawanya masuk (Manual, Web Widget, WhatsApp, Import, dll.). Web belum menampilkannya, jadi tim tidak bisa melihat atau menyaring dari mana kontak datang, misalnya untuk memeriksa kontak yang menumpuk dari chat widget.
+  - **Perbaikan:**
+    - Tabel **Contacts** mendapat kolom **Source** setelah Tags. Kontak tanpa source (dibuat sebelum v1.158.0) tampil **Unknown** dengan warna abu-abu. Kolom ini tidak bisa diurutkan karena API belum mendukung urutan per source.
+    - Toolbar mendapat filter **Source** (pilih banyak), sejajar Tipe Pelanggan, Wilayah, dan Tag. Pilihannya 14 source + Unknown. Beberapa pilihan digabung **OR**: Web Widget + WhatsApp menampilkan kontak dari salah satu channel itu. Filter ikut tersimpan di URL.
+    - **Detail kontak** (Contact Details) mendapat baris **Source** di bawah Wilayah. Kalau API mengirim `source_updated_at` (IMP-9, belum rilis), tanggalnya ikut tampil: *Web Widget · updated 04 Nov 2026*.
+    - Form kontak baru di **Omnichannel** mengirim `source: "omnichannel"`. Add Contact di halaman Contacts tidak mengirim apa-apa, dan API mencatatnya `manual`.
+  - **Technical Notes:**
+    - label, pilihan filter, dan helper ada di satu file `lib/constants/contact-source.ts` (`contactSourceLabel`, `CONTACT_SOURCE_OPTIONS`, `contactSourceQuery`). Nilai yang belum dikenal build ini tampil apa adanya
+    - `GET /contacts?source=web_widget,whatsapp`: dipisah koma, `unknown` untuk kontak tanpa source. `contactSourceQuery` membaca array dari filter maupun satu string dari URL (urlSync mengembalikan satu pilihan sebagai string)
+    - `source` adalah channel **terakhir**, bukan asal pertama: setelah IMP-9, chat widget yang cocok ke kontak lama lewat email mengubahnya jadi `web_widget`
+    - tipe `Contact` mendapat `source` dan `source_updated_at`
+  - **🧪 Testing:** 7 tes baru (`contact-source.test.ts`); 6/6 mutasi tertangkap; seluruh suite 80 file / 882 tes lolos; `tsc` bersih; build dilewati (dev server sedang jalan di port 3100)
+
+#### 🐛 Contacts: Reload dengan Filter Aktif Menampilkan Data Tanpa Filter
+
+- **Deskripsi:**
+  - **Masalah:** saat halaman Contacts di-reload dengan filter di URL (misalnya `?f=source:unknown`), tabel sempat menampilkan data yang benar lalu berganti ke semua kontak, padahal chip filter masih aktif. Ditemukan saat tes Source, tapi bug ini sudah ada sebelumnya dan juga mengenai filter Tipe Pelanggan, Wilayah, Tag, dan pencarian dari URL.
+  - **Root Cause:** saat halaman dibuka, `ContactClient` memuat data dengan setelan bawaannya (tanpa filter), sementara SuperTable meminta data dengan filter yang dipulihkan dari URL. Dua request berjalan bersamaan dan yang selesai terakhir menang. Request tanpa filter lebih lambat karena menghitung total semua kontak, sehingga sering selesai belakangan dan menimpa hasil yang difilter.
+  - **Perbaikan:** hanya jawaban request terbaru yang mengisi tabel. Jawaban request lama, termasuk error dan status loading-nya, diabaikan.
+  - **Impact:** setelah reload, tabel menampilkan data sesuai filter di URL.
+  - **Technical Notes:** penghitung request (`requestSeqRef`) di `loadData`, pola yang sama dengan `boardRequestSeq` (pipeline) dan `listRequestSeq` (quotation)
+  - **🧪 Testing:** tidak ada tes otomatis (komponen dengan `fetch` langsung, repo belum punya tes DOM); dicek manual dengan reload `?f=source:unknown`
+
+---
+
+## [1.118.2] - 2026-11-04
+
+### Detail Versi 1.118.2
+
+#### 💄 Workspace: Email Pengunjung Web Widget Tampil di Panel Customer
+
+- **Deskripsi:**
+  - **Masalah:** untuk chat Web Widget, bagian **Customer** di panel kanan Workspace hanya menampilkan **Visitor: widget-xxxx**, yaitu ID acak yang dibuat setiap chat baru. Email yang diisi pengunjung di form sebelum chat tidak terlihat. Selama chat masih dilayani bot, belum ada kontak yang bisa dibuka, jadi agen tidak punya cara melihat email itu. Selain itu, tombol **View full profile** hanya membaca data daftar percakapan yang diperbarui tiap 30 detik, sehingga tombol baru muncul hingga 30 detik setelah chat terhubung ke kontak.
+  - **Perbaikan:**
+    - Chat Web Widget menampilkan baris **Email** (ikon amplop) di bawah baris Visitor. Isinya "—" kalau pengunjung tidak punya email. Baris Visitor tetap ada, begitu juga teks di header thread. Channel lain tidak berubah.
+    - **View full profile** membaca kontak dari detail percakapan, yang diambil ulang setiap ada pembaruan WebSocket. Begitu BE menautkan chat ke kontak (pengunjung minta agen, agen membalas, atau chat di-assign), tombol langsung muncul tanpa menunggu daftar diperbarui.
+    - Chat yang baru diambil dari antrean (claim) langsung membawa email dan kontaknya ke panel.
+  - **Technical Notes:**
+    - butuh API v1.161.0 (`external_contact_email` di `GET /omnichannels/inbox` dan `GET /omnichannels/conversations/{id}`; `contact_id` di detail). Dengan API lama nilainya tidak ada, baris Email menampilkan "—", dan tidak ada yang rusak
+    - tipe `Conversation` mendapat `contact_id` dan `external_contact_email`; `ConversationListItem` mendapat `external_contact_email`
+    - helper `visitorEmail` dan `profileContactId` di `components/support/workspace/workspaceHelpers.ts` memilih detail percakapan dulu, baru baris daftar
+    - `claimedToListItem` di `WorkspaceClient.tsx` ikut membawa `contact_id` dan `external_contact_email`
+  - **🧪 Testing:** 7 tes baru (`workspaceHelpers.test.ts`); 4/4 mutasi tertangkap; seluruh suite 79 file / 875 tes lolos; `tsc` bersih; build OK
+
+---
+
+## [1.118.1] - 2026-11-03
+
+### Detail Versi 1.118.1
+
+#### 🐛 Knowledge Base: Modal "Isi placeholder" Tidak Menampilkan Variabel yang Sama Dua Kali
+
+- **Deskripsi:**
+  - **Masalah:** sejak BE 1.160.0 semua nama variabel template memakai HURUF_BESAR. Artikel yang dipasang sebelum itu bisa masih berisi nama huruf kecil, misalnya `{{alamat_pusat}}`, sementara artikel baru berisi `{{ALAMAT_PUSAT}}`. Di modal **Isi placeholder** per artikel (menu ⋮ di tabel artikel), keduanya bisa muncul sebagai dua kolom terpisah, dan hitungan "dipakai juga di N artikel lain" tidak menghitung artikel dengan nama berhuruf lain.
+  - **Perbaikan:**
+    - Satu data = **satu kolom**, dengan nama HURUF_BESAR, walaupun di artikel tertulis dengan huruf berbeda. Label dan contohnya diambil dari baris yang punya label.
+    - Hitungan "dipakai juga di N artikel lain" menghitung kedua bentuk huruf. Mengisi `ALAMAT_PUSAT` juga mengisi `{{alamat_pusat}}`, karena `fill-placeholders` di BE tidak membedakan huruf besar/kecil.
+    - Di tenant baru tidak ada perubahan yang terlihat. Ini pengaman untuk tenant yang memasang blueprint sebelum BE 1.160.0, sampai script perapian BE (BE-8.6) dijalankan.
+  - **Technical Notes:**
+    - `articlePlaceholderFields` dan `otherArticlesSharing` di `lib/utils/kbPlaceholders.ts` membandingkan nama dengan `toUpperCase()`. Content Gaps di BE 1.160.0 sudah mengelompokkan per nama HURUF BESAR; FE ikut menyamakan supaya tetap benar dengan data campuran
+    - Komentar yang masih menyebut "variabel blueprint huruf kecil" diperbarui
+  - **🧪 Testing:** 4 tes baru + 1 tes disesuaikan (`kbPlaceholders.test.ts`); 7/7 mutasi tertangkap; seluruh suite 78 file / 868 tes lolos; `tsc` bersih
+
+---
+
+## [1.118.0] - 2026-11-03
+
+### Detail Versi 1.118.0
+
+#### ✨ Setup Cepat: Data Diisi Sekali (Data Perusahaan di Depan, Data Artikel Setelah Pemasangan)
+
+- **Deskripsi:**
+  - **Masalah:** form **Setup Cepat › Isi data perusahaan** dan artikel Knowledge Base dari blueprint memakai nama variabel yang berbeda untuk data yang sama. Contohnya, form menanyakan `company_name` dan `email_cs`, sedangkan artikel marketing memakai `NAMA_BRAND` dan `EMAIL_CS`. Akibatnya data yang sudah diisi di form diminta lagi di halaman Fill placeholders. Selain itu, data artikel bisa diisi di dua tempat: di depan (bagian opsional) dan di belakang (Checklist Aktivasi).
+  - **Perbaikan** (bersama BE 1.160.0, yang menyeragamkan semua nama menjadi HURUF_BESAR dengan satu nama per data):
+    - Form memakai nama baku dari BE. E-commerce kini 7 kolom (nomor WA tidak lagi ditanya dua kali), dan isiannya langsung mengisi artikel support **dan** marketing.
+    - **Nama toko/perusahaan wajib diisi.** Kolomnya bertanda `*`, tombol **Lihat pratinjau** nonaktif selama kosong dengan keterangan "Isi Nama toko/perusahaan dulu", dan kolom yang ditinggalkan kosong menampilkan "Wajib diisi". Peringatan kuning "N data belum diisi" kini hanya menghitung kolom opsional.
+    - **Satuan tampil di samping kolom angka** ("hari", "hari kerja", "bulan"), sehingga yang diisi cukup angkanya, misalnya `7` untuk batas retur. Kolom angka memunculkan keyboard angka di HP.
+    - **Data artikel hanya diisi di satu tempat: setelah pemasangan.** Bagian lipat "Data untuk artikel Knowledge Base (opsional)" (1.116.5) dihapus dari wizard. Dengan bagian itu, data yang dikosongkan di depan diminta lagi di Checklist Aktivasi, sehingga user merasa mengisi dua kali. Sekarang:
+      - **depan** (Pasang Paket Industri): hanya data perusahaan. Keterangannya menyebut bahwa data khusus artikel diisi setelah pemasangan;
+      - **belakang** (Checklist Aktivasi, terbuka otomatis setelah install): panel **"Lengkapi data artikel Knowledge Base (N belum diisi)"**. Teksnya menjelaskan bahwa data perusahaan sudah terisi dan yang tersisa adalah data khusus artikel, cukup diisi sekali untuk semua artikel. Kalimat lama "tidak ditanyakan di langkah data perusahaan" dihapus;
+      - halaman Fill placeholders di Knowledge Base tetap tersedia untuk melengkapi nanti.
+  - **Technical Notes:**
+    - `BlueprintVariable` mendapat `type`, `unit`, dan `required` (opsional, BE lama tetap jalan). Komponen baru `BlueprintVariableField` untuk kolom form data perusahaan
+    - Helper `missingRequired` dan `blankOptional` di `components/admin/blueprints/blueprintVariables.ts`
+    - Dihapus karena tidak dipakai lagi: `KbVariablesSection.tsx`, `kbVariables.ts` (`extraKbVariables`, `filledCount`) beserta tesnya, dan field `kb_variables` di tipe `BlueprintDetail`. BE tetap mengirim `kb_variables` (1.160.0), tapi FE sengaja tidak memakainya
+    - Variabel Flow Studio (`{{contact_name}}`, `{{company_name}}`) dan variabel macro saat dipakai tidak tersentuh
+  - **🧪 Testing:** 3 tes baru (`blueprintVariables.test.ts`), 10 tes `kbVariables.test.ts` ikut terhapus bersama helper-nya; 4/4 mutasi tertangkap; seluruh suite 78 file / 864 tes lolos; `tsc` bersih
+
+---
+
+## [1.117.11] - 2026-11-03
+
+### Detail Versi 1.117.11
+
+#### 💄 Settings › Web Widget: Tombol Save Settings Selalu Terlihat
+
+- **Deskripsi:**
+  - **Masalah:** form Web Widget sangat panjang, dan tombol **Save Settings** hanya ada di paling bawah. Setelah mengubah setting di bagian atas, admin harus scroll jauh ke bawah untuk menyimpan.
+  - **Perbaikan:** tombol **Save Settings** ada di bar yang **menempel di bagian bawah layar** selama form Web Widget masih terlihat. Setelah form habis (bagian Bot Playground dan Embed Guide di bawahnya), bar kembali di posisi aslinya di akhir form.
+  - **Technical Notes:**
+    - `sticky bottom-0` di footer form `WebWidgetConfigPanel`, dengan latar putih dan garis atas supaya isi form di belakangnya tidak terbaca tembus. `-mx-6 -mb-6` mengikuti padding kartu di halaman `settings/web-widget`
+    - Menempel di kolom isi Settings yang ter-scroll sendiri di desktop (1.117.10). Di bawah 1024px tombol tetap di akhir form seperti sebelumnya
+  - **🧪 Testing:** `tsc` bersih. Perlu dicek manual di browser
+
+---
+
+## [1.117.10] - 2026-11-03
+
+### Detail Versi 1.117.10
+
+#### 💄 Settings: Hanya Isi Halaman yang Ter-scroll, Kedua Sidebar Tetap di Tempat
+
+- **Deskripsi:**
+  - **Masalah:** di halaman Settings (misalnya Settings › General › Company) ada dua sidebar: menu utama dan menu Settings. Saat isi halaman di-scroll, menu Settings dan topbar ikut naik dan hilang dari layar. BO ingin hanya isi halaman yang ter-scroll.
+  - **Perbaikan:**
+    - Di layar desktop (≥ 1024px), area Settings setinggi layar di bawah topbar, dan **hanya kolom isi yang ter-scroll**. Menu utama, menu Settings, dan topbar tetap di tempat.
+    - Menu Settings yang panjang punya scroll sendiri.
+    - Saat pindah ke halaman Settings lain, isi halaman mulai dari atas lagi.
+    - Tablet dan HP tidak berubah: menu Settings tetap berupa laci (drawer), dan halaman ter-scroll seperti biasa.
+  - **Technical Notes:**
+    - Penyebab: sidebar Settings sudah `sticky`, tapi pembungkus kolom konten di `AuthenticatedLayout` memakai `overflow-x-hidden`, yang menjadikannya scroll container sehingga `sticky` di dalamnya tidak berfungsi. Layout utama sengaja tidak diubah, karena akan mengubah perilaku topbar dan elemen menempel di semua halaman
+    - `SettingsLayout`: `lg:h-[calc(100vh-52px)] lg:overflow-hidden` (52px = tinggi topbar); `SettingsContent`: `lg:overflow-y-auto` + reset scroll ke atas saat `pathname` berubah; `SettingsSidebar`: `lg:static lg:h-full`
+    - Sudah dicek: tidak ada halaman di bawah `/settings` yang bergantung pada scroll jendela atau tinggi `100vh`
+  - **🧪 Testing:** `tsc` bersih; seluruh suite tetap lolos. Perlu dicek manual di browser (lihat tes di bawah)
+
+---
+
+## [1.117.9] - 2026-11-03
+
+### Detail Versi 1.117.9
+
+#### 🐛 Widget: "Menghubungkan Anda dengan tim kami…" Hilang Setelah Agen Menjawab
+
+- **Deskripsi:**
+  - **Masalah:** setelah pengunjung minta agen (1.117.7), catatan *"Menghubungkan Anda dengan tim kami…"* tetap ada di bawah chat walaupun agen sudah membalas, sehingga pengunjung mengira masih menunggu.
+  - **Perbaikan:**
+    - Catatan **hilang begitu ada balasan tim setelah permintaan agen**. Setelah permintaan berhasil, bot dan flow sudah diam, jadi balasan tim berikutnya adalah agen.
+    - Tetap hilang **setelah refresh**: widget mengingat titik permintaan bersama sesi chat di browser.
+    - Tidak berubah: catatan tampil selama permintaan dikirim dan sampai agen membalas; tombol coba lagi saat gagal; catatan "terhubung dengan agen" saat agen langsung ditugaskan; kartu tawaran agen tetap tidak muncul lagi.
+  - **Technical Notes:**
+    - Pesan ke widget tidak membawa info pengirim (agen/bot/sistem). Satu-satunya pesan otomatis yang masih bisa datang setelah permintaan adalah peringatan idle *"Masih di sana?"* (default setelah 30 menit sepi), dan pesan itu juga menghilangkan catatan. Kalau perlu dibedakan, BE perlu menambah `sender_type` di pesan; aturan di FE tinggal diganti
+    - Titik permintaan = id pesan tersimpan terbaru saat permintaan berhasil (`agent_request_mark` di sesi `localStorage`, diisi sekali per chat; `null` = belum ada pesan). Dicatat dari `POST /request-agent`, `/start`, `POST /messages`, WS `agent_requested`, dan resync. Sesi lama tanpa titik memakai posisi saat resync
+    - Helper tanpa import di `lib/utils/agentRequest.ts`: `agentRequestMark`, `agentAnsweredSince`; `agentRequestLine` menerima `agentAnswered`
+  - **🧪 Testing:** 8 tes baru (`agentRequest.test.ts`); 8/8 mutasi tertangkap; seluruh suite 78 file / 867 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.8] - 2026-11-03
+
+### Detail Versi 1.117.8
+
+#### 💄 Widget: Kartu True Deflection Jadi "Mau Dihubungkan?" + Tidak Lagi Menumpuk
+
+- **Deskripsi:**
+  - **Masalah:**
+    - saat setting **Hold the ticket until the visitor asks** menyala, kartu di bawah jawaban bot bertanya *"Apakah ini membantu?"* dengan daftar judul artikel dan tombol **Ya, terima kasih / Bicara dengan agen**, padahal yang ingin ditawarkan adalah bicara dengan agen;
+    - kartu selalu digambar di **paling bawah chat** dan bertahan sampai dijawab. Kalau pengunjung tidak memilih lalu bertanya lagi, kartu lama tetap ada dan **menumpuk** dengan kartu berikutnya (misalnya kartu no-answer "Mau dihubungkan?").
+  - **Perbaikan:**
+    - Kartu baru, dengan desain dan tombol yang sama seperti kartu no-answer: *"Untuk informasi lebih lengkap, Anda bisa berbicara dengan agen kami. Mau dihubungkan?"* [**Ya, hubungkan**] [**Tidak**] (EN: *"For more details, you can talk to one of our agents. Connect now?"* / **Yes, connect me** / **No, thanks**). Tanpa daftar judul artikel.
+    - **Ya, hubungkan** → minta agen dengan cara yang sama seperti tombol lain (1.117.7): catatan "Menghubungkan Anda dengan tim kami…".
+    - **Tidak** → kartu **langsung hilang tanpa catatan apa pun**; bot tetap menjawab. Setelah refresh kartu tidak muncul lagi.
+    - Kartu ditaruh **tepat di bawah jawaban** yang bersangkutan dan **hanya selama jawaban itu pesan terbaru**. Begitu ada pesan baru, kartu itu hilang walaupun belum dijawab. Jadi **paling banyak satu kartu** yang tampil (kartu ini untuk jawaban KB, kartu no-answer untuk jawaban yang tidak ketemu).
+    - Kapan kartu muncul lagi (pertanyaan lanjutan, paling cepat 5 menit sekali) ditentukan BE (BE-3.1, 1.157.0).
+    - Dashboard: deskripsi setting **Hold the ticket until the visitor asks** diperbarui sesuai perilaku baru: kartu "talk to an agent? Yes / No", maksimal sekali per 5 menit, dan notifikasi agen baru dikirim saat pengunjung minta agen.
+  - **Technical Notes:**
+    - `message_id` dari frame `bot_suggestion` dan dari `pending_deflection` (replay setelah refresh) dipakai untuk menempatkan kartu; dengan BE lama tanpa `message_id`, kartu tetap di bawah selama pesan terakhir dari bot. Aturan penempatan ada di helper tanpa import `lib/utils/deflectionCard.ts` (`deflectionCardPlacement`, `readCardMessageId`)
+    - "Tidak" mengirim `POST /deflection/{id}/feedback { helpful: true }` di belakang layar (outcome `deflected`, tanpa vote artikel sejak BE 1.157.0, Q-3.4). Gagal hanya dicatat di console. 👍/👎 di bawah jawaban tetap aktif
+    - `submitDeflection`, state `helpful`/`escalated`/`submitting`/`error`, string `deflectQuestion`/`deflectYes`/`deflectTalkHuman`/`deflectHelpful`, serta CSS `.deflect-articles` dan `.deflect-err` dihapus; string baru `agentCardQuestion`
+  - **🧪 Testing:** 6 tes baru (`deflectionCard.test.ts`); 5/5 mutasi tertangkap; seluruh suite 78 file / 859 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.7] - 2026-11-03
+
+### Detail Versi 1.117.7
+
+#### 🐛 Widget: Semua Cara "Hubungkan ke Agen" Kini Sama
+
+- **Deskripsi:**
+  - **Masalah:** ada beberapa cara meminta agen di widget, dan hasilnya berbeda-beda:
+    - kartu no-answer → **Ya, hubungkan**, tombol **Bicara dengan agen** di layar Home, dan menu ⋮ mengirim teks *"Saya ingin berbicara dengan agen"* atas nama pengunjung. Sejak BE 1.157.0 bot tidak lagi membalas "Baik, kami hubungkan…", sehingga pengunjung **tidak melihat konfirmasi apa pun**;
+    - hanya kartu true deflection → **Bicara dengan agen** yang menampilkan catatan *"Menghubungkan Anda dengan tim kami…"*;
+    - permintaan yang **diketik** pengunjung ("admin dong") juga tanpa konfirmasi.
+  - **Perbaikan:** semua jalur kini memakai satu cara, seperti kartu true deflection:
+    - kartu no-answer → Ya, tombol Home, menu ⋮, dan kartu deflection → Bicara dengan agen: **tanpa bubble teks** atas nama pengunjung. Langsung muncul catatan **"Menghubungkan Anda dengan tim kami…"** (EN *"Connecting you to our team…"*), dan semua kartu agen hilang;
+    - permintaan yang **diketik** pengunjung: bubble pesannya tetap tampil (dia yang mengetik), lalu muncul catatan yang sama. Tidak ada kartu "Mau dihubungkan?";
+    - **gagal** → catatan merah *"Gagal mengirim — ketuk untuk coba lagi"*; ketuk untuk meminta lagi. Kartu agen muncul kembali;
+    - setelah halaman di-refresh, catatan tetap tampil;
+    - kalau saat itu ada agen online yang langsung ditugaskan ke chat, catatannya langsung *"Anda terhubung dengan agen"*. Kalau agen baru mengambil chat **belakangan** di Workspace, catatan tetap "Menghubungkan…", karena BE belum mengirim sinyal penugasan ke widget.
+  - **Technical Notes:**
+    - satu fungsi widget `requestAgent(source, deflectionId?)` → `POST /public/widget/request-agent { source, deflection_id? }` (BE 1.157.0, BE-4.1) untuk `deflection`, `no_answer`, `menu`, `home`. Tanpa chat (tombol Home sebelum chat dimulai): `/start` dengan `request_agent: true`, sehingga bot tidak menjawab pesan pertama itu
+    - response `POST /messages` (`agent_request.outcome` escalated/failed) dan `/start` (`agent_requested`, `agent_request`) dibaca untuk permintaan yang diketik. Coba lagi setelah gagal memakai `request-agent` dengan source yang sama (`typed`/`home`). Frame WS baru `agent_requested` dan `agent_requested` di `GET /conversation` (setelah refresh) ditangani
+    - `sent_at` dari response `POST /messages` dipakai untuk jam bubble pesan pengunjung (menggantikan jam lokal dari 1.117.3)
+    - status permintaan di helper tanpa import `lib/utils/agentRequest.ts` (`canRequestAgent`, `showsAgentCards`, `agentRequestLine`, `readAgentRequestOutcome`, `afterAgentOutcome`); `onHandoff()` dan cabang `submitDeflection(d, false)` dihapus. "Ya, terima kasih" di kartu deflection tidak berubah (diganti di FE-3.1)
+    - `assigned` dari response `request-agent` dan `agent_request.assigned` dari `POST /messages` (helper `readAgentAssigned`) menyalakan catatan "Anda terhubung dengan agen"
+    - FE tidak mendeteksi teks sendiri; deteksi permintaan agen hanya di BE
+  - **🧪 Testing:** 11 tes baru (`agentRequest.test.ts`); 10/10 mutasi tertangkap; seluruh suite 77 file / 853 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.6] - 2026-11-03
+
+### Detail Versi 1.117.6
+
+#### ✨ Knowledge Base › Categories: Pilih & Hapus Banyak Kategori Sekaligus
+
+- **Deskripsi:**
+  - **Masalah:** kategori hanya bisa dihapus satu per satu. Konfirmasinya juga tidak menyebut bahwa **semua section dan artikel di dalamnya ikut terhapus permanen**, termasuk artikel Published yang dipakai answer bot
+  - **Perbaikan:**
+    - Checkbox di setiap kategori, plus **Pilih semua** di kotak biru di atas daftar (bisa setengah tercentang kalau baru sebagian yang dipilih). Klik checkbox tidak membuka/menutup kategori.
+    - Begitu ada yang dipilih: **"N kategori dipilih"** + tombol merah **Hapus (N)** + **Batal pilih**.
+    - Konfirmasi **"Hapus N kategori?"** menyebut dampaknya: jumlah section, artikel, dan artikel Published yang ikut terhapus, serta nama tiap kategori dengan jumlah artikelnya. Tombolnya **Hapus permanen**.
+    - Berhasil: toast *"N kategori dihapus (M artikel)"*, pilihan dikosongkan. Gagal: toast error *"Tidak ada kategori yang dihapus"* (semua atau tidak sama sekali di BE).
+    - Konfirmasi hapus **satu** kategori (ikon 🗑) kini juga menyebut jumlah section dan artikel yang ikut terhapus.
+    - Setiap kategori kini menampilkan jumlah artikel di samping jumlah section.
+  - **Technical Notes:**
+    - `POST /knowledge/categories/bulk-delete { category_ids }` (BE 1.157.0, BE-2.1) → `bulkDeleteKbCategories`, `useBulkDeleteKbCategories`; jumlah dari `section_count` / `article_count` / `published_article_count` di `GET /knowledge/categories`. Dengan BE lama (tanpa jumlah), konfirmasi tetap memperingatkan tanpa angka, tidak menampilkan nol yang salah
+    - hapus satuan maupun massal kini me-refresh kategori, section, daftar & detail artikel, Content Gaps, dan **config Web Widget**. BE membuang id kategori yang dihapus dari quick action widget (Q-2.2)
+    - logika pilihan dan dampak di `lib/utils/kbCategories.ts` (`selectAllState`, `toggleAll`, `toggleOne`, `keepExisting`, `deleteImpact`)
+    - hanya untuk user dengan izin kelola KB (`canManage`), sama seperti tombol hapus satuan
+  - **🧪 Testing:** 10 tes baru (`kbCategories.test.ts`); 9/9 mutasi tertangkap; seluruh suite 76 file / 842 tes lolos; `tsc` bersih
+
+---
+
+## [1.117.5] - 2026-11-03
+
+### Detail Versi 1.117.5
+
+#### ✨ Knowledge Base: Isi Placeholder per Artikel dari Daftar
+
+- **Deskripsi:**
+  - **Masalah:** artikel dengan tag kuning "N placeholders left" hanya bisa dibereskan dengan membuka editornya, atau lewat halaman Fill placeholders yang mengisi tanda itu di **semua** artikel sekaligus
+  - **Perbaikan:**
+    - Tabel artikel kini punya **menu aksi ⋮** di kolom paling kanan, **sama seperti tabel lain** (prop standar `rowActions` SuperTable). Isinya **Edit** dan, untuk artikel yang masih punya `{{…}}`, **Isi placeholder (N)**. Tag kuning "N placeholders left" di kolom Status juga bisa diklik. Keduanya membuka modal, bukan halaman artikel.
+    - Kolom aksi **menempel di kanan**, jadi tetap terlihat walau tabel di-scroll ke samping.
+    - Modal **"Isi placeholder — <judul>"**:
+      - satu kolom per tanda yang tersisa di artikel itu, dengan label dan contohnya;
+      - potongan kalimat **dari artikel ini** tempat tanda dipakai (Judul / Ringkasan / Isi), dengan tanda yang sedang diisi ditandai biru;
+      - kolom boleh dikosongkan; tanda yang kosong tetap tertinggal;
+      - checkbox **"Terapkan juga ke N artikel lain yang memakai tanda yang sama"** (default mati). Tanpa centang, hanya artikel ini yang diubah.
+    - Setelah **Simpan**: toast (dengan sisa tanda kalau masih ada), modal tertutup, dan tabel **kembali ke batch pertama dan ke paling atas**. Tag dan kotak kuning ikut ter-refresh.
+    - Gagal menyimpan → pesan error di dalam modal; isian tidak hilang.
+  - **Technical Notes:**
+    - `POST /knowledge/articles/fill-placeholders` kini dikirim dengan `article_ids` (BE 1.157.0, BE-6.1). BE juga mengisi judul dan excerpt (Q-6.2). `fillKbPlaceholders(token, values, articleIds?)`; `useFillPlaceholders` kini menerima `{ values, articleIds? }` dan ikut me-refresh detail artikel
+    - helper di `lib/utils/kbPlaceholders.ts`: `articlePlaceholderFields`, `otherArticlesSharing`, `placeholderSnippet`, `articleFillRequest`; modal `components/knowledge/KbArticlePlaceholderDialog.tsx`; `KbReadinessTag` mendapat prop `onFill`
+    - aksi "Isi placeholder" dan tag yang bisa diklik hanya untuk user dengan `omnichannel:setup` (baca Content Gaps) **dan** `knowledge:publish` (mengisi)
+    - opsi baru SuperTable `features.stickyRowActions` (default **mati**): kolom aksi baris di-pin ke kanan (`enableColumnPinning` material-react-table v3) hanya untuk kolom itu, sehingga menu kolom lain tidak mendapat opsi "Pin". Header kolom yang di-pin tetap biru seperti header lain
+    - SuperTable: perubahan `restartKey` kini juga menggulir tabel ke paling atas. Daftar memang dimuat ulang dari batch pertama, jadi posisi scroll lama tidak berlaku lagi. Ini berlaku juga untuk tabel lain yang memakai `restartKey` (WA Marketing, Import History)
+  - **🧪 Testing:** 11 tes baru (`kbPlaceholders.test.ts`); 10/10 mutasi tertangkap; seluruh suite 75 file / 832 tes lolos; `tsc` bersih
+
+---
+
+## [1.117.4] - 2026-11-03
+
+### Detail Versi 1.117.4
+
+#### 💄 Knowledge Base: Pilihan Kolom Tabel Artikel Diingat
+
+- **Deskripsi:**
+  - **Masalah:** tabel artikel Knowledge Base sebenarnya sudah punya menu show/hide kolom (ikon **View options** di kanan atas tabel → **Columns**, bawaan SuperTable), tapi:
+    - pilihan kolom hilang setiap kali halaman di-refresh;
+    - kolom **Title**, satu-satunya jalan masuk ke artikel, ikut bisa disembunyikan.
+  - **Perbaikan:**
+    - kolom yang disembunyikan/ditampilkan lewat **View options › Columns** kini **diingat di browser** untuk tabel ini;
+    - **Title** tidak bisa disembunyikan (tidak muncul di daftar Columns).
+  - **Technical Notes:**
+    - opsi baru SuperTable `features.rememberColumnVisibility` (default **mati**, butuh `tableId`), menyimpan `columnVisibility` di localStorage `st_cv_<tableId>`. Tabel lain tidak berubah sampai opsinya dinyalakan
+    - pilihan dibaca **setelah mount** (render server dan render pertama di browser sama), dan baru disimpan setelah dibaca, sehingga keadaan awal "semua tampil" tidak menimpa pilihan yang tersimpan
+    - isi localStorage yang rusak atau bukan peta kolom → diabaikan (`readColumnVisibility` di `components/ui/super-table/hooks/columnVisibilityStorage.ts`)
+    - kolom Title memakai `enableHiding: false`
+  - **🧪 Testing:** 5 tes baru (`columnVisibilityStorage.test.ts`); 4/5 mutasi tertangkap (sisanya ekuivalen: cek `!raw` yang hasilnya sama dengan cek sesudahnya); seluruh suite 75 file / 821 tes lolos; `tsc` bersih
+
+---
+
+## [1.117.3] - 2026-11-03
+
+### Detail Versi 1.117.3
+
+#### ✨ Widget: Jam di Setiap Bubble Chat + Pemisah Tanggal
+
+- **Deskripsi:**
+  - **Masalah:** bubble chat di widget tidak menampilkan waktu sama sekali, sehingga pengunjung tidak tahu kapan sebuah pesan dikirim atau dibalas, terutama saat membuka lagi chat dari hari sebelumnya
+  - **Perbaikan:**
+    - Jam kecil abu-abu **di bawah setiap bubble**: rata kanan untuk pesan pengunjung, rata kiri untuk balasan tim/bot. Format mengikuti bahasa widget: `10.12` (ID) / `10:12 AM` (EN), dalam zona waktu browser pengunjung.
+    - **Pemisah tanggal** di atas pesan pertama setiap hari: *Hari ini* / *Kemarin* / *1 Nov 2026* (EN: *Today* / *Yesterday* / *Nov 1, 2026*).
+    - Pesan pengunjung yang sedang dikirim menampilkan *Mengirim…* (EN *Sending…*). Pesan yang gagal tetap hanya menampilkan link coba lagi.
+    - Bubble sapaan awal, catatan sistem, dan kartu (👍/👎, tawaran agen, deflection) tidak diberi jam.
+  - **Technical Notes:**
+    - helper tanpa import `lib/utils/widgetTime.ts` (`parseMessageTime`, `formatMessageTime`, `dayKey`, `dayLabel`), di-bundle ke widget seperti `answerFeedback.ts`
+    - sumber waktu: `sent_at` dari server (riwayat `GET /public/widget/conversation`). Frame WebSocket `message` belum membawa `sent_at` (BE-5.1), jadi untuk sementara dipakai jam saat frame diterima. Pesan pengunjung memakai jam saat terkirim. Keduanya diganti waktu dari server saat resync
+    - bahasa jam dan tanggal mengikuti urutan yang sama dengan teks widget: `config.locale` → `data-locale` → ID
+    - tanpa perubahan BE (BE-5.1 hanya membuat jam pesan live lebih akurat)
+  - **🧪 Testing:** 8 tes baru (`widgetTime.test.ts`); 5/6 mutasi tertangkap (sisanya mutasi ekuivalen: `+1` bulan di `dayKey` yang hanya dipakai untuk membandingkan); seluruh suite 74 file / 816 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.2] - 2026-11-03
+
+### Detail Versi 1.117.2
+
+#### 💄 Settings › Web Widget: Placeholder Teks Bot = Teks Bawaan BE
+
+- **Deskripsi:**
+  - **Masalah:** placeholder kolom teks bot berbeda dari teks yang benar-benar dikirim bot saat kolom dikosongkan. Contohnya No-Answer Text menampilkan *"Kami akan menghubungkan Anda dengan tim kami…"*, padahal bot mengirim *"Maaf, kami belum memahami maksud pertanyaan Anda. 🙏 Boleh dijelaskan dengan kalimat lain?"*. Dua teks bantuan juga sudah salah:
+    - No-Answer: *"Leave blank to stay silent"*;
+    - Pesan "masih di sana?": *"Wajib diisi. Dikosongkan berarti fitur ini tidak berjalan"*.
+
+    Keduanya keliru karena BE sekarang memakai teks bawaan bila kolom kosong.
+  - **Perbaikan:**
+    - Placeholder **No-Answer Text**, **Greeting Reply**, **Closing Reply**, **Intro Text**, dan **Pesan "masih di sana?"** kini sama persis dengan teks bawaan BE.
+    - Placeholder mengikuti pilihan **Widget Language**: English → teks EN; Bahasa Indonesia / Automatic → teks ID. Berubah langsung saat bahasa diganti, sebelum Save.
+    - Teks bantuan No-Answer, Intro, dan Pesan "masih di sana?" diperbarui: kolom boleh dikosongkan, dan bot memakai teks yang tampil samar di kolom.
+  - **Technical Notes:**
+    - teks bawaan di `lib/utils/widgetDefaultTexts.ts` (`widgetDefaultText`), disalin dari `answer_bot_service.resolve_*` di BE (1.156.6)
+    - kalau BE mengirim `default_texts` di `GET web-widget-config` (BE-7.1), teks dari server dipakai dan salinan FE hanya cadangan per teks
+    - `default_texts` adalah output baca-saja: dibuang dari body `PUT` (`widgetConfigPayload`) dan dari tipe `UpdateWebWidgetConfigRequest`
+    - tanpa perubahan perilaku bot
+  - **🧪 Testing:** 7 tes baru (`widgetDefaultTexts.test.ts` 6, `webWidgetConfig.test.ts` 1); 5/5 mutasi tertangkap; seluruh suite 73 file / 808 tes lolos; `tsc` bersih
+
+---
+
+## [1.117.1] - 2026-11-02
+
+### Detail Versi 1.117.1
+
+#### 💄 Widget: Kartu "Mau dihubungkan dengan agen kami?" di Balasan No-Answer
+
+- **Deskripsi:**
+  - **Masalah:** tawaran agen saat bot tidak menemukan jawaban (1.117.0) hanya berupa tombol kecil **Bicara dengan agen**, tidak bisa ditolak, dan muncul di bawah **setiap** balasan no-answer, termasuk yang lama
+  - **Perbaikan:** tombol diganti kartu dengan desain yang sama seperti kartu "Apakah ini membantu?":
+    - teks **"Mau dihubungkan dengan agen kami?"** dengan tombol **Ya, hubungkan** (warna tema) dan **Tidak** (bergaris). Untuk `data-locale="en"`: "Would you like to talk to one of our agents?" / **Yes, connect me** / **No, thanks**
+    - **Ya, hubungkan**: sama seperti tombol lama. Widget mengirim "Saya ingin berbicara dengan agen", BE menyerahkan chat ke tim, bot membalas konfirmasi lalu diam, dan kartu hilang
+    - **Tidak**: kartu ditutup tanpa request ke server; pengunjung lanjut bertanya dan bot tetap menjawab. Pilihan ini diingat di browser, jadi kartu itu tidak muncul lagi setelah halaman di-refresh
+    - kartu hanya tampil di bawah balasan no-answer **yang paling baru** dan hilang begitu ada pesan baru. Kalau bot kembali tidak menemukan jawaban, kartu baru muncul di balasan itu
+  - **Technical Notes:**
+    - `showsAgentOffer()` diganti `agentOfferMessageId(messages, agentRequested, dismissed)` di `lib/utils/answerFeedback.ts`: kartu hanya untuk pesan terakhir di thread, yang dari sisi bot, ber-`offer_agent: true`, punya id, belum ditolak, dan pengunjung belum minta agen
+    - id balasan yang ditolak disimpan di sesi widget (`dismissed_agent_offers` di localStorage, dibaca lewat `readDismissedOffers()`); terhapus bersama sesi saat "Mulai ulang" atau token kedaluwarsa
+    - memakai ulang class `.deflect*`; CSS `.agent-offer*` dan string `noAnswerTalkToAgent` dihapus, diganti `agentOfferQuestion` / `agentOfferYes` / `agentOfferNo`
+    - tanpa perubahan BE
+  - **🧪 Testing:** 7 tes baru menggantikan 3 tes lama (`answerFeedback.test.ts`, 21 tes); 6/6 mutasi tertangkap; seluruh suite 72 file / 801 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.0] - 2026-11-02
+
+### Detail Versi 1.117.0
+
+#### ✨ Widget: 👍/👎 di Bawah Jawaban Bot
+
+- **Deskripsi:**
+  - **Masalah:** pengunjung hanya bisa menilai jawaban bot lewat kartu "Apakah ini membantu?", yang hanya muncul satu kali untuk jawaban terbaru. Jawaban lain tidak bisa dinilai, jadi kolom Helpful / Not helpful di Knowledge Base jarang bertambah
+  - **Perbaikan:** jawaban bot yang ditandai BE (`answer_feedback`) mendapat tombol 👍 👎 kecil, rata kiri, di bawah bubble-nya:
+    - klik 👍 atau 👎: kedua tombol terkunci, jempol yang dipilih berwarna tema, dan muncul "Terima kasih atas masukannya" ("Thanks for your feedback" untuk `data-locale="en"`). Vote bersifat final
+    - 👎 hanya menghitung: tidak ada pertanyaan atau tawaran agen, dan bot tidak membalas
+    - setelah halaman di-refresh, bubble yang sudah dinilai tetap terkunci (vote dibaca dari server)
+    - kalau gagal mengirim, tombol aktif lagi dengan teks "Gagal mengirim — ketuk untuk coba lagi"
+  - **Impact:** setiap jawaban bot bisa dinilai, dan nilainya menambah Helpful / Not helpful pada artikel yang dikutip. Dashboard tidak perlu diubah
+  - **Technical Notes:**
+    - `fromServer()` menyalin `answer_feedback` (dari frame WS `message` dan riwayat `GET /public/widget/conversation`); vote dikirim ke `POST /public/widget/answers/{deflection_id}/vote` `{ helpful }`
+    - tombol mengikuti vote yang **tersimpan di server** (`vote` di response), bukan yang diklik
+    - state klien (sedang mengirim, gagal, vote dari response) disimpan per `deflection_id` di luar daftar pesan, karena resync saat WebSocket tersambung ulang membangun ulang semua pesan
+    - kartu lama "Apakah ini membantu?" tidak diubah dan tetap tampil berdampingan
+    - butuh BE 1.156.4; dengan BE lama tombol tidak muncul, tidak ada yang rusak
+
+#### ✨ Widget: Tombol "Bicara dengan agen" di Balasan No-Answer
+
+- **Deskripsi:**
+  - **Masalah:** kalau bot tidak menemukan jawaban, pengunjung hanya mendapat "Maaf, kami belum memahami…" tanpa jalan ke agen, kecuali tahu menu ⋮
+  - **Perbaikan:** bubble no-answer yang ditandai BE (`offer_agent: true`) mendapat tombol kecil **Bicara dengan agen** ("Talk to an agent" untuk EN). Klik → widget mengirim "Saya ingin berbicara dengan agen", BE menyerahkan chat ke tim, bot membalas konfirmasi lalu diam sampai agen mengambil chat. Setelah itu **semua** tombol tersebut hilang, termasuk di bubble no-answer yang lebih lama dan yang datang kemudian
+  - **Technical Notes:**
+    - tombol memakai `onHandoff()` (sama dengan tombol di layar awal), bukan `onTalkToHuman()`: fungsi itu menjawab kartu lama bila masih aktif, sehingga bot tidak ikut diam
+    - flag `agentRequested` diset oleh tombol ini, tombol "Bicara dengan agen" di layar awal, dan menu ⋮; direset oleh "Mulai ulang"
+    - setelah reload, BE sudah mengirim `offer_agent: false` untuk semua pesan bila pengunjung sudah minta agen, ada agen yang memegang chat, atau chat tidak open
+    - tanpa endpoint baru; butuh BE 1.156.6 untuk field `offer_agent` (BE 1.156.5 sudah mengenali pesan permintaan agen)
+
+#### ✨ Widget: Nama & Email Wajib Sebelum Mulai Chat
+
+- **Deskripsi:**
+  - **Masalah:** chat dimulai secara anonim, jadi kontak dan tiket tercatat sebagai "Website Visitor" tanpa email, dan agen tidak bisa membalas lewat email
+  - **Perbaikan:** saat widget dibuka tanpa sesi chat, layar pertama adalah form **Nama** + **Email** ("Sebelum mulai, isi data Anda" / tombol **Mulai chat**). Composer, quick action, dan tombol agen baru tersedia setelah form valid:
+    - nama wajib (maks. 120 karakter); email harus punya satu `@`, titik di domain, tanpa spasi (maks. 254). Pesan error tampil di bawah kolomnya
+    - form belum memanggil server; nama dan email dikirim bersama pesan pertama ke `/public/widget/start`
+    - kalau `/start` menolak nama/email (400), pengunjung kembali ke form dengan pesan error; pesan yang tadi diketik disimpan dan langsung dikirim setelah form diperbaiki
+    - form hanya muncul sekali per sesi: pesan berikutnya dan refresh halaman (sesi masih ada) langsung ke chat
+    - "Mulai ulang" mengosongkan form dan menanyakannya lagi untuk chat baru
+  - **Impact:** kontak dan tiket dari widget memakai nama dan email pengunjung
+  - **Technical Notes:**
+    - view baru `prechat` di samping `home` / `chat`; composer dilepas dari DOM selama form tampil
+    - nama/email hanya disimpan di memori widget (tidak di localStorage); setelah `/start` berhasil, sesi yang membawanya
+    - sesi kedaluwarsa (401) lalu pengunjung mengirim lagi tanpa data di memori: pesan disimpan dan form muncul dulu
+    - aturan form di `lib/utils/preChat.ts` (`preChatErrors`, `startIdentityError`, `landingView`), tanpa import, ikut ter-bundle ke widget
+    - **urutan rilis:** BE 1.156.6 menolak `/start` tanpa nama/email, jadi widget ini harus sudah ter-deploy **sebelum atau bersamaan** dengan BE 1.156.6 di setiap environment. Widget ini aman dengan BE lama, karena `visitor_name` / `visitor_email` sudah diterima sejak dulu (opsional)
+    - string baru: `answerHelpfulAria`, `answerNotHelpfulAria`, `answerThanks`, `noAnswerTalkToAgent`, `preChatTitle`, `preChatName`, `preChatEmail`, `preChatSubmit`, `preChatNameError`, `preChatEmailError` (ID dan EN, bisa di-override lewat `config.strings`)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **28 Test Baru:**
+    - `lib/utils/answerFeedback.test.ts` (17): membaca `answer_feedback`; status tombol 👍/👎 (aktif, terkunci saat mengirim, terkunci dengan vote server atau vote dari response, aktif lagi setelah gagal, error lama hilang saat server punya vote); vote kedua dan klik ganda ditolak; vote dari response dipakai; tombol agen hanya untuk `offer_agent === true` dan hilang setelah minta agen
+    - `lib/utils/preChat.test.ts` (11): validasi email (format, spasi, panjang); error nama/email terpisah dan batas 120 karakter; pesan 400 `/start` dipetakan ke kolom, error lain tidak; layar pertama form → home/chat → chat bila ada sesi
+  - **Mutation check:** 17/17 mutasi tertangkap
+  - **Smoke test bundle** (`public/widget.js` di jsdom, fetch dan WebSocket palsu, 17 cek): form tampil pertama dan composer belum ada; error kosong / email salah; form valid membuka home tanpa request; `/start` membawa nama + email; 400 email kembali ke form dan pesan dikirim ulang dengan email baru; tombol agen hanya di bubble no-answer, mengirim pesan handoff, lalu hilang termasuk untuk bubble berikutnya; "Mulai ulang" mengosongkan form dan chat baru membawa data baru
+  - **Total:** 72 file test, 797 test lolos; `tsc` bersih; `npm run build:widget` OK
+
+---
+
+## [1.116.7] - 2026-11-02
+
+### Detail Versi 1.116.7
+
+#### 🐛 Menu Settings Terpotong (CSAT Surveys dkk. Tidak Terlihat)
+
+- **Deskripsi:**
+  - **Masalah:** sub-menu kelompok di sidebar Settings dibatasi tinggi tetap 384px (`max-h-96`) dan sisanya dipotong tanpa scroll. Batas itu hanya muat ±10 item, sedangkan kelompok **Support** punya 14 dan **Sales** ±14. Akibatnya admin hanya melihat Support sampai "Automation"; **CSAT Surveys, QA Scorecards, Canned Replies, dan Agents** tidak terlihat walau izinnya ada dan halamannya bisa dibuka lewat URL. Item terbawah Sales juga terpotong
+  - **Perbaikan:** tinggi sub-menu sekarang mengikuti isinya, berapa pun jumlah itemnya; animasi buka/tutup tetap ada
+  - **Technical Notes:**
+    - `components/settings/SettingsGroup.tsx`: `max-h-96`/`max-h-0` diganti grid `grid-rows-[1fr]`/`grid-rows-[0fr]` dengan pembungkus `min-h-0 overflow-hidden`
+    - `components/layout/Sidebar.tsx` (sidebar utama) punya pola yang sama; kelompoknya maksimal 7 item jadi belum terpotong, tapi ikut diperbaiki agar tidak terulang saat menu bertambah
+    - tidak perlu perubahan BE
+
+---
+
+## [1.116.6] - 2026-11-02
+
+### Detail Versi 1.116.6
+
+#### ✨ Knowledge Base: Halaman Isi Placeholder
+
+- **Deskripsi:**
+  - **Masalah:** isian `{{…}}` yang tertinggal di artikel (dari paket Setup Cepat) hanya bisa diisi lewat Bot Playground › Content Gaps atau panel di Checklist Aktivasi. Dari halaman Knowledge Base sendiri tidak ada jalan ke sana
+  - **Perbaikan:** kotak peringatan kuning di bawah kotak "Terbitkan semua draft": "N artikel masih berisi isian kosong… dan belum bisa diterbitkan", dengan tombol **Lengkapi isian (N)**. N = jumlah artikel yang masih berisi `{{…}}`; kotak hilang kalau sudah tidak ada. Tombol membuka halaman `/knowledge-base/placeholders` (tombol back ke Knowledge Base, seperti halaman Categories) dengan dua tampilan:
+    - **By placeholder:** form yang sama dengan Content Gaps; satu nilai diterapkan ke semua artikel yang memakai tanda itu
+    - **By article:** daftar artikel yang masih berisi `{{…}}`, status, tanda yang tersisa, dan link Edit
+  - **Technical Notes:**
+    - memakai ulang `KbPlaceholderFillForm` dan `GET /bot-playground/content-gaps`; tidak perlu perubahan BE
+    - tampil untuk user dengan izin `omnichannel:setup` (membaca Content Gaps) dan `knowledge:publish` (menyimpan isian). Tanpa izin itu tombol tidak tampil, dan halamannya menampilkan keterangan izin
+
+#### ✨ Knowledge Base: Tag "Ready to publish" di Daftar Artikel
+
+- **Deskripsi:**
+  - **Masalah:** dari daftar artikel tidak terlihat draft mana yang sudah bisa diterbitkan dan mana yang masih berisi `{{…}}`. Admin baru tahu saat menekan Terbitkan dan muncul modal penolakan
+  - **Perbaikan:** di kolom Status, di samping badge status:
+    - draft tanpa `{{…}}`: tag hijau **Ready to publish**
+    - artikel yang masih berisi `{{…}}`: tag kuning **N placeholders left**
+  - **Technical Notes:**
+    - dihitung dari Content Gaps (`articlesFromGaps`, `publishReadiness` di `lib/utils/kbPlaceholders.ts`), karena daftar artikel tidak memuat isi artikel. Setelah isian diterapkan, tag ikut diperbarui
+    - Content Gaps memeriksa body; BE saat publish juga memeriksa judul dan excerpt. Tanda yang hanya ada di judul atau excerpt tidak terlihat di tag, tapi tetap ditolak saat publish dan memunculkan modal yang sudah ada
+    - tag tidak tampil tanpa izin `omnichannel:setup`
+
+#### 💄 Modal "Artikel belum bisa diterbitkan" di Halaman Edit Artikel
+
+- **Deskripsi:**
+  - **Masalah:** saat Publish ditolak di halaman edit artikel, modal menampilkan tombol **Edit** yang mengarah ke halaman yang sedang dibuka
+  - **Perbaikan:** di halaman edit, tombol Edit tidak ditampilkan dan petunjuknya menjadi "Ganti tandanya di Body dengan isi sebenarnya, Save, lalu Publish lagi". Di daftar artikel, modal tetap dengan tombol Edit
+  - **Technical Notes:**
+    - prop `inEditor` di `UnfilledPlaceholdersDialog`
+
+#### 🎨 Import History: Progress dalam Persen, Tanpa Menu "Baris"
+
+- **Deskripsi:**
+  - **Masalah:** arahan boss di rapat 29 Okt untuk Import History (Email Marketing › Subscribers): *"kalau masih diolah saya cuma perlu tahu ini sudah berapa persen"* dan *"enggak perlu… rows per page, jadi jangan ada"*. Kolom Progress hanya berisi "Processed: 400 / 1000", dan footer masih punya menu **Baris: 25 ▾**
+  - **Perbaikan:**
+    - kolom Progress berisi bar kecil + persen + jumlah baris (`████░░░░ 40%  400 / 1000`). Bar hijau saat 100%. Persen naik sendiri setiap auto-refresh. Job tanpa baris menampilkan "—"
+    - menu **Baris** tidak ada lagi di Import History; ukuran muatan tetap 25
+  - **Technical Notes:**
+    - `importProgressPercent` di `components/email-marketing/subscribers/modals/importProgress.ts`: dibulatkan ke bawah (100% hanya jika semua baris selesai) dan dibatasi 0-100
+    - SuperTable: footer infinite scroll tidak menampilkan menu Baris bila `features.pageSizeOptions` hanya berisi satu ukuran. Saat ini hanya Import History yang begitu, jadi tabel lain tidak berubah
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **10 Test Baru:**
+    - `lib/utils/kbPlaceholders.test.ts` (+6): daftar per artikel dari Content Gaps; tanda ganda dihitung sekali; data kosong; draft bersih "ready"; jumlah tanda per artikel (1 dan 2); tanpa tag untuk artikel Published yang bersih, Archived, atau saat Content Gaps belum termuat
+    - `components/email-marketing/subscribers/modals/importProgress.test.ts` (4): persen dari processed/total; dibulatkan ke bawah; dibatasi 0-100; tanpa baris atau angka kosong menjadi "—"
+  - **Mutation check:** 5/5 mutasi tertangkap (helper KB)
+  - **Total:** 70 file test, 769 test lolos; `tsc` bersih
+
+---
+
+## [1.116.5] - 2026-10-30
+
+### Detail Versi 1.116.5
+
+FE disiapkan lebih dulu untuk pekerjaan BE yang sedang berjalan (BE-9, BE-10, BE-6, BE-7), supaya bisa langsung dites begitu BE naik ke DEV. Selama BE belum mengirim datanya, tampilan tetap sama seperti sebelumnya.
+
+#### ✨ Setup Cepat: Data untuk Artikel Knowledge Base Ditanyakan Sejak Awal
+
+- **Deskripsi:**
+  - **Masalah:** form **Isi data perusahaan** hanya menanyakan data milik blueprint. Data yang dipakai paket artikel Knowledge Base (alamat, link Google Maps, daftar cabang, dan seterusnya, ±80 untuk paket marketing) tidak pernah ditanyakan, sehingga tertinggal sebagai `{{…}}` di artikel
+  - **Perbaikan:** bila modul Knowledge Base dicentang dan BE mengirim daftar data paket KB, langkah **Isi data & modul** menampilkan bagian lipat **"Data untuk artikel Knowledge Base (opsional)"** dengan hitungan "X dari N terisi". Nilainya ikut terkirim bersama data perusahaan saat pratinjau dan pemasangan
+  - Data yang sudah ditanyakan blueprint (misalnya nama toko) tidak ditanyakan dua kali
+  - **Impact:** artikel KB dari Setup Cepat bisa langsung terisi lengkap, tanpa harus melengkapinya setelah install
+  - **Technical Notes:**
+    - membaca `kb_variables` (`{key, label, example}[]`) dari detail blueprint (`GET /industry-blueprints/{id}`), yang diminta di BE-9 langkah 2(a); tanpa field itu, bagian ini tidak tampil
+    - `extraKbVariables` dan `filledCount` di `components/admin/blueprints/kbVariables.ts`; tampilan di `components/admin/blueprints/KbVariablesSection.tsx`
+
+#### 🛡️ Penolakan Terbit dari Server Memakai Modal Isian Kosong
+
+- **Deskripsi:**
+  - **Masalah:** tombol **Terbitkan semua draft** di Knowledge Base belum diperiksa FE, karena FE tidak memuat isi semua draft. Artikel ber-`{{…}}` masih bisa terbit lewat tombol ini
+  - **Perbaikan:** bila server menolak menerbitkan karena masih ada isian kosong (BE-10), daftar artikel dan halaman edit menampilkan modal **"Artikel belum bisa diterbitkan"** yang sama (daftar artikel, tanda yang tersisa, link Edit), bukan pesan error biasa
+  - **Technical Notes:**
+    - `placeholderRejection` di `lib/utils/kbPlaceholders.ts` membaca respons **422 `VALIDATION_ERROR`** yang dikirim BE 1.156.0: satu artikel `error.details = { article_id, title, placeholders }`, massal (`bulk-status` / `bulk-publish`) `error.details = { articles: [ … ] }`. Bentuk kontrak awal (`id`, `reason: "unfilled_placeholders"`) tetap diterima. Error lain, termasuk 422 validasi biasa (details berupa list), tetap tampil seperti sebelumnya
+    - celah "Terbitkan semua draft" baru tertutup setelah BE-10 aktif
+
+#### ✨ Link di Pesan Web Widget Bisa Diklik
+
+- **Deskripsi:**
+  - **Masalah:** widget menampilkan pesan sebagai teks biasa, sehingga link artikel dari answer bot (BE-6) dan link yang dikirim agent tampil sebagai teks panjang yang tidak bisa diklik
+  - **Perbaikan:** alamat `http://` dan `https://` di pesan widget menjadi link yang terbuka di tab baru. Tanda baca di akhir kalimat tidak ikut menjadi bagian link
+  - **Keamanan:** hanya `http`/`https` yang menjadi link (`javascript:`, `data:` dan sejenisnya tetap teks), dan pesan tidak pernah dibaca sebagai HTML (`<b>tes</b>` tetap tampil apa adanya)
+  - **Technical Notes:**
+    - `splitLinks` di `lib/utils/linkify.ts` (tanpa import, ikut dibundel ke `public/widget.js`); `appendMessageText` di `widget/src/widget.ts` membangun node teks dan `<a rel="noopener noreferrer nofollow">`
+    - memakai loop `RegExp.exec` (bukan `matchAll`) karena bundel widget menargetkan ES2018
+
+#### ✨ Bot Playground: Alasan AI Tidak Menjawab
+
+- **Deskripsi:**
+  - **Masalah:** saat AI tidak menulis jawaban, Playground hanya memberi peringatan umum, sehingga admin tidak tahu apakah AI mati, belum terhubung, menolak, gagal, atau ditahan aturan artikel
+  - **Perbaikan:** di bawah jawaban pada tab **Tester** muncul satu kalimat alasan dan langkah yang perlu diambil, sesuai `fallback_reason` dari BE (BE-7). Alasan yang belum dikenal FE tetap ditampilkan dengan kodenya
+  - **Technical Notes:**
+    - `fallbackReasonHint` di `components/omnichannel/answerBotHints.ts`; tidak tampil bila AI menjawab, bila BE belum mengirim field ini, atau bila petunjuk "AI answer is off" dari 1.116.3 sudah menjelaskannya
+
+#### 💄 Panel Isian: Tanda Milik Kolom Disorot di Potongan Artikel
+
+- **Deskripsi:**
+  - **Masalah:** potongan artikel di bawah tiap kolom panel isian (Checklist Aktivasi dan Content Gaps) sering memuat tanda lain yang bersebelahan. Contoh: kolom `JAM_MINGGU` menampilkan "Sabtu: {{JAM_SABTU}} - Minggu: {{JAM_MINGGU}}", sehingga terlihat seperti kolom itu mengisi `JAM_SABTU`
+  - **Perbaikan:** tanda milik kolom itu sendiri dicetak tebal biru; tanda lain tetap teks abu-abu biasa
+  - **Technical Notes:**
+    - `splitOwnPlaceholder` di `lib/utils/kbPlaceholders.ts`, dipakai `KbPlaceholderFillForm`; kunci dicocokkan tanpa peduli huruf besar/kecil dan spasi di dalam kurung, sama seperti `fill-placeholders`
+
+#### 🔧 Dev Proxy: Batas Tunggu Request Dinaikkan ke 120 Detik
+
+- **Deskripsi:**
+  - **Masalah:** saat dites lokal, **Apply values** di panel isian Setup Cepat membalas "Internal Server Error", padahal nilainya tersimpan. Proxy `/api/proxy` (rewrite Next.js, aktif bila `BACKEND_URL` diisi) memutus request setelah 30 detik (`socket hang up`), sementara API masih bekerja
+  - **Perbaikan:** batas tunggu proxy dinaikkan menjadi 120 detik
+  - **Technical Notes:**
+    - `experimental.proxyTimeout: 120_000` di `next.config.mjs`; hanya berlaku saat rewrite `/api/proxy` aktif (`BACKEND_URL` diisi)
+    - penyebab utamanya API yang lambat (> 30 detik untuk beberapa artikel). Dicatat untuk BE sebagai BE-13; error 500 install blueprint (BE-12) kemungkinan penyebabnya sama
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **28 Test Baru:**
+    - `components/admin/blueprints/kbVariables.test.ts` (6): tanpa `kb_variables` tidak ada bagian tambahan; data yang sudah ditanyakan blueprint dibuang, urutan tetap; kunci ganda ditanyakan sekali; kunci dibandingkan persis (huruf besar/kecil); entri tanpa kunci dilewati; hitungan terisi mengabaikan spasi
+    - `lib/utils/kbPlaceholders.test.ts` (+9): tanda milik kolom disorot, tanda tetangga tidak; semua kemunculan, huruf besar/kecil dan spasi; kunci yang merupakan awalan kunci lain tidak ikut; tanda yang terpotong tidak disorot; penolakan server dibaca menjadi daftar artikel; bentuk 422 massal BE (`article_id`) terbaca; bentuk 422 satu artikel terbaca; error lain (termasuk 422 validasi biasa) diabaikan; entri tanpa id atau tanpa tanda dibuang
+    - `lib/utils/linkify.test.ts` (8): teks tanpa link; link di antara teks dengan baris baru; tanda baca dan kurung penutup di luar link; kurung milik URL tetap; beberapa link dengan query; skema selain http(s) tetap teks; HTML tetap teks; "https://" saja bukan link
+    - `components/omnichannel/answerBotHints.test.ts` (+5): setiap alasan punya kalimat sendiri; tidak tampil bila AI menjawab atau BE belum mengirim alasan; tidak dobel dengan petunjuk AI mati; AI mati di jawaban lain tetap dijelaskan; alasan baru tampil dengan kodenya
+  - **Mutation check:** 13/13 mutasi tertangkap
+  - **Total:** 69 file test, 759 test lolos; `tsc` bersih
+
+---
+
+## [1.116.4] - 2026-10-29
+
+### Detail Versi 1.116.4
+
+#### 🐛 Setup Cepat: Isian Artikel Knowledge Base yang Tertinggal Kosong
+
+- **Deskripsi:**
+  - **Masalah:** blueprint di **Settings › Setup Cepat** hanya menanyakan data milik blueprint itu sendiri (nama toko, jam operasional, WhatsApp dan email CS, dan seterusnya). Padahal 8 blueprint (E-commerce, Hospitality & Travel, Kesehatan & Klinik, Otomotif & Bengkel, Pendidikan & Kursus, Properti, SaaS & Software, Manufaktur) juga memasang paket Knowledge Base marketing yang punya 65–84 isian sendiri, misalnya `{{ALAMAT_PUSAT}}`, `{{URL_MAPS}}` dan `{{DAFTAR_CABANG}}`. Isian itu tidak pernah ditanyakan, sehingga artikelnya tertinggal dengan tanda `{{…}}` mentah, dan answer bot bisa membacakannya ke pengunjung (contoh: "Cabang utama kami di {{ALAMAT_PUSAT}}")
+  - **Perbaikan:** tab **Checklist Aktivasi** di Setup Cepat (yang otomatis terbuka setelah install) kini menampilkan panel **"Isian artikel Knowledge Base (N tanda kosong)"** selama masih ada tanda yang belum diisi:
+    - daftar semua tanda yang masih kosong, lengkap dengan label, contoh isian, potongan kalimat dan artikel yang memakainya;
+    - nilai yang diisi langsung diterapkan ke semua artikel yang memakainya, dan panel hilang begitu semua tanda terisi;
+    - pengingat bahwa artikel dari blueprint dipasang sebagai **Draft** dan perlu diterbitkan di Knowledge Base agar dibaca answer bot
+  - **Impact:** admin bisa melengkapi data artikel tepat setelah Setup Cepat, tanpa harus menemukan sendiri tab Content Gaps di Bot Playground
+  - **Technical Notes:**
+    - form isian dipindahkan ke komponen bersama `components/knowledge/KbPlaceholderFillForm.tsx`, dipakai tab **Content Gaps** di Bot Playground (tampilan tidak berubah) dan tab Checklist Aktivasi Setup Cepat
+    - memakai endpoint yang sudah ada: `GET /bot-playground/content-gaps` dan `POST /knowledge/articles/fill-placeholders`
+    - panel hanya tampil bila masih ada tanda kosong dan user punya izin `omnichannel:setup` serta izin menulis artikel (`offersKbFill` di `components/admin/blueprints/kbFillOffer.ts`); tanpa izin, daftar tanda tidak diminta ke API
+    - setelah install, cache Knowledge Base dan Content Gaps ikut diperbarui
+    - perbaikan menyeluruh ada di BE: menanyakan isian paket KB di langkah data perusahaan dan melaporkan isian yang kosong di hasil install
+
+#### 🐛 Setup Cepat: Knowledge Base yang Terhapus Tidak Bisa Dipasang Ulang
+
+- **Deskripsi:**
+  - **Masalah:** di langkah **Pratinjau**, tombol **"Pasang 0 item"** nonaktif bila semua modul lain sudah terpasang, walaupun Knowledge Base (misalnya setelah kategorinya dihapus) masih perlu dipasang ulang
+  - **Root Cause:** pratinjau BE tidak menjalankan installer Knowledge Base, sehingga modul ini selalu dihitung 0 item. FE menonaktifkan tombol bila total item 0
+  - **Perbaikan:** tombol tetap aktif bila modul Knowledge Base dipilih, dengan label **"Pasang Knowledge Base"** bila tidak ada item lain yang baru. Aman, karena install Knowledge Base melewati artikel yang sudah ada
+  - **Technical Notes:** `previewCanInstall` dan `installButtonLabel` di `components/admin/blueprints/previewInstall.ts`
+
+#### 🛡️ Artikel Berisi Isian Kosong Tidak Bisa Diterbitkan
+
+- **Deskripsi:**
+  - **Masalah:** artikel yang masih berisi tanda `{{…}}` bisa diterbitkan, lalu answer bot membacakannya apa adanya ke pengunjung
+  - **Perbaikan:**
+    - **Knowledge Base › Terbitkan (N):** isi artikel yang dicentang diperiksa dulu. Bila ada yang masih berisi `{{…}}`, **tidak ada satu pun yang diterbitkan**, dan muncul modal **"Artikel belum bisa diterbitkan"** berisi daftar artikel, tanda yang tersisa, dan tautan **Edit** ke masing-masing;
+    - **Halaman edit artikel › Publish:** versi yang tersimpan diperiksa dengan cara yang sama, karena versi itulah yang diterbitkan;
+    - tanda huruf besar (`{{ALAMAT_PUSAT}}`) dan huruf kecil (`{{company_name}}`) sama-sama dihitung
+  - **Technical Notes:**
+    - `unfilledPlaceholders` dan `articlesWithPlaceholders` di `lib/utils/kbPlaceholders.ts`; modal `components/knowledge/UnfilledPlaceholdersDialog.tsx`
+    - daftar artikel tidak membawa isi, jadi artikel yang dicentang dimuat dulu lewat `useLoadKbArticles` (`lib/hooks/useKnowledge.ts`, selalu data terbaru, 6 artikel sekaligus)
+    - ini pengaman di FE; BE diminta menambahkan penolakan yang sama di API
+
+#### ✨ "Lewati Dulu" untuk Isian Artikel Knowledge Base
+
+- **Deskripsi:**
+  - Panel isian di **Checklist Aktivasi** kini punya tombol **Lewati dulu**. Panel disembunyikan sampai daftar tanda kosong berubah (misalnya setelah memasang blueprint lain); pilihan ini disimpan di browser
+  - Tombol hanya aktif bila **semua** artikel yang masih berisi tanda kosong berstatus **Draft**, karena artikel itu tidak dibaca answer bot dan tidak bisa diterbitkan sebelum diisi. Bila ada yang sudah terbit, tombol nonaktif dengan keterangan *"Tidak bisa dilewati: ada artikel yang sudah terbit dengan isian kosong"*
+  - **Catatan:** saat ini BE baru melaporkan tanda dari artikel Published, jadi tombol ini selalu nonaktif sampai BE juga melaporkan artikel Draft beserta statusnya
+  - **Technical Notes:** `canSkipKbFill` dan `kbGapSignature` di `components/admin/blueprints/kbFillOffer.ts`; artikel tanpa status dianggap sudah terbit
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **23 Test Baru:**
+    - `lib/utils/kbPlaceholders.test.ts` (8): nilai isian dikirim setelah di-trim dan isian kosong tidak dikirim; tanda huruf besar dan kecil ditemukan sekali dan berurutan, artikel bersih/kosong tidak punya tanda, kurung yang bukan tanda tidak dihitung, hanya artikel bertanda yang diblokir;
+    - `components/admin/blueprints/kbFillOffer.test.ts` (9): panel tampil bila masih ada tanda kosong dan izinnya lengkap; "Lewati dulu" aktif hanya bila semua artikel bertanda masih Draft (nonaktif bila ada yang terbit, statusnya tidak diketahui, atau daftarnya kosong); tanda yang sama dengan urutan berbeda dianggap sama, tanda baru mengubahnya;
+    - `components/admin/blueprints/previewInstall.test.ts` (6): tombol aktif bila ada item baru atau modul Knowledge Base dipilih, nonaktif bila keduanya tidak ada; label menghitung item, menyebut Knowledge Base, atau tetap "Pasang 0 item"
+  - **Total:** 67 file test, 731 test lolos
+
+---
+
 ## [1.116.3] - 2026-10-29
 
 ### Detail Versi 1.116.3

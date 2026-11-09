@@ -15,6 +15,8 @@ export function widgetConfigPayload(
   stored: WebWidgetConfig | undefined,
   changes: Partial<UpdateWebWidgetConfigRequest>
 ): UpdateWebWidgetConfigRequest {
-  const { id: _id, account_id: _accountId, ...rest } = stored ?? ({} as Partial<WebWidgetConfig>);
+  // default_texts is read-only server output (what blank fields fall back to).
+  const { id: _id, account_id: _accountId, default_texts: _defaults, ...rest } =
+    stored ?? ({} as Partial<WebWidgetConfig>);
   return { ...rest, ...changes } as UpdateWebWidgetConfigRequest;
 }

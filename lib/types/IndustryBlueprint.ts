@@ -1,9 +1,15 @@
 export interface BlueprintVariable {
     key: string;
     label?: string;
-    example?: string;
+    example?: string | null;
     /** Industry-level default the install uses when the field is left blank. Never set for identity fields. */
     default?: string;
+    /** From the template variable dictionary (BE 1.160.0); absent on an older BE. */
+    type?: "text" | "number" | "phone" | "email" | "url";
+    /** Shown next to the field ("hari", "hari kerja"): the value is the number only. */
+    unit?: string | null;
+    /** Must be filled before the install (NAMA_PERUSAHAAN). */
+    required?: boolean;
 }
 
 export interface BlueprintSummary {
@@ -23,6 +29,9 @@ export interface BlueprintSummary {
 
 export interface BlueprintDetail extends BlueprintSummary {
     variables: BlueprintVariable[];
+    // The API also sends `kb_variables` (BE 1.160.0). The wizard leaves them
+    // out on purpose: KB article data is filled once, after the install, in
+    // the Checklist Aktivasi panel - never asked in two places.
 }
 
 export interface ModuleReport {

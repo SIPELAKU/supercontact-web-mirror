@@ -13,10 +13,11 @@ import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Tag, Users, Pencil, Copy } from "lucide-react";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Tag, Users, Pencil, Copy, History } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
+import { CONTACT_SOURCE_OPTIONS } from "@/lib/constants/contact-source";
 
 interface ContactTableProps {
   data: Contact[];
@@ -25,6 +26,9 @@ interface ContactTableProps {
   errorMessage?: string;
   onRetry?: () => void;
   rowCount: number;
+  // Bumped by ContactClient after a write, once the fresh first batch is in:
+  // restarts the lazy list so an in-place change (edit, merge) shows.
+  restartKey?: number;
 
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: { format: 'csv' | 'excel'; currentState: SuperTableState }) => Promise<Contact[]> | Contact[];
@@ -39,6 +43,7 @@ interface ContactTableProps {
 
   onOpenAdd: () => void;
   onOpenImport: () => void;
+  onOpenImportHistory: () => void;
   onSuccess?: () => void;
 }
 
@@ -49,6 +54,7 @@ export const ContactTable = ({
   errorMessage,
   onRetry,
   rowCount,
+  restartKey,
   onStateChange,
   onExportRequest,
   onEdit,
@@ -59,6 +65,7 @@ export const ContactTable = ({
   onDeleteAll,
   onOpenAdd,
   onOpenImport,
+  onOpenImportHistory,
   isDuplicating,
   onSuccess,
 }: ContactTableProps) => {
@@ -101,6 +108,8 @@ export const ContactTable = ({
       ...(tagOptions.length > 0
         ? [{ id: "tag_ids", label: "Tag", type: "multiselect" as const, options: tagOptions }]
         : []),
+      // BE-1.1: a fixed vocabulary, so always offered. OR across picks.
+      { id: "source", label: "Source", type: "multiselect" as const, options: CONTACT_SOURCE_OPTIONS },
     ];
   }, [customerTypes, regionTree, tagPage]);
 
@@ -175,6 +184,7 @@ export const ContactTable = ({
         errorMessage={errorMessage}
         onRetry={onRetry}
         rowCount={rowCount}
+        restartKey={restartKey}
         renderEmptyState={() => (
           <EmptyState
             icon={Users}
@@ -246,6 +256,14 @@ export const ContactTable = ({
             {/* Desktop */}
             <div className="hidden md:flex gap-2">
               <AppButton
+                onClick={onOpenImportHistory}
+                variantStyle="outline"
+                color="primary"
+                startIcon={<History size={16} />}
+              >
+                Import History
+              </AppButton>
+              <AppButton
                 onClick={onOpenImport}
                 variantStyle="outline"
                 color="primary"
@@ -264,6 +282,13 @@ export const ContactTable = ({
 
             {/* Mobile - icon only */}
             <div className="flex md:hidden gap-2">
+              <button
+                onClick={onOpenImportHistory}
+                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+                title="Import History"
+              >
+                <History size={16} />
+              </button>
               <button
                 onClick={onOpenImport}
                 className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"

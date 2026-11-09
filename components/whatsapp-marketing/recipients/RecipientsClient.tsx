@@ -17,7 +17,9 @@ import {
 import { useListRefresh } from '@/lib/hooks/useListRefresh';
 import RecipientsTable from './RecipientsTable';
 import AddRecipientModal from './AddRecipientModal';
-import ImportWaRecipientModal from './ImportWaRecipientModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
+import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import {
   WA_RECIPIENT_SORT_KEYS,
   type WaRecipient,
@@ -37,6 +39,7 @@ export default function RecipientsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isImportModalOpen, setImportModalOpen] = useState(false);
+  const [isImportHistoryOpen, setImportHistoryOpen] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<WaRecipient | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
@@ -68,6 +71,7 @@ export default function RecipientsClient() {
     batchIndex: page - 1,
     firstBatchKey: waRecipientsKey({ ...listParams, page: 1 }),
   });
+  useImportDataChanged('recipients', () => void listRefresh.refreshAfterSave());
 
   // Handlers
   const handleOpenAddModal = () => setAddModalOpen(true);
@@ -77,10 +81,16 @@ export default function RecipientsClient() {
     setImportModalOpen(false);
     setSelectedRecipient(null);
   };
-  // Add, Edit and Import save inside their modals and call this afterwards.
+  // Add and Edit save inside their modals and call this afterwards.
   const handleSuccess = () => {
     handleCloseModals();
     void listRefresh.refreshAfterSave();
+  };
+  // An import runs as a background job (FE-4): nothing to reload yet, so hand
+  // over to Import History, which refreshes this list when the job completes.
+  const handleImportStarted = () => {
+    handleCloseModals();
+    setImportHistoryOpen(true);
   };
 
   const handleOpenEditModal = (recipient: WaRecipient) => {
@@ -176,6 +186,7 @@ export default function RecipientsClient() {
         restartKey={listRefresh.restartKey}
         onAdd={handleOpenAddModal}
         onImport={() => setImportModalOpen(true)}
+        onImportHistory={() => setImportHistoryOpen(true)}
         onEdit={handleOpenEditModal}
         onDeleteRequest={handleDeleteRequest}
         onDeleteAll={() => setConfirmAllOpen(true)}
@@ -199,11 +210,18 @@ export default function RecipientsClient() {
         onSuccess={handleSuccess}
       />
 
-      <ImportWaRecipientModal
+      <ImportFileModal
+        view="recipients"
         open={isImportModalOpen}
-        recipientType="whatsapp"
         onClose={handleCloseModals}
-        onSuccess={handleSuccess}
+        onSuccess={handleImportStarted}
+      />
+
+      <ImportHistoryModal
+        open={isImportHistoryOpen}
+        onClose={() => setImportHistoryOpen(false)}
+        view="recipients"
+        onDataChanged={() => void listRefresh.refreshAfterSave()}
       />
 
       {/* Delete Confirmation */}

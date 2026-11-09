@@ -2,6 +2,11 @@
 // Contacts API functions
 
 import { fetchWithTimeout } from "./api-client";
+import type {
+  ContactConversationListResponse,
+  ContactConversationQuery,
+} from "@/lib/types/omnichannel";
+import { readCreateContactResponse, type CreateContactResult } from "@/lib/utils/contactDuplicate";
 
 // ============================================
 // Types
@@ -77,6 +82,53 @@ export async function fetchContacts(
     throw new Error(errorMsg);
   }
   return json;
+}
+
+// POST /contacts. Never throws for an API answer: a duplicate (409) or a
+// refusal comes back as a result the form acts on (lib/utils/contactDuplicate).
+export async function createContact(
+  token: string,
+  body: Record<string, unknown>,
+): Promise<CreateContactResult> {
+  const res = await fetchWithTimeout(`/api/proxy/contacts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  return readCreateContactResponse(res.status, json);
+}
+
+// Every conversation of one contact (BE-1.2). A contact without conversations
+// answers `items: []`, not 404.
+export async function fetchContactConversations(
+  token: string,
+  contactId: string,
+  query: ContactConversationQuery,
+): Promise<ContactConversationListResponse> {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    limit: String(query.limit),
+  });
+  if (query.channel_type) params.set("channel_type", query.channel_type);
+  if (query.sort) params.set("sort", query.sort);
+
+  const res = await fetchWithTimeout(
+    `/api/proxy/contacts/${encodeURIComponent(contactId)}/conversations?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  const json = await res.json().catch(() => ({}));
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+  if (!res.ok || !json.success) {
+    throw new Error(json?.error?.message || "Failed to load conversations");
+  }
+  return json.data;
 }
 
 export async function deleteMultipleContacts(token: string, contactIds: string[]): Promise<ContactResponse> {

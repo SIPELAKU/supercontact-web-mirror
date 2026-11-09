@@ -42,6 +42,9 @@ import {
   getInitials,
   getSlaTargetState,
   formatRelativeTime,
+  visitorEmail,
+  profileContactId,
+  assigneeId,
 } from "./workspaceHelpers";
 
 // Icon + human label for the customer's channel identifier row.
@@ -94,6 +97,10 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
   const idMeta = IDENTIFIER_META[channelType] ?? IDENTIFIER_META.web_widget;
   const IdIcon = idMeta.icon;
   const color = avatarColor(identifier || conversationId);
+  const isWebWidget = channelType === "web_widget";
+  const email = visitorEmail(conversation, selectedItem);
+  const contactId = profileContactId(conversation, selectedItem);
+  const ownerId = assigneeId(conversation, selectedItem);
 
   // CRM organization the contact belongs to (Support Desk Phase 1/2). Prefer
   // the freshly-fetched conversation, fall back to the selected list-item.
@@ -120,9 +127,10 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
           <KV icon={<User className="h-[15px] w-[15px]" />} k="Name" v={name} />
           <KV icon={<Hash className="h-[15px] w-[15px]" />} k="Channel" v={CHANNEL_META[channelType].label} />
           <KV icon={<IdIcon className="h-[15px] w-[15px]" />} k={idMeta.label} v={identifier} />
-          {selectedItem.contact_id && (
+          {isWebWidget && <KV icon={<Mail className="h-[15px] w-[15px]" />} k="Email" v={email || "—"} />}
+          {contactId && (
             <Link
-              href={`/contact/detail/${selectedItem.contact_id}?tab=conversations`}
+              href={`/contact/detail/${contactId}?tab=conversations`}
               className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[#3E63D8] hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -148,7 +156,7 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
           <PriorityControl conversationId={conversationId} priority={conversation?.priority} />
           <AssigneeControl
             conversationId={conversationId}
-            currentUserId={selectedItem.assigned_user_id ?? undefined}
+            currentUserId={ownerId ?? undefined}
             currentUserFullname={conversation?.assigned_user_fullname}
           />
           <TagsControl conversationId={conversationId} tags={conversation?.tags || []} />
@@ -187,9 +195,9 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
           defaultSubjectId={conversationId}
           lockSubject
           defaultAgent={
-            selectedItem.assigned_user_id
+            ownerId
               ? {
-                  id: selectedItem.assigned_user_id,
+                  id: ownerId,
                   name: conversation?.assigned_user_fullname || "Assigned agent",
                 }
               : null

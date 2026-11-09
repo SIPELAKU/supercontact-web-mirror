@@ -31,6 +31,7 @@ import {
   useTransferConversation,
 } from "@/lib/hooks/useOmnichannel";
 import { useUsers } from "@/lib/hooks/useUsers";
+import { useConversationMessages } from "@/lib/hooks/useOlderMessages";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { WorkspaceComposer } from "./WorkspaceComposer";
@@ -55,6 +56,16 @@ export function WorkspaceThread({
   onToggleContext,
   onBackToQueue,
 }: WorkspaceThreadProps) {
+  // FE-8: page 1 comes with `conversation` (reloaded by the WebSocket); the
+  // pages before it are loaded here as the staff scrolls up.
+  const { messages, hasOlder, loadOlder, isLoadingOlder, loadOlderFailed } = useConversationMessages(
+    conversationId,
+    conversation?.messages,
+    conversation?.total_messages,
+  );
+  // Goes up with every reply sent from the composer: the list then shows it.
+  const [replySentKey, setReplySentKey] = useState(0);
+
   if (!conversationId) {
     return (
       <main className="flex h-full min-w-0 flex-1 items-center justify-center bg-[#F7F8FB]">
@@ -108,7 +119,15 @@ export function WorkspaceThread({
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
           </div>
         ) : (
-          <MessageList messages={conversation?.messages || []} channelType={channelType} />
+          <MessageList
+            messages={messages}
+            channelType={channelType}
+            onLoadOlder={loadOlder}
+            hasOlder={hasOlder}
+            isLoadingOlder={isLoadingOlder}
+            loadOlderFailed={loadOlderFailed}
+            replySentKey={replySentKey}
+          />
         )}
       </div>
 
@@ -123,6 +142,7 @@ export function WorkspaceThread({
       <WorkspaceComposer
         conversationId={conversationId}
         contactFirstName={name.split(" ")[0]}
+        onReplySent={() => setReplySentKey((key) => key + 1)}
       />
     </main>
   );

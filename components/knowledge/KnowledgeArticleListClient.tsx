@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   Archive,
   BookOpen,
   CheckCircle2,
   FileEdit,
   LayoutTemplate,
   Loader2,
+  PencilLine,
   Plus,
   Send,
   Settings2,
@@ -32,14 +34,25 @@ import {
   useKbArticles,
   useKbPermissions,
   useKbSections,
+  useLoadKbArticles,
 } from "@/lib/hooks/useKnowledge";
+import { useContentGaps } from "@/lib/hooks/useBotPlayground";
+import {
+  articlesFromGaps,
+  articlesWithPlaceholders,
+  placeholderRejection,
+  publishReadiness,
+  type ArticleWithPlaceholders,
+} from "@/lib/utils/kbPlaceholders";
+import { UnfilledPlaceholdersDialog } from "./UnfilledPlaceholdersDialog";
 import type {
   KbArticleStatus,
   KbArticleSummary,
   KbBulkStatusReport,
   KbBulkStatusRequest,
 } from "@/lib/types/knowledge";
-import { KbStatusBadge } from "./KbStatusBadge";
+import { KbReadinessTag, KbStatusBadge } from "./KbStatusBadge";
+import { KbArticlePlaceholderDialog } from "./KbArticlePlaceholderDialog";
 
 /** One lazy batch. The list used to fetch a flat 200 - the API's hard cap -
  *  and tell the user "daftar dibatasi 200 artikel" when a knowledge base
@@ -113,6 +126,22 @@ export default function KnowledgeArticleListClient() {
   // the whole selection UI and then get a 403 from every button. Gate on what
   // the API actually checks.
   const canPublish = can("knowledge:publish");
+  // Which articles still carry a {{placeholder}} comes from Content Gaps (the
+  // list has no bodies), which is gated on omnichannel:setup. Without it the
+  // tags and the fill button stay hidden rather than guess.
+  const canSeeGaps = can("omnichannel:setup");
+  const { data: gaps } = useContentGaps(canSeeGaps);
+  const gapsById = useMemo(
+    () => (gaps ? new Map(articlesFromGaps(gaps).map((a) => [a.id, a])) : undefined),
+    [gaps]
+  );
+  const gapArticleCount = gapsById?.size ?? 0;
+  // Fill one article's placeholders from the list (Content Gaps to read them,
+  // knowledge:publish to write them).
+  const canFill = canSeeGaps && canPublish;
+  const [fillTarget, setFillTarget] = useState<{ id: string; title: string } | null>(null);
+  // Bumped after a fill: the list starts over from the first batch, at the top.
+  const [restartEpoch, setRestartEpoch] = useState(0);
 
   const [status, setStatus] = useState<KbArticleStatus | "">("");
   const [sectionId, setSectionId] = useState<string>("");
@@ -174,6 +203,12 @@ export default function KnowledgeArticleListClient() {
   const clearTableSelection = useCallback(() => setSelectionEpoch((n) => n + 1), []);
   const [report, setReport] = useState<KbBulkStatusReport | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  // Drafts that still carry a {{…}} placeholder are not published at all: the
+  // answer bot would read the placeholder out to visitors. The list rows have
+  // no body, so the selected drafts are loaded and checked first.
+  const loadArticles = useLoadKbArticles();
+  const [checkingPublish, setCheckingPublish] = useState(false);
+  const [blockedPublish, setBlockedPublish] = useState<ArticleWithPlaceholders[]>([]);
 
   // Changing a page-owned filter sends the table back to the first batch AND
   // clears its selection - SuperTable does both off this key, so the page no
@@ -207,6 +242,13 @@ export default function KnowledgeArticleListClient() {
       setReport(res);
       clearTableSelection?.();
     } catch (err) {
+      // "Terbitkan semua draft" is not checked here first, so the API's own
+      // refusal is what reaches the placeholder dialog.
+      const blocked = placeholderRejection(err);
+      if (blocked.length > 0) {
+        setBlockedPublish(blocked);
+        return;
+      }
       // The API layer throws the PARSED BODY for 4xx/5xx (not an Error), and a
       // bare Error("UNAUTHORIZED") for 401. An `instanceof Error` check drops
       // the server's reason on every 403 and prints the raw sentinel on expiry,
@@ -219,11 +261,32 @@ export default function KnowledgeArticleListClient() {
     }
   }
 
+  async function publishSelected(ids: string[]) {
+    setReport(null);
+    setBulkError(null);
+    setCheckingPublish(true);
+    try {
+      const blocked = articlesWithPlaceholders(await loadArticles(ids));
+      if (blocked.length > 0) {
+        setBlockedPublish(blocked);
+        return;
+      }
+    } catch (err) {
+      setBulkError(getErrorMessage(err, "Gagal memeriksa isi artikel sebelum diterbitkan."));
+      return;
+    } finally {
+      setCheckingPublish(false);
+    }
+    await runBulk({ status: "published", article_ids: ids });
+  }
+
   const columns = useMemo<MRT_ColumnDef<KbArticleSummary>[]>(
     () => [
       {
         accessorKey: "title",
         header: "Title",
+        // The way into each article: never hidden from the Columns menu.
+        enableHiding: false,
         Cell: ({ row }) => (
           <div>
             <div className="font-semibold">{row.original.title}</div>
@@ -238,7 +301,19 @@ export default function KnowledgeArticleListClient() {
       {
         accessorKey: "status",
         header: "Status",
-        Cell: ({ row }) => <KbStatusBadge status={row.original.status} />,
+        Cell: ({ row }) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <KbStatusBadge status={row.original.status} />
+            <KbReadinessTag
+              readiness={publishReadiness(row.original, gapsById)}
+              onFill={
+                canFill
+                  ? () => setFillTarget({ id: row.original.id, title: row.original.title })
+                  : undefined
+              }
+            />
+          </div>
+        ),
       },
       {
         accessorKey: "section_id",
@@ -289,7 +364,7 @@ export default function KnowledgeArticleListClient() {
         ),
       },
     ],
-    [sectionName]
+    [sectionName, gapsById]
   );
 
   const sectionOptions = useMemo(
@@ -433,10 +508,8 @@ export default function KnowledgeArticleListClient() {
                   count={eligible.publish.length}
                   icon={<Send size={16} />}
                   primary
-                  busy={bulkStatus.isPending}
-                  onClick={() =>
-                    runBulk({ status: "published", article_ids: eligible.publish })
-                  }
+                  busy={bulkStatus.isPending || checkingPublish}
+                  onClick={() => void publishSelected(eligible.publish)}
                 />
                 <BulkAction
                   label="Jadikan draft"
@@ -515,6 +588,25 @@ export default function KnowledgeArticleListClient() {
         </div>
       )}
 
+      {canPublish && gapArticleCount > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-2 text-sm text-amber-800">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <span>
+              <span className="font-semibold">{gapArticleCount}</span> artikel masih berisi isian
+              kosong seperti {"{{ALAMAT_PUSAT}}"} dan belum bisa diterbitkan.
+            </span>
+          </div>
+          <AppButton
+            variantStyle="outline"
+            startIcon={<PencilLine size={16} />}
+            onClick={() => router.push("/knowledge-base/placeholders")}
+          >
+            Lengkapi isian ({gapArticleCount})
+          </AppButton>
+        </div>
+      )}
+
       <SuperTable<KbArticleSummary>
         tableId="kb-articles-table"
         urlKey=""
@@ -537,6 +629,7 @@ export default function KnowledgeArticleListClient() {
         // above), so this tells SuperTable to go back to the first batch and
         // drop its selection when either moves.
         resetPageKey={filterKey}
+        restartKey={restartEpoch}
         clearSelectionKey={selectionEpoch}
         onStateChange={(state) => {
           setSearch(state.globalFilter);
@@ -550,6 +643,23 @@ export default function KnowledgeArticleListClient() {
           href: (row) => `/knowledge-base/articles/${row.id}`,
         }}
         onRowClick={(row) => router.push(`/knowledge-base/articles/${row.id}`)}
+        // The same ⋮ menu as every other table, pinned right so it stays in
+        // view however far the columns are scrolled.
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <FileEdit size={16} />,
+            onClick: (row) => router.push(`/knowledge-base/articles/${row.id}`),
+          },
+          {
+            id: "fill-placeholders",
+            label: (row) => `Isi placeholder (${publishReadiness(row, gapsById)})`,
+            icon: <PencilLine size={16} />,
+            hidden: (row) => !canFill || typeof publishReadiness(row, gapsById) !== "number",
+            onClick: (row) => setFillTarget({ id: row.id, title: row.title }),
+          },
+        ]}
         renderEmptyState={({ hasActiveFilters, hasSearch }) => (
           <EmptyState
             icon={BookOpen}
@@ -578,10 +688,23 @@ export default function KnowledgeArticleListClient() {
           rowSelection: canPublish ? "multi" : "none",
           urlSync: true,
           pageSizeOptions: [BATCH_SIZE, 100, 200],
+          // View options › Columns: hide/show columns, remembered per browser.
+          columnVisibility: true,
+          stickyRowActions: true,
         }}
       />
 
       {confirmationPopup}
+      <UnfilledPlaceholdersDialog articles={blockedPublish} onClose={() => setBlockedPublish([])} />
+      <KbArticlePlaceholderDialog
+        article={fillTarget}
+        gaps={gaps}
+        onClose={() => setFillTarget(null)}
+        onSaved={() => {
+          setFillTarget(null);
+          setRestartEpoch((n) => n + 1);
+        }}
+      />
     </div>
   );
 }

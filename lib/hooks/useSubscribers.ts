@@ -5,8 +5,6 @@ import {
 
   deleteSubscriber,
   fetchSubscribers,
-  fetchBulkJobs,
-  actionBulkJob,
   updateSubscriber,
   duplicateSubscribers,
 } from '@/lib/api';
@@ -14,13 +12,11 @@ import type {
   CreateSubscriberData,
   CreateSubscriberResponse,
   DeleteSubscriberResponse,
-  SubscribersResponse,
-  BulkJobsResponse
+  SubscribersResponse
 } from '@/lib/types/email-marketing';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 import { UpdateSubscriberData } from '@/lib/api/email-marketing/subscribers';
-import { markListsStale } from './useListRefresh';
 
 export function useSubscribers(
   page: number = 1,
@@ -40,40 +36,6 @@ export function useSubscribers(
     // change and sort - the single biggest source of the "kaku" feel. Keeping
     // the previous rows visible turns those into a progress bar over live data.
     placeholderData: keepPreviousData,
-  });
-}
-
-export function bulkJobsKey(page: number, limit: number, search?: string, target?: string[], mailingListIds?: string[]) {
-  return ['bulkJobs', page, limit, search, target, mailingListIds] as const;
-}
-
-// No refetchInterval: the Import History modal polls with useListRefresh's
-// reload, which refetches batch 1 and restarts its lazy table.
-export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[], mailingListIds?: string[]) {
-  return useQuery<BulkJobsResponse>({
-    queryKey: bulkJobsKey(page, limit, search, target, mailingListIds),
-    queryFn: () => {
-      const token = Cookies.get('access_token');
-      if (!token) throw new Error('No authentication token');
-      return fetchBulkJobs(token, page, limit, search, target, mailingListIds);
-    },
-  });
-}
-
-export function useActionBulkJob() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ jobId, action }: { jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay' }) => {
-      const token = Cookies.get('access_token');
-      if (!token) throw new Error('No authentication token');
-      return actionBulkJob(token, jobId, action);
-    },
-    onSuccess: () => {
-      // The Import History modal reloads its own list (useListRefresh).
-      markListsStale(queryClient, ['bulkJobs']);
-      queryClient.invalidateQueries({ queryKey: ['subscribers'] });
-    },
   });
 }
 

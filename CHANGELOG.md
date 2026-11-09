@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.131.0] - 2026-11-09
+
+### Detail Versi 1.131.0
+
+#### ✨ Agen Mengambil Chat Widget dengan Accept (Prioritas 1: W1, W5, W6, W8)
+
+- **Deskripsi:**
+  - **Masalah:** agen tiba-tiba mendapat chat tanpa tahu, pelanggan tiba-tiba melihat "Anda terhubung dengan agen" walaupun belum ada yang membalas, dan quick action langsung masuk ke agen setiap kali bot tidak yakin.
+  - **Perbaikan:**
+    - **Accept:** chat web widget tetap di Live & unassigned dan All open. Kolom balas diganti tombol **Accept** sampai agen menjadi pemilik chat. Chat yang dipegang agen lain menampilkan "This chat is being handled by …". Berlaku di Workspace, halaman Omnichannel, dan detail kontak. Selama data chat dimuat, kolom balas dan tombol Accept sama-sama belum tampil. Catatan internal tetap bisa dibuat sebelum Accept. Saluran lain tidak berubah.
+    - **Widget:** "Anda terhubung dengan Rina" baru tampil setelah Accept. Setelah 5 menit tanpa Accept: "Tim kami masih sibuk. Kami akan membalas di sini secepatnya." Di luar jam kerja: "Tim kami sedang offline. Kami akan segera menghubungi Anda."
+    - **Quick action:** tombol yang ditekan di tengah chat mengirim `action_id`, jadi kategori KB dan antreannya tetap berlaku. Settings memberi peringatan kalau tombol belum punya kategori KB.
+  - **Technical Notes:**
+    - `lib/utils/widgetReplyGate.ts` (`widgetReplyState`), `WidgetReplyGate.tsx`, `useWidgetReply`, `useAcceptConversation`, `acceptConversation`
+    - `lib/utils/agentRequest.ts`: `msUntilAgentBusy`, `readAgentRequestedAt`, `readAgentName`, `connectedAgentLine`, status `offline`. `readAgentAssigned` dihapus
+    - Frame WS baru `agent_connected`
+  - **Rilis:** harus naik bersamaan dengan API Prioritas 1. Tanpa API ini, tombol Accept gagal.
+
+- **🧪 Testing:** Vitest 33 tes pada helper ini (semua 1064 lulus), 21 mutasi tertangkap, tsc dan lint bersih. Chrome dengan API mock: 24 cek lulus di Workspace dan widget, ditambah 4 skenario chat yang lambat dimuat (kolom balas tidak muncul sesaat). Belum dites dengan API asli, dan tombol Accept di halaman Omnichannel serta detail kontak belum dicek di browser.
+
+---
+
 ## [1.130.1] - 2026-11-06
 
 ### Detail Versi 1.130.1

@@ -662,6 +662,25 @@ export async function assignConversation(token: string, conversationId: string, 
   return json.data || json;
 }
 
+/** Takes an unowned web widget chat (W5). 409: another agent was first. */
+export async function acceptConversation(token: string, conversationId: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/accept`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json().catch(() => null);
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const error = new Error(json?.error?.message || 'Failed to accept the chat') as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
+}
+
 export async function setConversationStatus(token: string, conversationId: string, data: SetConversationStatusRequest): Promise<ConversationWithMessages> {
   const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/status`, {
     method: 'PATCH',

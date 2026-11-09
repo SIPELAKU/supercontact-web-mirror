@@ -6,7 +6,10 @@ import {
   agentRequestLine,
   agentRequestMark,
   canRequestAgent,
-  readAgentAssigned,
+  connectedAgentLine,
+  msUntilAgentBusy,
+  readAgentName,
+  readAgentRequestedAt,
   readAgentRequestOutcome,
   showsAgentCards,
   type AgentRequestUi,
@@ -105,18 +108,71 @@ describe("readAgentRequestOutcome", () => {
   });
 });
 
-describe("readAgentAssigned", () => {
-  it("an online agent took the chat at once", () => {
-    expect(readAgentAssigned({ success: true, outcome: "escalated", assigned: true })).toBe(true);
-    expect(readAgentAssigned({ success: true, agent_request: { outcome: "escalated", assigned: true } })).toBe(true);
+describe("the wait for an agent (W5)", () => {
+  const at = "2026-11-09T03:00:00.000Z";
+  const start = Date.parse(at);
+  const minutes = (n: number) => start + n * 60 * 1000;
+
+  it("connecting for 5 minutes, then busy", () => {
+    expect(agentRequestLine(requested, false, at, minutes(4.9))).toBe("connecting");
+    expect(agentRequestLine(requested, false, at, minutes(5))).toBe("busy");
+    expect(agentRequestLine(requested, false, at, minutes(60))).toBe("busy");
   });
 
-  it("queued for the team, not yet taken: false", () => {
-    expect(readAgentAssigned({ outcome: "escalated", assigned: false })).toBe(false);
-    expect(readAgentAssigned({ agent_request: { outcome: "escalated", assigned: false } })).toBe(false);
-    expect(readAgentAssigned({ agent_request: null })).toBe(false);
-    expect(readAgentAssigned({ assigned: "true" })).toBe(false);
-    expect(readAgentAssigned(null)).toBe(false);
+  it("an agent's answer ends the wait", () => {
+    expect(agentRequestLine(requested, true, at, minutes(60))).toBeNull();
+  });
+
+  it("no time known: keeps connecting", () => {
+    expect(agentRequestLine(requested, false, null, minutes(60))).toBe("connecting");
+    expect(agentRequestLine(requested, false, "not a date", minutes(60))).toBe("connecting");
+  });
+
+  it("msUntilAgentBusy counts down to zero and stops there", () => {
+    expect(msUntilAgentBusy(at, minutes(1))).toBe(4 * 60 * 1000);
+    expect(msUntilAgentBusy(at, minutes(6))).toBe(0);
+  });
+});
+
+describe("outside business hours (W6)", () => {
+  const offline: AgentRequestUi = { state: "offline" };
+
+  it("shows the offline line and offers no more requests", () => {
+    expect(agentRequestLine(offline)).toBe("offline");
+    expect(canRequestAgent(offline)).toBe(false);
+  });
+
+  it("an agent's answer ends it", () => {
+    expect(agentRequestLine(offline, true)).toBeNull();
+  });
+
+  it("is read from every response shape", () => {
+    expect(readAgentRequestOutcome({ outcome: "offline" })).toBe("offline");
+    expect(readAgentRequestOutcome({ agent_request: { outcome: "offline" } })).toBe("offline");
+    expect(afterAgentOutcome(submitting, "offline", "menu")).toEqual(offline);
+  });
+});
+
+describe("readAgentRequestedAt", () => {
+  it("reads either response shape, nothing else", () => {
+    expect(readAgentRequestedAt({ agent_requested_at: "t" })).toBe("t");
+    expect(readAgentRequestedAt({ agent_request: { agent_requested_at: "t" } })).toBe("t");
+    expect(readAgentRequestedAt({ agent_requested_at: 5 })).toBeNull();
+    expect(readAgentRequestedAt(null)).toBeNull();
+  });
+});
+
+describe("the connected line (W8)", () => {
+  it("names the agent when known", () => {
+    expect(connectedAgentLine("Anda terhubung dengan {name}", "Anda terhubung dengan agen", readAgentName({ name: " Rina " }))).toBe(
+      "Anda terhubung dengan Rina",
+    );
+  });
+
+  it("falls back without a usable name", () => {
+    for (const agent of [null, undefined, {}, { name: "" }, { name: 5 }]) {
+      expect(connectedAgentLine("x {name}", "plain", readAgentName(agent))).toBe("plain");
+    }
   });
 });
 

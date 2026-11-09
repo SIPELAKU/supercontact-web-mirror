@@ -14,7 +14,12 @@ export type AgentRequestUi =
   | { state: "idle" }
   | { state: "submitting"; source: AgentRequestSource }
   | { state: "requested" }
+  // Asked outside business hours: no one will pick it up for now (W6).
+  | { state: "offline" }
   | { state: "failed"; source: AgentRequestSource };
+
+// How long "Menghubungkan…" is shown before saying the team is busy (W5).
+export const AGENT_BUSY_AFTER_MS = 5 * 60 * 1000;
 
 /** A new request may start: nothing under way, or the last one failed. */
 export function canRequestAgent(ui: AgentRequestUi): boolean {
@@ -28,15 +33,30 @@ export function showsAgentCards(ui: AgentRequestUi): boolean {
 }
 
 /** The line under the thread: "connecting" while sending and once handed
- *  over until an agent answers, "failed" with a retry, nothing otherwise. */
+ *  over until an agent answers, "busy" after 5 minutes of that, "offline"
+ *  outside business hours, "failed" with a retry, nothing otherwise. */
 export function agentRequestLine(
   ui: AgentRequestUi,
   agentAnswered = false,
-): "connecting" | "failed" | null {
+  requestedAt?: string | null,
+  now: number = Date.now(),
+): "connecting" | "busy" | "offline" | "failed" | null {
   if (ui.state === "submitting") return "connecting";
-  if (ui.state === "requested") return agentAnswered ? null : "connecting";
+  if (ui.state === "requested") {
+    if (agentAnswered) return null;
+    return msUntilAgentBusy(requestedAt, now) === 0 ? "busy" : "connecting";
+  }
+  if (ui.state === "offline") return agentAnswered ? null : "offline";
   if (ui.state === "failed") return "failed";
   return null;
+}
+
+/** Time left before the team counts as busy; the full wait for a time that
+ *  is missing or unreadable, so "Menghubungkan…" simply stays. */
+export function msUntilAgentBusy(requestedAt: string | null | undefined, now: number = Date.now()): number {
+  const at = requestedAt ? Date.parse(requestedAt) : NaN;
+  if (Number.isNaN(at)) return AGENT_BUSY_AFTER_MS;
+  return Math.max(0, at + AGENT_BUSY_AFTER_MS - now);
 }
 
 /** Where the thread stood when a request for an agent went through: the id of
@@ -65,32 +85,49 @@ export function agentAnsweredSince(
   return messages.slice(start).some((m) => m.direction === "inbound" && !!m.id);
 }
 
-/** What a POST /messages or /start response says about an agent request:
- *  `agent_request.outcome`, or `agent_requested: true` from /start. null
- *  when the message was not a request for an agent. */
-export function readAgentRequestOutcome(response: unknown): "escalated" | "failed" | null {
-  const r = response as { agent_request?: { outcome?: unknown } | null; agent_requested?: unknown } | null;
-  const outcome = r?.agent_request?.outcome;
-  if (outcome === "escalated" || outcome === "failed") return outcome;
+export type AgentRequestOutcome = "escalated" | "offline" | "failed";
+
+/** What a response says about an agent request: `outcome` on POST
+ *  /request-agent, `agent_request.outcome` on POST /messages, `agent_requested`
+ *  from /start. null when the message was not a request for an agent. */
+export function readAgentRequestOutcome(response: unknown): AgentRequestOutcome | null {
+  const r = response as {
+    outcome?: unknown;
+    agent_request?: { outcome?: unknown } | null;
+    agent_requested?: unknown;
+  } | null;
+  const outcome = r?.agent_request?.outcome ?? r?.outcome;
+  if (outcome === "escalated" || outcome === "offline" || outcome === "failed") return outcome;
   return r?.agent_requested === true ? "escalated" : null;
 }
 
-/** An online agent took the chat at once: `assigned` on POST /request-agent
- *  and /start, `agent_request.assigned` on POST /messages. A later pick-up
- *  in the Workspace is not reported to the widget (no event for it yet). */
-export function readAgentAssigned(response: unknown): boolean {
-  const r = response as { assigned?: unknown; agent_request?: { assigned?: unknown } | null } | null;
-  return r?.assigned === true || r?.agent_request?.assigned === true;
+/** When the visitor asked for an agent, from the same responses or a frame. */
+export function readAgentRequestedAt(response: unknown): string | null {
+  const r = response as { agent_requested_at?: unknown; agent_request?: { agent_requested_at?: unknown } | null } | null;
+  const at = r?.agent_request?.agent_requested_at ?? r?.agent_requested_at;
+  return typeof at === "string" && at ? at : null;
+}
+
+/** The agent's name from `agent_connected` or GET /conversation (W8). */
+export function readAgentName(agent: unknown): string | null {
+  const name = (agent as { name?: unknown } | null | undefined)?.name;
+  return typeof name === "string" && name.trim() ? name.trim() : null;
+}
+
+/** "Anda terhubung dengan Rina", or the plain line without a name. */
+export function connectedAgentLine(named: string, plain: string, name: string | null): string {
+  return name ? named.replace("{name}", name) : plain;
 }
 
 /** The state after a response reported an outcome. A failure never undoes a
  *  request that already went through (another tab, a WS frame). */
 export function afterAgentOutcome(
   ui: AgentRequestUi,
-  outcome: "escalated" | "failed" | null,
+  outcome: AgentRequestOutcome | null,
   source: AgentRequestSource,
 ): AgentRequestUi {
   if (outcome === "escalated") return { state: "requested" };
+  if (outcome === "offline") return { state: "offline" };
   if (outcome === "failed" && ui.state !== "requested") return { state: "failed", source };
   return ui;
 }

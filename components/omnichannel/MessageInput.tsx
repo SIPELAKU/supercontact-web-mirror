@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSendMessage, useUploadMedia } from "@/lib/hooks/useOmnichannel";
+import { useSendMessage, useUploadMedia, useWidgetReply } from "@/lib/hooks/useOmnichannel";
+import { WidgetReplyGate } from "./WidgetReplyGate";
 import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
@@ -23,6 +24,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
   const uploadMediaMutation = useUploadMedia();
   // Best-effort agent-typing signal (throttled ~2s), fired on each keystroke.
   const notifyAgentTyping = useAgentTypingSignal(conversationId);
+  const widgetReply = useWidgetReply(conversationId, channelType);
 
   const isSubmitting = sendMessageMutation.isPending || uploadMediaMutation.isPending;
 
@@ -80,6 +82,14 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
       handleSendMessage();
     }
   };
+
+  if (widgetReply.state !== "open") {
+    return (
+      <div className="border-t border-gray-200 bg-white p-4">
+        <WidgetReplyGate conversationId={conversationId} state={widgetReply.state} ownerName={widgetReply.ownerName} />
+      </div>
+    );
+  }
 
   return (
     <div className="border-t border-gray-200 bg-white p-4">

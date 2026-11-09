@@ -239,7 +239,7 @@ const QuickActionsBuilder: React.FC<QuickActionsBuilderProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600">Route to queue</label>
+              <label className="text-xs font-medium text-gray-600">Queue when the visitor asks for an agent</label>
               <AppSelect
                 isBgWhite
                 value={action.target_queue_id ?? ""}
@@ -267,10 +267,15 @@ const QuickActionsBuilder: React.FC<QuickActionsBuilderProps> = ({
                   });
                 }}
               />
-              <p className="text-[11px] text-gray-400">
-                Visitors tapping this button get bot answers scoped to these
-                categories. Empty = search the whole public KB.
-              </p>
+              {action.kb_category_ids?.length ? (
+                <p className="text-[11px] text-gray-400">
+                  Visitors tapping this button get bot answers from these categories only.
+                </p>
+              ) : (
+                <p className="text-[11px] text-amber-700">
+                  No category selected: the bot searches every public article, so the answer may be off-topic.
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-600">Prefill message (optional)</label>

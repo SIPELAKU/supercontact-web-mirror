@@ -102,6 +102,19 @@ export async function updateManagedUser(
   return res.json();
 }
 
+/** POST /manage-users/{id}/resend-invitation: a new invitation email for a
+ *  Pending user, with a new link and password (the old ones stop working). */
+export async function resendInvitation(token: string, id: string): Promise<void> {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users/${id}/resend-invitation`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.error?.message || "Failed to send the invitation again");
+  }
+}
+
 export async function deleteManagedUser(
   token: string,
   id: string

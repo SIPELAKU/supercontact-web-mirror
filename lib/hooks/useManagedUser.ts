@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { ManageUserResponse, CreateManagedUserData, UpdateManagedUserData } from "../types/manage-users";
-import { fetchManagedUsers, createManagedUser, updateManagedUser, deleteManagedUser } from "../api/manage-users";
+import { fetchManagedUsers, createManagedUser, updateManagedUser, deleteManagedUser, resendInvitation } from "../api/manage-users";
     
 export function useManagedUsers(
   page: number,
@@ -38,6 +38,21 @@ export function useCreateManagedUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["managed-users"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useResendInvitation() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!token) throw new Error("No authentication token");
+      return resendInvitation(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["managed-users"] });
     },
   });
 }

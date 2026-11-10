@@ -5,7 +5,7 @@ import { Card } from "@mui/material";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
-import { useManagedUsers, useDeleteManagedUser } from "@/lib/hooks/useManagedUser";
+import { useManagedUsers, useDeleteManagedUser, useResendInvitation } from "@/lib/hooks/useManagedUser";
 import { ManageUser } from "@/lib/types/manage-users";
 import { useAuth } from "@/lib/context/AuthContext";
 import {
@@ -36,6 +36,7 @@ export default function UsersClient() {
 
   // Bulk Delete State & Hook
   const deleteMutation = useDeleteManagedUser();
+  const resendInvitation = useResendInvitation();
   const router = useRouter();
 
   // Ported as-is from the deleted DeleteUserModal (users-modal/delete-users)
@@ -271,6 +272,18 @@ export default function UsersClient() {
               setSelectedUser(user);
               setOpenDelete(true);
             }}
+            onResendInvitation={(user) =>
+              resendInvitation.mutate(String(user.id), {
+                onSuccess: () =>
+                  notify.success("Invitation sent again", {
+                    description: `A new invitation went to ${user.email}. The previous link no longer works.`,
+                  }),
+                onError: (error) =>
+                  notify.error("Failed to send the invitation", {
+                    description: handleError(error, "Resend Invitation"),
+                  }),
+              })
+            }
             renderTopLeftToolbar={() => (
               <>
                 {/* Desktop */}

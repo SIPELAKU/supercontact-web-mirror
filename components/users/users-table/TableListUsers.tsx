@@ -6,7 +6,7 @@ import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/supe
 import { ManageUser } from "@/lib/types/manage-users";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { UserRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { UserRound, Pencil, Plus, Send, Trash2 } from "lucide-react";
 
 interface TableListUsersProps {
   users: ManageUser[];
@@ -21,6 +21,8 @@ interface TableListUsersProps {
   onExportRequest?: (params: any) => Promise<ManageUser[]>;
   onEdit: (user: ManageUser) => void;
   onDelete: (user: ManageUser) => void;
+  /** Only offered for a user whose invitation is still Pending. */
+  onResendInvitation?: (user: ManageUser) => void;
   onBulkDelete?: (users: ManageUser[], clearSelection: () => void) => Promise<void>;
   isBulkDeleting?: boolean;
   renderTopLeftToolbar?: () => React.ReactNode;
@@ -39,6 +41,7 @@ export default function TableListUsers({
   onExportRequest,
   onEdit,
   onDelete,
+  onResendInvitation,
   onBulkDelete,
   isBulkDeleting,
   renderTopLeftToolbar,
@@ -135,6 +138,17 @@ export default function TableListUsers({
             icon: <Pencil size={16} />,
             onClick: (row) => onEdit(row),
           },
+          ...(onResendInvitation
+            ? [
+                {
+                  id: "resend-invitation",
+                  label: "Resend invitation",
+                  icon: <Send size={16} />,
+                  hidden: (row: ManageUser) => row.status !== "Pending",
+                  onClick: (row: ManageUser) => onResendInvitation(row),
+                },
+              ]
+            : []),
           {
             id: "delete",
             label: "Delete",

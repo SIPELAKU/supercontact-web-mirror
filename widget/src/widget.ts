@@ -56,6 +56,7 @@ import {
   type AnswerFeedback,
   type AnswerVoteUi,
 } from "../../lib/utils/answerFeedback";
+import { headerIdentity } from "../../lib/utils/widgetHeader";
 import { latestSuggestions, readSuggestions, type NoAnswerSuggestions } from "../../lib/utils/noAnswerSuggestions";
 import {
   PRE_CHAT_EMAIL_MAX,
@@ -92,6 +93,9 @@ interface WidgetConfig {
   // Support Assistant concept fields (added to GET /public/widget/config/{key}).
   bot_name?: string | null;
   bot_avatar_url?: string | null;
+  // The header shows these once an agent takes the chat (BE 1.168.0).
+  company_name?: string | null;
+  company_logo_url?: string | null;
   home_headline?: string | null;
   home_subtext?: string | null;
   show_home_screen?: boolean;
@@ -749,6 +753,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private preChatNameErrEl!: HTMLDivElement;
     private preChatEmailErrEl!: HTMLDivElement;
     private poweredByEl!: HTMLAnchorElement;
+    private headerAvatarEl!: HTMLDivElement;
+    private headerNameEl!: HTMLDivElement;
     // The chat is Solved, Closed or Archived (W2): "Mulai chat baru" replaces
     // the composer. Set from the socket, a resync, or a refused send.
     private chatEnded = false;
@@ -842,14 +848,15 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
         .bubble {
           position: fixed; ${posV}: 20px; ${posH}: 20px; width: 56px; height: 56px;
-          border-radius: 50%; background: ${brand}; color: #fff; border: none;
+          border-radius: 50%; background: ${brand}; color: #fff; border: none; padding: 0;
           cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2147483000;
-          display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden;
+          display: flex; align-items: center; justify-content: center; font-size: 26px;
           /* touch drags move the launcher instead of scrolling the host page (feature 4) */
           touch-action: none;
         }
         .bubble.dragging { cursor: grabbing; box-shadow: 0 8px 22px rgba(0,0,0,.28); }
-        .bubble img { width: 100%; height: 100%; object-fit: cover; }
+        /* Rounded here, not with overflow: hidden on .bubble, which cut off the unread badge. */
+        .bubble img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
         .badge {
           position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px;
           padding: 0 5px; border-radius: 10px; background: #EF4444; color: #fff;
@@ -881,6 +888,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
         .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .header-avatar svg { width: 22px; height: 22px; }
+        .header-avatar .initials { font-size: 14px; font-weight: 700; }
         .header-title { flex: 1 1 auto; min-width: 0; }
         .header-title .name { font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .header-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 400; opacity: .92; margin-top: 2px; }
@@ -1159,14 +1167,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // Bot avatar tile.
       const avatar = document.createElement("div");
       avatar.className = "header-avatar";
-      if (this.config!.bot_avatar_url) {
-        const img = document.createElement("img");
-        img.src = this.config!.bot_avatar_url;
-        img.alt = "";
-        avatar.appendChild(img);
-      } else {
-        avatar.appendChild(svgEl(IC_ROBOT));
-      }
+      this.headerAvatarEl = avatar;
       header.appendChild(avatar);
 
       // Title + status sub-line.
@@ -1174,7 +1175,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       titleWrap.className = "header-title";
       const name = document.createElement("div");
       name.className = "name";
-      name.textContent = this.config!.bot_name || this.config!.title || "";
+      this.headerNameEl = name;
+      this.renderHeaderIdentity();
       titleWrap.appendChild(name);
 
       const status = document.createElement("div");
@@ -2301,11 +2303,41 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.agentRequestedAt = null;
       this.agentName = null;
       this.agentConnected = false;
+      this.renderHeaderIdentity();
     }
 
     private markAgentConnected(agent: unknown) {
       this.agentConnected = true;
       this.agentName = readAgentName(agent);
+      this.renderHeaderIdentity();
+    }
+
+    // The bot in the header until an agent takes the chat, then the company.
+    private renderHeaderIdentity() {
+      if (!this.headerAvatarEl || !this.headerNameEl) return;
+      const who = headerIdentity({
+        agentConnected: this.agentConnected,
+        companyName: this.config!.company_name,
+        companyLogoUrl: this.config!.company_logo_url,
+        botName: this.config!.bot_name,
+        botAvatarUrl: this.config!.bot_avatar_url,
+        title: this.config!.title,
+      });
+      this.headerNameEl.textContent = who.name;
+      this.headerAvatarEl.innerHTML = "";
+      if (who.avatarUrl) {
+        const img = document.createElement("img");
+        img.src = who.avatarUrl;
+        img.alt = "";
+        this.headerAvatarEl.appendChild(img);
+      } else if (who.initials) {
+        const initials = document.createElement("span");
+        initials.className = "initials";
+        initials.textContent = who.initials;
+        this.headerAvatarEl.appendChild(initials);
+      } else {
+        this.headerAvatarEl.appendChild(svgEl(IC_ROBOT));
+      }
     }
 
     // "No" on the card: it closes at once and nothing else happens for the

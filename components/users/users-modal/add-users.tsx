@@ -1,35 +1,28 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
-import { Search } from "lucide-react";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
 import { useCreateManagedUser } from "@/lib/hooks/useManagedUser";
-import { useDebounce } from "@/lib/hooks/useDebounce";
 import useRoles from "@/lib/hooks/useRoles";
-import useDepartments from "@/lib/hooks/useDepartments";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
+import { BranchPicker } from "./BranchPicker";
+import { DEPARTMENT_OPTIONS, LEVEL_OPTIONS, positionOptionsFor } from "./userFormOptions";
 
 type AddUserDialogProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
 };
 
-const DEPARTMENT_POSITIONS: Record<string, string[]> = {
-  "Marketing": ["Brand Manager", "Content writer", "Performance Marketing", "Marketing Coordinator", "SEO specialist"],
-  "Sales": ["Sales Manager", "Business Development", "Sales Executive", "Account Manager"],
-  "Customer Support": ["CS Manager", "CS Representative"],
-  "Human Resources": ["HR Manager", "HR Generalist"]
-};
 
 export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   // Form State
@@ -44,18 +37,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   const [status, setStatus] = useState("Active");
   const [roleId, setRoleId] = useState("");
 
-  // UI State
-  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
-
-  const debouncedBranch = useDebounce(branchName, 300);
-
   // Hooks
-  const { departments: allDepartments } = useDepartments(0, 100);
-
-  const { departments: branchDepartments } = useDepartments(0, 100, "", {
-    department: departmentName,
-  });
-
   const { roles: rolesData } = useRoles(1, 100);
   const { mutateAsync: createManagedUser, isPending: isSubmitting } =
     useCreateManagedUser();
@@ -97,7 +79,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
 
     if (!departmentUuid) {
       notify.error("Error", {
-        description: "Invalid Branch selected for this Department. Please create a department first.",
+        description: "Choose a branch from the list, or add a new one.",
         duration: 2000,
       });
       return;
@@ -114,7 +96,9 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
         role_id: roleId,
         status: status,
       });
-      notify.success("User created successfully");
+      notify.success("User added", {
+        description: `Invitation sent to ${email}. Ask them to check the spam folder too.`,
+      });
       handleClose();
     } catch (error: any) {
       console.error("Failed to create user:", error);
@@ -125,25 +109,6 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
     }
   };
 
-  // Filter branches based on input and selected department
-  const branches = useMemo(() => {
-    const list = branchDepartments.map((d) => d.branch);
-    return Array.from(new Set(list)).filter((b) =>
-      b.toLowerCase().includes(branchName.toLowerCase()),
-    );
-  }, [branchDepartments, branchName]);
-
-  const handleBranchSelect = (branchVal: string) => {
-    setBranchName(branchVal);
-    // When branch is selected, update departmentId if it changes
-    const deptMatch = branchDepartments.find(
-      (d) => d.branch === branchVal && d.department === departmentName,
-    );
-    if (deptMatch) {
-      setDepartmentUuid(deptMatch.id);
-    }
-    setShowBranchDropdown(false);
-  };
 
   const roleOptions = useMemo(() => {
     if (!rolesData?.roles) return [];
@@ -160,16 +125,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
     resetForm();
   }
 
-  // Calculate position options based on department
-  const positionOptions = useMemo(() => {
-    if (!departmentName || !DEPARTMENT_POSITIONS[departmentName]) {
-      return [];
-    }
-    return DEPARTMENT_POSITIONS[departmentName].map(pos => ({
-      value: pos,
-      label: pos,
-    }));
-  }, [departmentName]);
+  const positionOptions = positionOptionsFor(departmentName);
 
   return (
     <>
@@ -255,13 +211,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   <label className="text-sm font-medium">Department</label>
                 </div>
                 <AppSelect
-                  options={[
-                    { value: "", label: "Select department" },
-                    { value: "Marketing", label: "Marketing" },
-                    { value: "Sales", label: "Sales" },
-                    { value: "Human Resources", label: "Human Resources" },
-                    { value: "Customer Support", label: "Customer Support" },
-                  ]}
+                  options={DEPARTMENT_OPTIONS}
                   placeholder="Select department"
                   value={departmentName}
                   onChange={(e) => {
@@ -276,39 +226,15 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
               </div>
 
               {/* Branch */}
-              <div className="relative">
-                <label className="text-sm font-medium">Branch</label>
-                <div className="relative mt-2">
-                  <AppInput
-                    startIcon={<Search size={18} />}
-                    placeholder="Search for a Branch"
-                    value={branchName}
-                    onChange={(e) => {
-                      setBranchName(e.target.value);
-                      setShowBranchDropdown(true);
-                    }}
-                    onFocus={() => setShowBranchDropdown(branchName.length > 0)}
-                    onBlur={() =>
-                      setTimeout(() => setShowBranchDropdown(false), 200)
-                    }
-                    isBgWhite
-                    autoComplete="off"
-                  />
-                  {showBranchDropdown && branches.length > 0 && (
-                    <div className="absolute z-1500 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {branches.map((b, i) => (
-                        <div
-                          key={i}
-                          onClick={() => handleBranchSelect(b)}
-                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="text-gray-900">{b}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <BranchPicker
+                department={departmentName}
+                value={branchName}
+                selectedId={departmentUuid}
+                onChange={(branch, id) => {
+                  setBranchName(branch);
+                  setDepartmentUuid(id);
+                }}
+              />
 
               {/* Level */}
               <div>
@@ -316,11 +242,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   <label className="text-sm font-medium">Level</label>
                 </div>
                 <AppSelect
-                  options={[
-                    { value: "Admin", label: "Admin" },
-                    { value: "Manager", label: "Manager" },
-                    { value: "Staff", label: "Staff" },
-                  ]}
+                  options={LEVEL_OPTIONS}
                   placeholder="Select level"
                   value={level}
                   onChange={(e) => setLevel(e.target.value as string)}

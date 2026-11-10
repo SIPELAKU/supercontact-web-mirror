@@ -1,116 +1,101 @@
 "use client";
 
-import { KeyPersonType, Status } from "@/lib/types/Company";
 import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import { ArrowRight, Link as LinkIcon, Mail, MapPin, MoreVertical, Phone } from "lucide-react";
-import KeyPeopleCardSkeleton from "../company/detail-company/KeyPeopleCardSkeleton";
+import Link from "next/link";
+import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
+import type { CompanyProfileKeyPerson } from "@/lib/types/company-profile";
+import { departmentLine, personInitials, presenceBadge, whatsappLink } from "@/lib/utils/keyPeople";
+import { ContactLine } from "./ContactLine";
 
 interface KeyPeopleCardProps {
-  person: KeyPersonType;
-  isLoading: boolean;
+  person: CompanyProfileKeyPerson;
 }
 
-function statusDotClass(status: Status) {
-  if (status === "online") return "bg-green-500";
-  if (status === "idle") return "bg-yellow-400";
-  return "bg-slate-300";
-}
-
-function badgeClass(tone: KeyPersonType["badgeTone"]) {
-  switch (tone) {
-    case "red":
-      return "bg-red-100 text-red-700";
-    case "green":
-      return "bg-green-100 text-green-700";
-    case "purple":
-      return "bg-purple-100 text-purple-700";
-    case "orange":
-      return "bg-orange-100 text-orange-700";
-    case "cyan":
-      return "bg-cyan-100 text-cyan-700";
-    case "blue":
-    default:
-      return "bg-blue-100 text-blue-700";
-  }
-}
-
-export default function KeyPeopleCard({ person, isLoading }: KeyPeopleCardProps) {
-  if (isLoading) return <KeyPeopleCardSkeleton />;
+// One person on Settings › Company Profile › Key People: who they are, where
+// they sit, how to reach them. Only what the API knows is shown.
+export default function KeyPeopleCard({ person }: KeyPeopleCardProps) {
+  const where = departmentLine(person.department, person.branch) || person.location || "";
+  const presence = presenceBadge(person.presence);
   return (
-    <Card className="rounded-2xl! border border-slate-200 shadow-sm!">
-      <CardContent className="p-0!">
-        {/* Top */}
-        <div className="flex items-start justify-between gap-3 p-4">
-          <div className="flex items-start gap-3">
-            <div className="relative">
-              <Avatar src={person.avatarUrl} alt={person.name} className="h-15! w-15!">
-                {person.initials}
-              </Avatar>
-              <span className={["absolute -bottom-0.5 right-1 h-3.5 w-3.5 rounded-full border-2 border-white", statusDotClass(person.status)].join(" ")} />
-            </div>
-
-            <div className="min-w-0">
-              <Typography className="truncate text-sm! font-semibold! text-slate-900!">{person.name}</Typography>
-
-              <button className="truncate text-left text-xs font-medium text-[#5479EE] hover:underline">{person.title}</button>
-
-              <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="truncate">{person.location}</span>
-              </div>
-            </div>
+    <Card className="flex flex-col rounded-2xl! border border-slate-200 shadow-sm!">
+      <CardContent className="flex flex-1 flex-col p-0!">
+        <div className="flex items-start gap-3 p-4">
+          <div className="relative shrink-0">
+            <Avatar src={person.avatarUrl || undefined} alt={person.name} className="h-15! w-15!">
+              {personInitials(person.name)}
+            </Avatar>
+            {presence && (
+              <span
+                title={presence.label}
+                aria-label={presence.label}
+                className={`absolute -bottom-0.5 right-1 h-3.5 w-3.5 rounded-full border-2 border-white ${presence.dot}`}
+              />
+            )}
           </div>
-
-          <IconButton size="small">
-            <MoreVertical className="h-4 w-4 text-slate-500" />
-          </IconButton>
+          <div className="min-w-0">
+            <Typography className="truncate text-sm! font-semibold! text-slate-900!">{person.name}</Typography>
+            {person.title &&
+              (person.departmentId ? (
+                <Link
+                  href={`/settings/organization/${person.departmentId}`}
+                  title="Open this department"
+                  className="block truncate text-xs font-medium text-[#5479EE] hover:underline"
+                >
+                  {person.title}
+                </Link>
+              ) : (
+                <p className="truncate text-xs font-medium text-[#5479EE]">{person.title}</p>
+              ))}
+            {where && (
+              <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{where}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Contacts */}
         <div className="px-4 pb-3">
           {person.email && (
-            <div className="flex items-center gap-2 py-1 text-[12px] text-slate-600">
-              <Mail className="h-4 w-4 text-slate-400" />
-              <span className="truncate">{person.email}</span>
-            </div>
+            <ContactLine icon={<Mail className="h-4 w-4" />} value={person.email} href={`mailto:${person.email}`} copyLabel="Copy email" />
           )}
-
           {person.phone && (
-            <div className="flex items-center gap-2 py-1 text-[12px] text-slate-600">
-              <Phone className="h-4 w-4 text-slate-400" />
-              <span className="truncate">{person.phone}</span>
-            </div>
-          )}
-
-          {person.profileLinkLabel && (
-            <div className="flex items-center gap-2 py-1 text-[12px] text-slate-600">
-              <LinkIcon className="h-4 w-4 text-slate-400" />
-              <span className="truncate">{person.profileLinkLabel}</span>
-            </div>
+            <ContactLine
+              icon={<Phone className="h-4 w-4" />}
+              value={person.phone}
+              href={whatsappLink(person.phone) ?? `tel:${person.phone}`}
+              copyLabel="Copy phone number"
+            />
           )}
         </div>
 
-        <div className="flex justify-center">
-          <Divider className="w-[93%] " />
-        </div>
+        {person.description && (
+          <>
+            <div className="flex justify-center">
+              <Divider className="w-[93%]" />
+            </div>
+            <div className="p-4">
+              <Typography className="line-clamp-3 text-xs! leading-relaxed! text-slate-600!">{person.description}</Typography>
+            </div>
+          </>
+        )}
 
-        {/* Description */}
-        <div className="p-4">
-          <Typography className="text-xs! leading-relaxed! text-slate-600!">{person.description}</Typography>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 p-4">
-          <span className={["rounded-full px-3 py-1 text-[11px] font-semibold", badgeClass(person.badgeTone)].join(" ")}>{person.badgeLabel}</span>
-
-          <button className="flex items-center gap-1 text-xs font-medium text-[#5479EE] hover:underline">
+        <div className="mt-auto flex items-center justify-between gap-3 p-4">
+          {person.level ? (
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700">{person.level}</span>
+          ) : (
+            <span />
+          )}
+          <Link
+            href={`/settings/general/company/key-people/${encodeURIComponent(person.id)}`}
+            className="flex items-center gap-1 text-xs font-medium text-[#5479EE] hover:underline"
+          >
             Full Profile <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </CardContent>
     </Card>

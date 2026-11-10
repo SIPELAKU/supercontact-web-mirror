@@ -131,6 +131,35 @@ function mapCompanyProfilePayload(payload: unknown): CompanyProfileData {
   };
 }
 
+function mapKeyPerson(person: Record<string, any>, index = 0): CompanyProfileKeyPerson {
+  return {
+    id: String(person.manage_user_id ?? person.id ?? person.user_id ?? index + 1),
+    name: firstString(person.full_name, person.fullname, person.name) || "Unknown",
+    title: firstString(
+      person.manage_user_position,
+      person.position,
+      person.manage_user_level,
+      person.title,
+      person.role
+    ),
+    avatarUrl: firstString(person.avatar_url, person.avatar),
+    email: firstString(person.email),
+    phone: firstString(person.phone),
+    location: firstString(person.department_branch, person.location, person.city),
+    description: firstString(person.bio, person.about, person.description),
+    level: firstString(person.manage_user_level),
+    department: firstString(person.department_name),
+    branch: firstString(person.department_branch),
+    employeeCode: firstString(person.employee_code),
+    departmentId: firstString(person.department_id),
+    presence: firstString(person.presence),
+    country: firstString(person.country),
+    language: firstString(person.language),
+    timezone: firstString(person.timezone),
+    joinedAt: firstString(person.joined_at),
+  };
+}
+
 function mapKeyPeoplePayload(payload: unknown): CompanyProfileKeyPerson[] {
   const raw = asObject(payload);
   const list =
@@ -139,24 +168,7 @@ function mapKeyPeoplePayload(payload: unknown): CompanyProfileKeyPerson[] {
     (Array.isArray(raw.data) && raw.data) ||
     [];
 
-  return list
-    .map((item: unknown) => asObject(item))
-    .map((person: Record<string, any>, index: number) => ({
-      id: String(person.manage_user_id ?? person.id ?? person.user_id ?? index + 1),
-      name: firstString(person.full_name, person.fullname, person.name) || "Unknown",
-      title: firstString(
-        person.manage_user_position,
-        person.position,
-        person.manage_user_level,
-        person.title,
-        person.role
-      ),
-      avatarUrl: firstString(person.avatar_url, person.avatar),
-      email: firstString(person.email),
-      phone: firstString(person.phone),
-      location: firstString(person.department_branch, person.location, person.city),
-      description: firstString(person.about, person.description),
-    }));
+  return list.map((item: unknown, index: number) => mapKeyPerson(asObject(item), index));
 }
 
 function mapOrganizationPayload(payload: unknown): CompanyProfileOrganizationStructure {
@@ -208,17 +220,36 @@ export async function fetchCompanyProfile(token: string): Promise<CompanyProfile
   return mapCompanyProfilePayload(payload);
 }
 
+/** GET /internal/company-profile/key-people: one page, the search done by the
+ *  API (name, email or branch), and how many people match in total. */
+export async function fetchKeyPeoplePage(
+  token: string,
+  { page = 1, limit = 12, q = "" }: { page?: number; limit?: number; q?: string } = {}
+): Promise<{ people: CompanyProfileKeyPerson[]; total: number }> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (q.trim()) params.set("q", q.trim());
+  const payload = await authorizedGet(`${baseUrl}/internal/company-profile/key-people?${params}`, token);
+  const people = mapKeyPeoplePayload(payload);
+  return { people, total: firstNumber(asObject(payload).total) ?? people.length };
+}
+
 export async function fetchCompanyProfileKeyPeople(
   token: string,
   page: number = 1,
   limit: number = 12
 ): Promise<CompanyProfileKeyPerson[]> {
+  return (await fetchKeyPeoplePage(token, { page, limit })).people;
+}
+
+/** GET /internal/company-profile/key-people/{manage_user_id}. */
+export async function fetchKeyPersonDetail(token: string, id: string): Promise<CompanyProfileKeyPerson> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const payload = await authorizedGet(
-    `${baseUrl}/internal/company-profile/key-people?page=${page}&limit=${limit}`,
+    `${baseUrl}/internal/company-profile/key-people/${encodeURIComponent(id)}`,
     token
   );
-  return mapKeyPeoplePayload(payload);
+  return mapKeyPerson(asObject(payload));
 }
 
 export async function fetchCompanyProfileOrganizationStructure(

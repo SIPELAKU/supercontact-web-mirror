@@ -1,97 +1,88 @@
 "use client";
 
+import { Suspense } from "react";
+import Pagination from "@mui/material/Pagination";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import KeyPeopleCard from "@/components/omnichannel/key-people/KeyPeopleCard";
+import KeyPeopleCardSkeleton from "@/components/omnichannel/company/detail-company/KeyPeopleCardSkeleton";
 import InputSearch from "@/components/ui/input-search";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
-import { useAuth } from "@/lib/context/AuthContext";
-import { fetchCompanyProfileKeyPeople } from "@/lib/api/company-profile";
-import { KeyPersonType } from "@/lib/types/Company";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { useKeyPeople } from "@/lib/hooks/useKeyPeople";
+import { KEY_PEOPLE_PAGE_SIZE, keyPeoplePageCount } from "@/lib/utils/keyPeople";
 
-export default function SettingsCompanyKeyPeoplePage() {
-  const { getToken } = useAuth();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [people, setPeople] = useState<KeyPersonType[]>([]);
-
+// The company's active Admins and Managers, to look up and contact. Read only:
+// people are managed in Settings › Users, not here.
+function KeyPeopleContent() {
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const pathname = usePathname();
 
-  const handleSearch = (term: string) => {
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  // The API searches; one request a second at most while typing.
+  const q = useDebounce(searchParams.get("q") ?? "", 1000);
+  const { data, isLoading, isError } = useKeyPeople(page, q);
+  const people = data?.people ?? [];
+  const total = data?.total ?? 0;
+
+  const setParams = (changes: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-
-    if (term) {
-      params.set("q", term);
-    } else {
-      params.delete("q");
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
     }
-
     replace(`${pathname}?${params.toString()}`);
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadKeyPeople = async () => {
-      setIsLoading(true);
-      try {
-        const token = await getToken();
-        const result = await fetchCompanyProfileKeyPeople(token, 1, 12);
-        if (!isMounted) return;
-        const mapped: KeyPersonType[] = result.map((person) => ({
-          id: person.id,
-          name: person.name,
-          title: person.title || "-",
-          location: person.location || "-",
-          avatarUrl: person.avatarUrl,
-          status: "online",
-          email: person.email,
-          phone: person.phone,
-          description: person.description || "No description provided.",
-          badgeLabel: person.title || "Team Member",
-          badgeTone: "blue",
-        }));
-        setPeople(mapped);
-      } catch (error) {
-        if (!isMounted) return;
-        setPeople([]);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
+  return (
+    <>
+      <div className="mt-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <InputSearch
+          placeholder="Search by name, email or branch"
+          handleSearch={(term) => setParams({ q: term || null, page: null })}
+          searchParams={searchParams}
+        />
+        <p className="text-xs text-slate-500">Showing active Admins and Managers.</p>
+      </div>
 
-    loadKeyPeople();
-    return () => {
-      isMounted = false;
-    };
-  }, [getToken]);
+      {isError ? (
+        <p className="mt-6 text-sm text-red-500">Key people could not be loaded. Try again later.</p>
+      ) : isLoading ? (
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <KeyPeopleCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : people.length === 0 ? (
+        <p className="mt-6 text-sm text-slate-500">
+          {q ? `Nobody matches "${q}".` : "No active Admins or Managers yet."}
+        </p>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {people.map((person) => (
+            <KeyPeopleCard key={person.id} person={person} />
+          ))}
+        </div>
+      )}
 
-  const searchQuery = searchParams.get("q")?.toLowerCase() ?? "";
+      {total > KEY_PEOPLE_PAGE_SIZE && (
+        <div className="mt-6 flex justify-center">
+          <Pagination
+            count={keyPeoplePageCount(total)}
+            page={page}
+            onChange={(_, next) => setParams({ page: next > 1 ? String(next) : null })}
+            color="primary"
+            size="small"
+            showFirstButton
+            showLastButton
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
-  const filteredKeyPeople = useMemo(() => {
-    if (!searchQuery) return people;
-
-    return people.filter((p) => {
-      const haystack = [
-        p.name,
-        p.title,
-        p.location,
-        p.email,
-        p.phone,
-        p.description,
-        p.badgeLabel,
-        p.profileLinkLabel,
-        p.status,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(searchQuery);
-    });
-  }, [people, searchQuery]);
-
+export default function SettingsCompanyKeyPeoplePage() {
   return (
     <div>
       <SettingsPageHeader
@@ -102,26 +93,9 @@ export default function SettingsCompanyKeyPeoplePage() {
           { label: "Key People" },
         ]}
       />
-
-      <div className="mt-4 flex flex-row items-center justify-between">
-        <Suspense>
-          <InputSearch placeholder="Search People" handleSearch={handleSearch} searchParams={searchParams} />
-        </Suspense>
-
-        {/*
-          "Add People" / "Export" buttons removed: the backend only exposes
-          read-only key-people endpoints (GET /company-profile/key-people[/{id}]);
-          entries are derived from managed users, so there is no POST to wire an
-          add flow to and no export endpoint. Re-add these buttons once the API
-          supports those operations.
-        */}
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {filteredKeyPeople.map((item) => (
-          <KeyPeopleCard key={item.id} person={item} isLoading={isLoading} />
-        ))}
-      </div>
+      <Suspense>
+        <KeyPeopleContent />
+      </Suspense>
     </div>
   );
 }

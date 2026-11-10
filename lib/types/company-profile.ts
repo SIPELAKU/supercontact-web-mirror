@@ -32,6 +32,21 @@ export interface CompanyProfileKeyPerson {
   phone?: string;
   location?: string;
   description?: string;
+  /** Admin or Manager. */
+  level?: string;
+  department?: string;
+  branch?: string;
+  employeeCode?: string;
+  /** The department record, for its page in Settings › Organization. */
+  departmentId?: string;
+  /** "online" | "away" | "offline" from the Workspace; empty for someone who is not an agent. */
+  presence?: string;
+  /** From the person's profile; only the detail endpoint sends these. */
+  country?: string;
+  language?: string;
+  /** IANA, e.g. "Asia/Jakarta". */
+  timezone?: string;
+  joinedAt?: string;
 }
 
 export interface CompanyProfileOrganizationStructure {

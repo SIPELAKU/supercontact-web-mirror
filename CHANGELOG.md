@@ -9,6 +9,162 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.141.0] - 2026-11-10
+
+### Detail Versi 1.141.0
+
+#### ✨ Halaman Profil Key People Seperti My Profile
+
+- **Deskripsi:**
+  - **Masalah:** panel Full Profile hanya mengulang isi kartu Key People.
+  - **Perbaikan:**
+    - **Full Profile** membuka halaman profil sendiri (`/settings/general/company/key-people/{id}`) dengan tampilan seperti My Profile: banner, foto besar, nama dengan status online, jabatan dan departemen, cabang dan negara, serta tanggal bergabung.
+    - Bagian Personal Information berisi level, departemen dan cabang, kode karyawan, negara, dan bahasa (ABOUT), serta telepon ke WhatsApp, email, dan **jam lokal** orang itu (CONTACTS), ditambah bio. Email dan telepon tetap bisa disalin dengan ikon.
+    - Hanya untuk dilihat: tidak ada tombol Settings atau edit. Baris yang datanya kosong tidak ditampilkan. Orang yang tidak ditemukan mendapat pesan dan link kembali ke Key People.
+    - Di halaman yang sempit karena menu Settings, ABOUT dan CONTACTS bertumpuk supaya email dan telepon tidak terpotong.
+    - Di HP, label ada di atas nilainya dan jarak tepi kartu lebih kecil, jadi email, telepon, dan departemen tampil utuh tanpa geser ke samping. My Profile ikut membaik karena memakai komponen yang sama, dan tampilan di layar lebar tidak berubah.
+    - Panel samping Full Profile yang lama dihapus.
+  - **Technical Notes:**
+    - My Profile dipecah menjadi komponen bersama `components/profile/ProfileHeroCard.tsx` dan `ProfileInfoCard.tsx`. Tampilan My Profile tidak berubah
+    - `lib/utils/profileFormat.ts`: `formatJoinedDate` (kini juga aman untuk tanggal yang tidak terbaca), `localTime`
+    - `components/omnichannel/key-people/KeyPersonProfileClient.tsx`, `CopyIconButton.tsx`
+    - Field baru dari API 1.169.0: `country`, `language`, `timezone`, `joined_at`
+  - **Rilis:** butuh API 1.169.0. Dengan API lama halaman tetap berjalan tanpa negara, bahasa, jam lokal, dan tanggal bergabung.
+
+- **🧪 Testing:** Vitest 4 tes helper (semua 1110 lulus), 9 dari 10 mutasi tertangkap (satu sisanya pengaman kosong yang hasilnya sama karena zona waktu kosong juga ditolak `Intl`), tsc dan lint bersih. Chrome dengan API mock: 14 cek lulus, termasuk My Profile yang menampilkan semua isi sebelumnya, ditambah 9 cek di lebar HP 390 px. Belum dites manual.
+
+---
+
+## [1.140.0] - 2026-11-10
+
+### Detail Versi 1.140.0
+
+#### ✨ Header Widget Menampilkan Perusahaan Saat Ditangani Agen
+
+- **Deskripsi:**
+  - **Masalah:** setelah agen menerima chat, header widget masih menampilkan foto dan nama bot, sehingga pelanggan mengira masih bicara dengan bot.
+  - **Perbaikan:** setelah agen Accept, foto dan nama di header berganti menjadi logo dan nama perusahaan, juga setelah reload. Perusahaan tanpa logo menampilkan huruf awal namanya. Saat chat baru dimulai, header kembali ke bot. Tombol bulat widget tetap memakai foto bot. API lama yang belum mengirim data perusahaan tidak mengubah header.
+  - **Technical Notes:** `lib/utils/widgetHeader.ts` (`headerIdentity`), `renderHeaderIdentity` di `widget/src/widget.ts`, field `company_name` dan `company_logo_url` di `GET /public/widget/config`.
+  - **Rilis:** butuh API 1.168.0.
+
+- **🧪 Testing:** Vitest 5 tes helper, mutasi tertangkap semua. Chrome dengan API mock: 8 cek lulus. Belum dites manual.
+
+---
+
+## [1.139.0] - 2026-11-10
+
+### Detail Versi 1.139.0
+
+#### ✨ Key People: Foto, Telepon, Status, dan Link Departemen
+
+- **Deskripsi:**
+  - **Perbaikan:**
+    - Foto tampil kalau ada, dan inisial kalau tidak ada.
+    - Telepon bisa diklik untuk membuka WhatsApp (`0812…` diubah ke `62812…`), dengan ikon salin.
+    - Titik status dari Workspace: hijau Online, kuning Away, abu-abu Offline. Orang yang bukan agen tidak punya titik.
+    - Jabatan membuka halaman departemennya di Settings › Organization.
+    - Panel Full Profile menampilkan status, WhatsApp, link departemen, dan About yang sekarang terisi.
+  - **Technical Notes:** `whatsappLink` dan `presenceBadge` di `lib/utils/keyPeople.ts`, field `department_id`, `phone`, `avatar_url`, `presence`, dan `bio` dari API.
+  - **Rilis:** butuh API 1.168.0. Dengan API lama halaman tetap berjalan tanpa data baru itu.
+
+- **🧪 Testing:** Vitest untuk helper dan mapper, mutasi tertangkap semua. Chrome dengan API mock: 8 cek lulus. Belum dites manual.
+
+---
+
+## [1.138.0] - 2026-11-10
+
+### Detail Versi 1.138.0
+
+#### ✨ Kirim Ulang Undangan User
+
+- **Deskripsi:**
+  - **Masalah:** kalau email undangan tidak sampai, user baru tidak punya cara masuk, karena password-nya ada di email itu.
+  - **Perbaikan:** di Settings › Users, menu aksi baris user berstatus **Pending** memuat **Resend invitation**. Email baru dikirim dengan link dan password baru, dan link lama tidak berlaku lagi. User yang sudah aktif tidak mendapat pilihan ini.
+  - **Technical Notes:** `resendInvitation` di `lib/api/manage-users.ts`, `useResendInvitation`, prop `onResendInvitation` di `TableListUsers`, `POST /manage-users/{id}/resend-invitation`.
+  - **Rilis:** butuh API 1.168.0.
+
+- **🧪 Testing:** Chrome dengan API mock: 4 cek lulus (Pending mendapat pilihan, Active tidak, request terkirim, pesan sukses menyebut email). Belum dites manual.
+
+---
+
+## [1.137.1] - 2026-11-10
+
+### Detail Versi 1.137.1
+
+#### 🐛 Badge Notifikasi di Tombol Widget Tidak Terpotong Lagi
+
+- **Deskripsi:**
+  - **Root Cause:** tombol bulat widget memakai `overflow: hidden` supaya foto bot ikut bulat. Badge merah diletakkan sedikit di luar lingkaran, jadi ikut terpotong.
+  - **Perbaikan:** sudut bulat dipindah ke foto di dalam tombol, `overflow: hidden` di tombol dihapus, dan padding bawaan tombol dibuang supaya foto tetap memenuhi lingkaran. Badge tampil utuh, termasuk angka dua digit dan widget di kiri bawah. Bentuk tombol tidak berubah.
+  - **Technical Notes:** CSS `.bubble` dan `.bubble img` di `widget/src/widget.ts`.
+
+- **🧪 Testing:** Chrome dengan API mock: 5 cek. Sebelum diperbaiki kelimanya gagal, sesudahnya kelimanya lulus (tombol dengan foto, tanpa foto, angka 12, dan posisi kiri bawah), dan foto bot tetap bulat penuh. Belum dites manual.
+
+---
+
+## [1.137.0] - 2026-11-10
+
+### Detail Versi 1.137.0
+
+#### ✨ Halaman Key People Bisa Dipakai Sepenuhnya
+
+- **Deskripsi:**
+  - **Masalah:** di Settings › Company Profile › Key People, tombol Full Profile, ⋮, dan jabatan tidak melakukan apa pun, titik "online" selalu hijau, setiap kartu bertuliskan "No description provided.", dan hanya 12 orang pertama yang tampil dan bisa dicari.
+  - **Perbaikan:**
+    - Tombol ⋮ dihapus (keputusan BO). Jabatan tampil sebagai teks biasa, dan titik status palsu dihapus. Keduanya menunggu data BE.
+    - Email bisa diklik untuk menulis email, dengan ikon salin di sebelahnya. Ikon berubah menjadi centang sebentar setelah disalin. Telepon juga begitu, setelah BE mengirimnya.
+    - Kartu menampilkan inisial nama kalau tidak ada foto, departemen dan cabang ("Sales · HO"), dan level (Admin atau Manager). Bio hanya tampil kalau ada isinya.
+    - **Full Profile** membuka panel profil, hanya lihat: level, departemen, cabang, kode karyawan, email, dan About. Foto, telepon, dan bio otomatis ikut tampil setelah BE mengirimnya.
+    - Pencarian (nama, email, atau cabang) dan halaman dilakukan API, 12 orang per halaman. Saat mengetik, request dikirim paling cepat 1 detik sekali.
+    - Keterangan "Showing active Admins and Managers." di atas daftar.
+  - **Technical Notes:**
+    - `lib/api/company-profile.ts`: `fetchKeyPeoplePage` (dengan `total` dan `q`), `fetchKeyPersonDetail`, satu mapper `mapKeyPerson`
+    - `lib/hooks/useKeyPeople.ts`: `useKeyPeople`, `useKeyPersonDetail` (TanStack Query)
+    - `lib/utils/keyPeople.ts`: `personInitials`, `keyPeoplePageCount`, `departmentLine`
+    - `components/omnichannel/key-people/ContactLine.tsx`, `KeyPersonProfileDrawer.tsx`
+  - **Rilis:** tidak perlu API baru. Foto, telepon, link jabatan, dan status online menyusul setelah BE menambah field.
+
+- **🧪 Testing:** Vitest 10 tes (semua 1096 lulus), 12 mutasi tertangkap, tsc dan lint bersih. Chrome dengan API mock: 18 cek lulus. Belum dites manual.
+
+---
+
+## [1.136.0] - 2026-11-10
+
+### Detail Versi 1.136.0
+
+#### ✨ Kolom Branch di Add User dan Edit User
+
+- **Deskripsi:**
+  - **Masalah:** daftar branch baru muncul setelah mengetik, jadi saat diklik kolomnya terlihat rusak. Departemen yang belum punya branch tidak bisa dipakai dari form ini.
+  - **Perbaikan:**
+    - Saat kolom Branch diklik, branch departemen terpilih langsung tampil (maksimal 10). Mengetik menyaring daftar, dan sisa yang tersembunyi ditulis "Type to find N more".
+    - Departemen tanpa branch menampilkan "No branches in {department} yet".
+    - Tombol **+ Add branch** di bawah daftar membuka kolom nama. **Add** (atau Enter) membuat branch untuk departemen itu dan langsung memilihnya. Nama yang sudah ada ditolak tanpa mengirim request.
+    - Tanpa izin `departments:manage` tombol itu diganti "Ask an admin to add a branch in Settings › Organization."
+    - Kolom Branch nonaktif sampai Department dipilih. Nama branch yang diketik persis sama dengan branch yang ada langsung dianggap terpilih.
+  - **Technical Notes:**
+    - Komponen bersama `components/users/users-modal/BranchPicker.tsx`, dipakai Add User dan Edit User
+    - `lib/utils/branchOptions.ts`: `branchOptions`, `findBranch`, `hasBranches`
+    - `components/users/users-modal/userFormOptions.ts`: daftar Department, Level, dan Position yang tadinya disalin di dua form
+    - Branch baru = data departemen baru (`POST /departments` dengan `department` dan `branch`), karena nama departemen di API hanya empat pilihan tetap
+  - **Rilis:** tidak perlu API baru.
+
+- **🧪 Testing:** Vitest 9 tes helper (semua 1086 lulus), 12 mutasi tertangkap, tsc dan lint bersih. Chrome dengan API mock: 18 cek lulus di Add User. Edit User memakai komponen yang sama, tapi belum dicek di browser. Belum dites manual.
+
+---
+
+## [1.135.1] - 2026-11-10
+
+### Detail Versi 1.135.1
+
+#### 💄 Pesan Sukses Add User Menyebut Email Undangan
+
+- **Deskripsi:** setelah user ditambahkan, pesan sukses berbunyi "Invitation sent to {email}. Ask them to check the spam folder too.", supaya admin tahu user baru harus membuka email undangan. Pesan saat branch belum dipilih dari daftar juga diperjelas.
+
+- **🧪 Testing:** dicek di Chrome dengan API mock (bagian dari cek Add User di 1.136.0). Belum dites manual.
+
+---
+
 ## [1.135.0] - 2026-11-09
 
 ### Detail Versi 1.135.0

@@ -5,6 +5,7 @@ import type {
     BlueprintInstallReport,
     BlueprintSummary,
     InstalledBlueprint,
+    PipelineStagePlanItem,
 } from "@/lib/types/IndustryBlueprint";
 
 function getFullUrl(path: string): string {
@@ -63,6 +64,8 @@ export async function installBlueprint(
         modules?: string[] | null;
         variables?: Record<string, string>;
         dry_run: boolean;
+        /** Sent, identical, with the preview and the install. */
+        pipeline_stage_plan?: PipelineStagePlanItem[];
     }
 ): Promise<{ data: BlueprintInstallReport }> {
     const res = await fetchWithTimeout(

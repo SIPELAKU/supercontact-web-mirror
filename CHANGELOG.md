@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.144.0] - 2026-11-20
+
+### Detail Versi 1.144.0
+
+#### ✨ Setup Cepat: Pilih Tahapan Template Mana yang Mengganti Tahapan Lama
+
+- **Deskripsi:**
+  - **Masalah:** memasang modul "Tahapan penjualan" dari blueprint selalu menambah tahapan baru setelah tahapan yang sudah ada. Perusahaan yang sudah berjalan jadi punya dua set tahapan (misalnya Prospect dan Prospek), dan sejak batas 8 tahapan, tahapan template sering tidak terpasang sama sekali.
+  - **Perbaikan:**
+    - Di langkah **Isi data & modul**, kalau "Tahapan penjualan" dicentang, muncul daftar tahapan dari template dengan penjelasan singkat tiga pilihan. Tiap tahapan punya tiga tombol: **Ganti nama** (salah satu tahapan Anda diberi nama dari template; deal di dalamnya tetap), **Tambah baru**, atau **Lewati**. Kalau Ganti nama dipilih, muncul pilihan "Tahapan Anda yang diganti" dan hasilnya ditulis di bawahnya, misalnya “Prospect” → “Prospek” · 12 deal tetap di dalamnya. Tahapan menang/kalah langsung menggantikan Closed - Won/Closed - Lost tanpa perlu memilih.
+    - Di bawahnya ada **Hasil pipeline Anda**: urutan tahapan setelah dipasang, masing-masing bertanda **Nama baru** (dengan nama lamanya), **Baru**, atau **Tetap**, beserta jumlah "X dari maks. 8 tahapan". Kartunya memakai warna tahapan seperti di board: tahapan yang diganti namanya tetap memakai warnanya, tahapan baru berwarna abu-abu (warna bawaan API) dan bisa diganti di halaman Pipeline. Pilihan "Tahapan Anda yang diganti" juga memakai titik warna.
+    - Pilihan awal otomatis: tahapan menang/kalah template mengganti Closed - Won/Closed - Lost, tahapan pertama mengganti tahapan awal (Prospect), tahapan yang namanya sudah ada dipasangkan ke tahapan itu, dan sisanya ditambahkan selama totalnya tidak lebih dari 8. User tinggal mengubah.
+    - Aturan: tahapan menang/kalah hanya bisa mengganti tahapan menang/kalah; satu tahapan lama hanya bisa dipilih satu baris (yang sudah dipakai tampil "dipakai “nama tahapan template”"); nama hasil akhir tidak boleh dobel; nama mengikuti data yang diisi di atas (misalnya `{{PRODUK}}`).
+    - Tahapan non-aktif ikut dihitung dalam batas 8. Lebih dari 8: jumlahnya merah, ada penjelasan, dan **Lihat pratinjau** dikunci. Perusahaan yang sudah punya 8 tahapan atau lebih hanya bisa memakai Ganti nama dan Lewati.
+    - **Pratinjau** menampilkan rincian per tahapan (ganti nama "Prospect → Prospek", tahapan baru, tidak dipasang) dengan error dari API di baris tahapan yang bersangkutan. **Ubah pilihan** kembali ke langkah 2 dengan semua pilihan tetap ada.
+    - **Pasang** mengirim pilihan yang sama persis dengan pratinjau. Sebelum memasang, tahapan perusahaan dimuat ulang; kalau ada yang berubah sejak pratinjau (misalnya dihapus admin lain), pemasangan dibatalkan dan user diarahkan kembali ke langkah 2 dengan penjelasan per baris.
+    - Rencana yang isinya hanya ganti nama tetap bisa dipasang (tombol "Pasang perubahan tahapan").
+    - Perusahaan yang belum punya tahapan: pesan "Atur tahapan pipeline dulu" dengan link ke Pipeline, dan modul tidak bisa dicentang. User tanpa akses pipeline, atau yang bukan Admin (API hanya memetakan tahapan untuk Admin): pesan dan modul tidak bisa dicentang.
+    - Kalau API menemukan kesalahan di rencana saat pratinjau (API tidak menulis apa pun bila ada satu saja yang salah), error tampil di rincian, termasuk error untuk seluruh rencana seperti batas 8 tahapan, dan tombol **Pasang** dikunci sampai pilihan diperbaiki.
+    - Kalau server tidak mengirim daftar tahapan template, bagian ini menjelaskannya dan modul tetap bisa dipasang dengan cara lama.
+  - **Technical Notes:**
+    - `components/admin/blueprints/stageMappingRules.ts`: `readBlueprintStages`, `renderStageName` (aturan sama dengan `render_template` BE), `initialPlan`, `allowedTargets`, `freeTargets`, `createBlockReason`, `checkPlan`, `resultPipeline`, `describePlan`, `renameCount`
+    - `StageMappingSection.tsx` (controlled), `StageMappingPreview.tsx`. Rencana disimpan di state `BlueprintWizard` (bukan di section) supaya tidak hilang saat pindah ke pratinjau; di-reset saat blueprint diganti atau modul dilepas. Tidak disimpan di browser.
+    - Body install: `pipeline_stage_plan: [{ index, action: "assign" | "create" | "skip", stage_id }]`, dikirim hanya kalau modul dicentang dan API mengirim `pipeline_stages` di detail blueprint
+    - `usePipelineStages(includeInactive, enabled)`; `previewCanInstall`/`installButtonLabel` menghitung ganti nama
+  - **Rilis:** butuh API 1.171.1 (sudah di DEV): detail blueprint mengirim `pipeline_stages`, dan rencana yang hanya ganti nama tetap diterima walau perusahaan sudah lebih dari 8 tahapan. Dengan API lebih lama, bagian ini menampilkan penjelasan dan pemasangan berjalan dengan cara lama.
+
+- **🧪 Testing:** Vitest semua 1199 lulus (tes baru untuk aturan pemetaan, error per tahapan, dan tombol Pasang), 25 dari 26 mutasi aturan tertangkap (satu sisanya tidak mengubah perilaku, karena baris "Tambah baru"/"Lewati" selalu tanpa `stage_id`), tsc bersih, lint 0 error (config `next/core-web-vitals` saja). Chrome dengan API mock: 30 cek alur utama (warna hasil pipeline, tiga tombol pilihan, hasil pipeline, error seluruh rencana mengunci Pasang, pilihan awal, batas 8, menang/kalah, tahapan yang sudah dipilih, body pratinjau, error per tahapan, Ubah pilihan menyimpan pilihan, body Pasang sama dengan pratinjau, tahapan berubah setelah pratinjau, modul dilepas, lebar HP 390 px) + 3 cek perusahaan tanpa tahapan + 2 cek tanpa akses pipeline + 2 cek bukan Admin + 2 cek server tanpa daftar tahapan. Kontrak dicocokkan dengan kode BE 1.171.1 (`get_blueprint_summary`, `apply_blueprint_plan`), plus 4 cek dengan data tahapan asli template Multi Financing dari BE. Bentuk tahapan di 28 template BE sudah dicek: semua `{name, outcome, default_probability}`, tanpa warna. Belum dites manual.
+
+---
+
 ## [1.143.0] - 2026-11-20
 
 ### Detail Versi 1.143.0

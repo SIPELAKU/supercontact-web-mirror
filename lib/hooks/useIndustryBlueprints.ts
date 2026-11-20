@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { PipelineStagePlanItem } from "@/lib/types/IndustryBlueprint";
 import { useAuth } from "@/lib/context/AuthContext";
 import {
     fetchActivationChecklist,
@@ -57,16 +58,20 @@ export function useInstallBlueprint() {
             modules,
             variables,
             dryRun,
+            pipelineStagePlan,
         }: {
             blueprintId: string;
             modules?: string[] | null;
             variables?: Record<string, string>;
             dryRun: boolean;
+            /** Only when the pipeline_stages module is installed. */
+            pipelineStagePlan?: PipelineStagePlanItem[];
         }) =>
             installBlueprint(await getToken(), blueprintId, {
                 modules: modules ?? null,
                 variables: variables ?? {},
                 dry_run: dryRun,
+                ...(pipelineStagePlan ? { pipeline_stage_plan: pipelineStagePlan } : {}),
             }),
         onSuccess: (_data, variables) => {
             if (variables.dryRun) return;

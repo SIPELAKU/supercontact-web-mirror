@@ -42,3 +42,15 @@ describe('installButtonLabel', () => {
     expect(installButtonLabel(preview(0, false))).toBe('Pasang 0 item');
   });
 });
+
+describe('stage renames from the Tahapan penjualan plan', () => {
+  it('a plan of renames only can still be installed', () => {
+    expect(previewCanInstall(preview(0, false), 2)).toBe(true);
+    expect(previewCanInstall(preview(0, false), 0)).toBe(false);
+  });
+
+  it('the label says what will happen', () => {
+    expect(installButtonLabel(preview(0, false), 2)).toBe('Pasang perubahan tahapan');
+    expect(installButtonLabel(preview(4, false), 2)).toBe('Pasang 4 item');
+  });
+});

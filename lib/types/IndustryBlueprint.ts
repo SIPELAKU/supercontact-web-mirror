@@ -27,8 +27,28 @@ export interface BlueprintSummary {
     variables?: BlueprintVariable[];
 }
 
+/** One sales stage of a blueprint, as in its manifest: the name may still
+ *  hold {{VARIABLES}}. Won/lost stages can only take over the company's own
+ *  won/lost stage. */
+export interface BlueprintStage {
+    name: string;
+    outcome?: "open" | "won" | "lost";
+    color?: string | null;
+    default_probability?: number | null;
+}
+
+/** What to do with one blueprint stage on install (`index` = its position
+ *  in the manifest): rename an existing stage to it, add it, or leave it out. */
+export interface PipelineStagePlanItem {
+    index: number;
+    action: "assign" | "create" | "skip";
+    stage_id: string | null;
+}
+
 export interface BlueprintDetail extends BlueprintSummary {
     variables: BlueprintVariable[];
+    /** The `pipeline_stages` module's stages (API with the stage plan). */
+    pipeline_stages?: BlueprintStage[];
     // The API also sends `kb_variables` (BE 1.160.0). The wizard leaves them
     // out on purpose: KB article data is filled once, after the install, in
     // the Checklist Aktivasi panel - never asked in two places.

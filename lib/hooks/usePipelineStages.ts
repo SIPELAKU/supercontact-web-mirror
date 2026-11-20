@@ -16,11 +16,12 @@ import type {
 
 const KEY = "pipeline-stages";
 
-export function usePipelineStages(includeInactive = false) {
+export function usePipelineStages(includeInactive = false, enabled = true) {
     const { getToken } = useAuth();
     return useQuery({
         queryKey: [KEY, includeInactive],
         queryFn: async () => fetchPipelineStages(await getToken(), includeInactive),
+        enabled,
     });
 }
 

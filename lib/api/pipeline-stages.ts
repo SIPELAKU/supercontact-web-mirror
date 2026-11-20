@@ -1,5 +1,6 @@
 import { fetchWithTimeout } from "./api-client";
 import type {
+    PipelineSetupRequest,
     PipelineStage,
     PipelineStageCreate,
     PipelineStageUpdate,
@@ -65,7 +66,7 @@ export async function updatePipelineStage(
     return handleResponse(res, "Failed to update pipeline stage");
 }
 
-/** The API demands EVERY stage id exactly once, so the order is never ambiguous. */
+/** The ids of the ACTIVE stages, in board order (API 1.170.0). */
 export async function reorderPipelineStages(
     token: string,
     stageIds: string[]
@@ -76,6 +77,20 @@ export async function reorderPipelineStages(
         body: JSON.stringify({ stage_ids: stageIds }),
     });
     return handleResponse(res, "Failed to reorder pipeline stages");
+}
+
+/** First setup of a company with no stages: the default six, or the stages
+ *  as arranged in the Customize step, in board order. */
+export async function setupPipelineStages(
+    token: string,
+    body: PipelineSetupRequest
+): Promise<{ data: { data: PipelineStage[] } }> {
+    const res = await fetchWithTimeout(getFullUrl("/pipeline-stages/setup"), {
+        method: "POST",
+        headers: { ...authHeaders(token), "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    return handleResponse(res, "Failed to set up pipeline stages");
 }
 
 export async function deletePipelineStage(

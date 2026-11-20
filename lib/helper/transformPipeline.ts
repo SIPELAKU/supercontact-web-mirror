@@ -1,10 +1,20 @@
 import { formatMDY } from "@/lib/helper/date";
 import { Deal } from "@/lib/types/Pipeline";
 import type { PipelineBoardStage } from "@/lib/api/pipelines";
+import type { StageOutcome } from "@/lib/types/PipelineStage";
 
 export type StageUI = {
+  /** The column key: the stage name (deals are joined to stages by name). */
   id: string;
+  /** The catalogue stage's id; null for a stage outside the catalogue. */
+  stageId: string | null;
   name: string;
+  outcome: StageOutcome;
+  /** Hex, or null for a stage outside the catalogue. */
+  color: string | null;
+  isLocked: boolean;
+  /** Every deal on the stage, whatever the filters (blocks a delete). */
+  totalDeals: number;
   /** Total amount of every deal in the column that matches the filters. */
   value: number;
   /** Number of those deals; `deals` holds only the ones loaded so far. */
@@ -54,15 +64,11 @@ export interface PipelineAPIItem {
 
 /**
  * Won and Lost are final. A closed deal can be viewed but not edited, and it
- * cannot be moved to another stage.
+ * cannot be moved to another stage. Judged by what the stage does (its
+ * outcome), never by its name: a company may rename "Closed - Won" to "AJB".
  */
-export const CLOSED_STAGES = ["Closed - Won", "Closed - Lost"];
-
-export function isClosedStage(stage: string | null | undefined): boolean {
-  if (!stage) return false;
-  // "Closed-Won", "Closed - Won" and "closed - won" are the same stage.
-  const normalized = stage.replace(/\s*-\s*/g, " - ").trim().toLowerCase();
-  return CLOSED_STAGES.some((closed) => closed.toLowerCase() === normalized);
+export function isClosedOutcome(outcome: string | null | undefined): boolean {
+  return outcome === "won" || outcome === "lost";
 }
 
 /**
@@ -70,9 +76,7 @@ export function isClosedStage(stage: string | null | undefined): boolean {
  * days it has left both come from the API, which deletes it 30 days after the
  * day it expired - not 30 days after its close date.
  */
-export function mapPipelineDeal(item: PipelineAPIItem): Deal {
-  const stageName = item.deal_stage.trim();
-
+export function mapPipelineDeal(item: PipelineAPIItem, outcome?: StageOutcome): Deal {
   return {
     id: item.id,
     deal_name: item.deal_name || item.product?.product_name || "",
@@ -94,8 +98,8 @@ export function mapPipelineDeal(item: PipelineAPIItem): Deal {
     is_expired: item.status === "expired",
     days_until_deletion: item.days_until_deletion ?? undefined,
 
-    wonDate: stageName === "Closed - Won" ? formatMDY(item.expected_close_date) : undefined,
-    lostDate: stageName === "Closed - Lost" ? formatMDY(item.expected_close_date) : undefined,
+    wonDate: outcome === "won" ? formatMDY(item.expected_close_date) : undefined,
+    lostDate: outcome === "lost" ? formatMDY(item.expected_close_date) : undefined,
   };
 }
 
@@ -109,10 +113,15 @@ export function mapPipelineDeal(item: PipelineAPIItem): Deal {
 export function mapBoardStages(stages: PipelineBoardStage[]): StageUI[] {
   return (stages ?? []).map((stage) => ({
     id: stage.name,
+    stageId: stage.id ?? null,
     name: stage.name,
+    outcome: stage.outcome,
+    color: stage.color ?? null,
+    isLocked: Boolean(stage.is_locked),
+    totalDeals: stage.total_deals ?? 0,
     value: Number(stage.total_amount) || 0,
     count: stage.count ?? 0,
     nextCursor: stage.next_cursor ?? null,
-    deals: (stage.deals ?? []).map((item) => mapPipelineDeal(item)),
+    deals: (stage.deals ?? []).map((item) => mapPipelineDeal(item, stage.outcome)),
   }));
 }

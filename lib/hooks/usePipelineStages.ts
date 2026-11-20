@@ -5,9 +5,11 @@ import {
     deletePipelineStage,
     fetchPipelineStages,
     reorderPipelineStages,
+    setupPipelineStages,
     updatePipelineStage,
 } from "@/lib/api/pipeline-stages";
 import type {
+    PipelineSetupRequest,
     PipelineStageCreate,
     PipelineStageUpdate,
 } from "@/lib/types/PipelineStage";
@@ -56,6 +58,17 @@ export function useReorderPipelineStages() {
     return useMutation({
         mutationFn: async (stageIds: string[]) =>
             reorderPipelineStages(await getToken(), stageIds),
+        onSuccess: () => invalidateStagesAndDeals(queryClient),
+    });
+}
+
+/** First setup (Default or Customize) of a company with no stages. */
+export function useSetupPipelineStages() {
+    const { getToken } = useAuth();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (body: PipelineSetupRequest) =>
+            setupPipelineStages(await getToken(), body),
         onSuccess: () => invalidateStagesAndDeals(queryClient),
     });
 }

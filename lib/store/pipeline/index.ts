@@ -56,6 +56,8 @@ export type DealForm = Omit<reqBody, "expected_close_date"> & {
 
 interface GetState {
   listPipeline: StageUI[];
+  /** The company has no stages yet (`needs_setup` on the board). */
+  needsSetup: boolean;
   listActiveUser: DealStage[];
   stage: string;
   id: string;
@@ -180,6 +182,7 @@ let boardRequestSeq = 0;
 
 export const useGetPipelineStore = create<GetState>((set, get) => ({
   listPipeline: [],
+  needsSetup: false,
   stats: [],
   listActiveUser: [],
   loading: false,
@@ -260,6 +263,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
       set({
         listPipeline: mapBoardStages(data.stages),
+        needsSetup: Boolean(data.needs_setup),
         stats: toMetrics(data.stats),
         boardFilters: filters,
       });
@@ -289,7 +293,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
         listPipeline: state.listPipeline.map((stage) => {
           if (stage.name !== stageName) return stage;
           const loaded = new Set(stage.deals.map((d) => d.id));
-          const more = page.deals.map((item) => mapPipelineDeal(item)).filter((d) => !loaded.has(d.id));
+          const more = page.deals.map((item) => mapPipelineDeal(item, stage.outcome)).filter((d) => !loaded.has(d.id));
           // count and total already cover the whole column, so they stay.
           return { ...stage, deals: [...stage.deals, ...more], nextCursor: page.next_cursor ?? null };
         }),

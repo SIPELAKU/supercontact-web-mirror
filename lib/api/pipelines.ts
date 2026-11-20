@@ -1,3 +1,4 @@
+import type { StageOutcome } from "@/lib/types/PipelineStage";
 import api from "@/lib/utils/axiosClient";
 import type { AxiosError } from "axios";
 import type { PipelineAPIItem } from "@/lib/helper/transformPipeline";
@@ -100,11 +101,19 @@ export interface PipelineStatsResponse {
 
 /** One kanban column from `GET /pipelines/board`. */
 export interface PipelineBoardStage {
+    /** The catalogue stage; null for a stage outside it that still has deals. */
+    id?: string | null;
     name: string;
-    outcome: "open" | "won" | "lost";
+    outcome: StageOutcome;
+    /** Hex; null or missing on a stage outside the catalogue. */
+    color?: string | null;
+    /** Required stage: renamable, never deleted or deactivated. */
+    is_locked?: boolean;
     display_order: number | null;
     /** Every deal in the column that matches the filters, not only `deals`. */
     count: number;
+    /** Every deal on the stage, whatever the filters: what blocks a delete. */
+    total_deals?: number;
     /** Total of those same deals: a Decimal as a string, e.g. "1500.00". */
     total_amount: string;
     deals: PipelineAPIItem[];
@@ -115,6 +124,8 @@ export interface PipelineBoardStage {
 export interface PipelineBoardResponse {
     stats: PipelineStatsResponse;
     stages: PipelineBoardStage[];
+    /** The company has no stages yet: show the setup screen, not the board. */
+    needs_setup?: boolean;
 }
 
 export interface PipelineBoardColumnResponse {

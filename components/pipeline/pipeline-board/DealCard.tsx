@@ -2,18 +2,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatRupiah } from "@/lib/helper/currency"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
+import { stageColor as solidStageColor, stageTint } from "@/components/pipeline/stage-editor/stageRules"
 import { DealCardProps } from "@/lib/types/Pipeline"
 import { Calendar, Clock, Loader2 } from "lucide-react"
 import React from "react"
-
-export const dealStages = [
-  { label: "Prospect", bgColor: "bg-[#26C6F9]/16", textColor: "text-[#26C6F9]" },
-  { label: "Qualified", bgColor: "bg-[#FDB528]/16", textColor: "text-[#FDB528]" },
-  { label: "Negotiation", bgColor: "bg-[#72E128]/16", textColor: "text-[#72E128]" },
-  { label: "Proposal", bgColor: "bg-[#6D788D]/16", textColor: "text-[#6D788D]" },
-  { label: "Closed - Won", bgColor: "bg-[#666CFF]/16", textColor: "text-[#666CFF]" },
-  { label: "Closed - Lost", bgColor: "bg-[#EF4444]/16", textColor: "text-[#EF4444]" },
-] as const
 
 // Colour of the probability badge, so the likely wins stand out at a glance.
 const probabilityColor = (probability: number) =>
@@ -38,25 +30,14 @@ const deletionTagColor = (days: number | undefined) =>
     ? "bg-red-50 text-red-700 border-red-200"
     : "bg-amber-50 text-amber-700 border-amber-200"
 
-function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product, probability_of_close, is_expired, days_until_deletion, isSaving, isHighlighted }: DealCardProps) {
+function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, stageColor, product, probability_of_close, is_expired, days_until_deletion, isSaving, isHighlighted }: DealCardProps) {
   const isExpired = Boolean(is_expired)
   const daysLeft = days_until_deletion
   const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
-  const getStageColor = (stageName?: string) => {
-    if (!stageName) {
-      return {
-        bg: "bg-gray-100",
-        text: "text-gray-700",
-      }
-    }
-
-    const stage = dealStages.find(s => s.label.toLowerCase() === stageName.toLowerCase())
-
-    return stage
-      ? { bg: stage.bgColor, text: stage.textColor }
-      : { bg: "bg-gray-100", text: "text-gray-700" }
-  }
-  const stageColor = getStageColor(stageName)
+  // The badge takes the stage's colour from the API; grey without one.
+  const badgeStyle = stageColor
+    ? { backgroundColor: stageTint(stageColor, 0.16), color: solidStageColor(stageColor) }
+    : undefined
   return (
     <Card
       // overflow-hidden rounds the strip's top corners with the card's; pt-0
@@ -94,7 +75,7 @@ function DealCardComponent({ id, deal_name, company, amount, expected_close_date
       <CardContent className="p-4 space-y-4">
         <div className={`space-y-4 transition-opacity ${isExpired ? "opacity-60 group-hover:opacity-100" : ""}`}>
           <div className="space-y-1.5">
-            <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${stageColor.bg} ${stageColor.text}`}>
+            <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${badgeStyle ? "" : "bg-gray-100 text-gray-700"}`} style={badgeStyle}>
               {deal_name || 'No Name'}
             </div>
             <div>

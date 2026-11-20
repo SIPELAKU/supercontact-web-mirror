@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.143.0] - 2026-11-20
+
+### Detail Versi 1.143.0
+
+#### ✨ Setup dan Pengaturan Stage Pipeline dari Halaman Pipeline
+
+- **Deskripsi:**
+  - **Masalah:** daftar stage, warna, dan kunci Won/Lost di halaman Pipeline ditulis tetap di kode (6 nama). Stage lain milik perusahaan tampil abu-abu, tidak bisa dipilih di Add Deal maupun filter, dan kalau "Closed - Won" diganti nama, deal di sana tidak lagi terkunci. Perusahaan baru juga tidak bisa memilih stage sendiri.
+  - **Perbaikan:**
+    - **Perusahaan tanpa stage:** board diganti layar "Set up your pipeline" dan Add Deal dinonaktifkan. Admin klik **+ Set Up Stages** lalu memilih **Default** (6 stage) atau **Customize**. Selain Admin hanya melihat "Your pipeline isn't set up yet. Ask an Admin to set it up."
+    - **Customize:** 6 stage default bisa diganti nama lewat 5 saran per stage atau "Custom name…", diberi warna, digeser (Prospect tetap pertama, Closed - Won dan Closed - Lost tetap terakhir), ditambah (masuk sebelum Closed - Won), dan dihapus kecuali 4 stage wajib.
+    - **Nama:** memilih "Custom name…" mengganti dropdown dengan kolom teks dan tombol **Cancel**, yang mengembalikan dropdown beserta nama sebelumnya.
+    - **Warna:** tab **Palette** (10 warna) dan tab **Wheel** (roda warna dengan slider kecerahan), ditambah kolom hex.
+    - **Pratinjau** kolom ada di bawah daftar dan selalu satu baris. Kalau lebih lebar dari modal, pratinjau bisa digeser ke samping dengan drag mouse (kursor berubah jadi tangan) atau usap di HP. Di Edit, stage yang sedang diubah diberi garis tepi.
+    - **Maksimal 8 stage**, termasuk yang non-aktif. Di bawah daftar ada penghitung (misalnya "6 of 8 stages (1 inactive)"). Begitu mencapai 8, tombol **Add Stage** hilang dan diganti info "You've reached the maximum of 8 stages. Delete a stage to add another." Perusahaan yang sudah terlanjur lebih dari 8 tetap memakai semua stage-nya, tapi mendapat info bahwa stage baru hanya bisa ditambah setelah jumlahnya di bawah 8. BE juga menambahkan batas yang sama.
+    - **Tombol gear** di samping Add Deal (Admin): editor yang sama untuk semua stage, dengan jumlah deal, checkbox "Show inactive stages", Activate/Deactivate yang langsung tersimpan, dan Save yang mengirim hapus, tambah, ubah, lalu urutkan. Di atasnya ada catatan aturan: deal harus dipindah dulu sebelum stage bisa dihapus; stage yang dinonaktifkan hilang dari Add Deal dan filter, dan deal-nya hanya tetap terlihat di kolom paling ujung selama stage itu masih berisi deal; stage wajib hanya bisa diganti nama dan warna. Menutup dengan perubahan yang belum disimpan meminta konfirmasi "Discard unsaved changes?".
+    - **Tanda Quotation:** stage yang dipakai untuk quotation (Proposal) diberi tanda **Quotation** di editor dan ikon di judul kolom board, dengan penjelasan saat diarahkan: customer yang punya deal di stage ini bisa dipilih saat membuat quotation, dan produk dari deal itu otomatis jadi item. Tanda mengikuti fungsi stage, jadi tetap ada setelah nama atau warnanya diubah.
+    - **Titik tiga di tiap kolom** (Admin, kursor tangan saat diarahkan): menu dengan nama dan warna stage di atas, **Edit** (nama dan warna satu stage), dan **Delete**. Delete nonaktif untuk stage wajib atau yang masih punya deal, dengan alasannya tertulis di bawahnya. Jumlah deal memakai `total_deals`, bukan angka kolom yang ikut filter.
+    - **Judul kolom:** nama stage punya baris sendiri di atas (panjang pun tampil utuh, turun ke baris berikutnya, tidak terpotong) dengan titik tiga di sampingnya; jumlah deal, tanda Quotation, dan total ada di baris bawahnya.
+    - Warna kolom, badge kartu deal, dan chip filter memakai warna stage dari API. Kolom Prospect kini biru muda, bukan abu-abu.
+    - Pilihan stage di Add Deal dan filter board diambil dari daftar stage perusahaan.
+    - Kunci Won/Lost (kartu tidak bisa digeser, konfirmasi sebelum memindah atau menyimpan ke Won/Lost) memakai fungsi stage (`outcome`), jadi tetap berlaku setelah stage diganti nama.
+    - Form Quotation: pilihan deal hanya menyembunyikan deal di stage Won/Lost. Sebelumnya deal di Prospect dan Proposal akan ikut hilang dengan API 1.170.0.
+    - Settings › Sales › Tahapan Penjualan diberi keterangan bahwa halaman masih dalam pengembangan dan stage diatur dari halaman Pipeline.
+    - Menu dropdown bersama kini bisa ditutup dengan tombol Escape.
+  - **Technical Notes:**
+    - Folder baru `components/pipeline/stage-editor/`: `colorMath.ts` (HSV, titik roda warna), `stageRules.ts` (stage default, saran nama, palet, aturan urutan/hapus/nonaktif, validasi nama, `canManageStages`), `useStageDraft.ts` (`diffStages`, `applyStageRequests`), `StageEditor` (mode `setup`/`manage`/`single`), `StageRow`, `StageRowActions`, `StageNameField`, `StageColorPicker`, `StagePreview`, `StageSetupDialog`, `StageManageDialog`, `StageColumnMenu`, `PipelineSetupEmpty`
+    - `StageOutcome` jadi `entry`/`quotation`/`open`/`won`/`lost`; stage punya `color`, `is_locked`. Create/Update tanpa `outcome`. `setupPipelineStages()` + `useSetupPipelineStages()`
+    - Board: `needs_setup`, kolom `id`, `color`, `is_locked`, `total_deals`. `isClosedStage()`/`CLOSED_STAGES` diganti `isClosedOutcome()`; `wonDate`/`lostDate` dari `outcome`
+    - Dihapus: `stageColors` (board), `dealStages` (AddDealModal dan DealCard)
+    - Kalau satu request Save gagal, request sebelumnya tetap tersimpan (tidak ada endpoint batch); pesan API ditampilkan dan daftar dimuat ulang.
+    - Tidak diubah: label funnel Dashboard, filter ICP `"Closed - Won"`, industry blueprint.
+  - **Rilis:** butuh API 1.170.0 (sudah di DEV). Jangan naik ke staging/PROD sebelum API di sana 1.170.0, karena board lama tidak mengirim `color`/`outcome` baru dan setup tidak ada.
+
+- **🧪 Testing:** Vitest 45 tes baru/diubah (semua 1167 lulus), 15 dari 16 mutasi tertangkap (sisanya mutasi yang hasilnya identik), tsc bersih, lint 0 error (config `next/core-web-vitals` saja). Chrome dengan API mock yang menyimpan state: 65 cek Admin (batas 8 stage dan perusahaan di atas batas, nama stage panjang tidak terpotong, tanda Quotation, scrollbar pratinjau tersembunyi, setup Customize sampai body request, Custom name + Cancel, tab Wheel, pratinjau satu baris dan geser dengan drag, board, menu titik tiga, Edit, catatan aturan gear, Show inactive, Activate, Discard, Save yang gagal di tengah, pilihan Add Deal, lebar HP 390 px) dan 4 cek Staff. Kontrak dicocokkan dengan openapi DEV 1.170.0. Belum dites manual.
+
+---
+
 ## [1.142.0] - 2026-11-20
 
 ### Detail Versi 1.142.0

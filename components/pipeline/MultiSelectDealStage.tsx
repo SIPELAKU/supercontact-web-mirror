@@ -4,6 +4,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import type { DealStage } from "@/components/pipeline/SelectDealStage";
+import { stageColor, stageTint } from "@/components/pipeline/stage-editor/stageRules";
+
+// A stage from the API is coloured with inline styles; the "All" row has none.
+const chipStyle = (stage: DealStage) =>
+  stage.color ? { backgroundColor: stageTint(stage.color, 0.16), color: stageColor(stage.color) } : undefined;
 
 interface Props {
   /** Picked stage values; empty = all. */
@@ -68,6 +73,7 @@ export default function MultiSelectDealStage({
                 <span
                   key={stage.value}
                   className={cn("shrink-0 px-3 py-1 rounded-full text-sm font-medium", stage.bgColor, stage.textColor)}
+                  style={chipStyle(stage)}
                 >
                   {stage.label}
                 </span>
@@ -97,7 +103,10 @@ export default function MultiSelectDealStage({
                 onClick={() => toggle(stage)}
                 className="px-2 py-2 rounded-md cursor-pointer flex justify-between items-center hover:bg-gray-50"
               >
-                <span className={cn(stage.bgColor && "px-3 py-1 rounded-full", stage.bgColor, stage.textColor)}>
+                <span
+                  className={cn((stage.bgColor || stage.color) && "px-3 py-1 rounded-full", stage.bgColor, stage.textColor)}
+                  style={chipStyle(stage)}
+                >
                   {stage.label}
                 </span>
                 {selected && <span>✓</span>}

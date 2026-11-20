@@ -30,19 +30,11 @@ import { Spinner } from "../ui/spinner";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import * as pipelineAPI from "@/lib/api/pipelines";
-import { isClosedStage } from "@/lib/helper/transformPipeline";
+import { isClosedOutcome } from "@/lib/helper/transformPipeline";
+import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
 import { format, startOfToday } from "date-fns";
 import { Lock } from "lucide-react";
 
-export const dealStages = [
-  { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
-  { value: "Prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
-  { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Negotiation", label: "Negotiation", bgColor: "bg-[#EAF6FF]", textColor: "text-blue-700" },
-  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFF6E8]", textColor: "text-orange-700" },
-  { value: "Closed - Won", label: "Closed/Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
-  { value: "Closed - Lost", label: "Closed/Lost", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-]
 
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
@@ -51,6 +43,20 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   // list, whose page/search/status/sort would otherwise leak in here (S3-1).
   const { catalogue: listProduct, fetchCatalogue, catalogueLoading } = useGetProductStore();
   const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline, setStage } = useGetPipelineStore();
+  // The company's active stages, for the Deal Stage picker.
+  const { data: stagesData } = usePipelineStages(false);
+  const catalogue = useMemo(() => stagesData?.data?.data ?? [], [stagesData]);
+  // What a stage does (Won/Lost lock the deal), never its name: the company's
+  // stages first, then the board's columns (which also hold a stage outside
+  // the catalogue that still has deals).
+  const outcomeOf = (name?: string | null) => {
+    const key = (name ?? "").trim().toLowerCase();
+    if (!key) return undefined;
+    return (
+      catalogue.find((s) => s.name.trim().toLowerCase() === key)?.outcome ??
+      listPipeline.find((s) => s.name.trim().toLowerCase() === key)?.outcome
+    );
+  };
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   // Confirmation before saving a deal as Won/Lost (see handleSubmit).
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -135,7 +141,16 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   const isInitialLoading = id ? loadingDeal : !addListsReady;
   // Won/Lost is final: the deal can still be opened and read, but every field
   // and the save button are disabled. Judged by the SAVED stage, not the form.
-  const isClosedDeal = Boolean(id) && isClosedStage(deal?.deal_stage);
+  const isClosedDeal =
+    Boolean(id) && isClosedOutcome(deal?.stage_outcome ?? outcomeOf(deal?.deal_stage));
+  // The active stages, plus the deal's own stage when it is not one of them
+  // (an inactive stage), so the field never shows blank.
+  const stageOptions = useMemo(() => {
+    const options = catalogue.map((s) => ({ value: s.name, label: s.name }));
+    const current = deal?.deal_stage;
+    if (current && !options.some((o) => o.value === current)) options.push({ value: current, label: current });
+    return options;
+  }, [catalogue, deal?.deal_stage]);
   // The close date the deal has now (Update only): it may stay as it is even
   // when it has passed (an expired deal).
   const savedCloseDate = id && deal?.expected_close_date ? new Date(deal.expected_close_date) : undefined;
@@ -347,7 +362,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
     // Saving as Won/Lost is final (the deal can't be edited or moved again
     // afterwards), so it waits for a confirmation first.
-    if (isClosedStage(formData.deal_stage)) {
+    if (isClosedOutcome(outcomeOf(formData.deal_stage))) {
       setShowCloseConfirm(true);
       return;
     }
@@ -672,13 +687,13 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                     </label>
                     {isClosedDeal ? (
                       <LockedField
-                        value={dealStages.find(s => s.value === formData.deal_stage)?.label || formData.deal_stage}
+                        value={formData.deal_stage}
                       />
                     ) : (
                       <AppSelect
                         value={formData.deal_stage}
                         onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
-                        options={dealStages.filter(s => s.value !== "all")}
+                        options={stageOptions}
                         placeholder="Select Deal Stage"
                         isBgWhite
                         height="48px"

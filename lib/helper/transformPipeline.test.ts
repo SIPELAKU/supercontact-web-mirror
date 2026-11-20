@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { PipelineBoardStage } from '@/lib/api/pipelines';
-import { isClosedStage, mapBoardStages, type PipelineAPIItem } from './transformPipeline';
+import { isClosedOutcome, mapBoardStages, type PipelineAPIItem } from './transformPipeline';
 
 const item = (id: string, deal_stage: string, probability_of_close?: number): PipelineAPIItem => ({
   id,
@@ -89,17 +89,38 @@ describe('mapBoardStages (GET /pipelines/board)', () => {
   });
 });
 
-describe('isClosedStage', () => {
-  it('treats Won and Lost as closed (final), however the name is written', () => {
-    expect(isClosedStage('Closed - Won')).toBe(true);
-    expect(isClosedStage('Closed - Lost')).toBe(true);
-    expect(isClosedStage('closed-won')).toBe(true);
-    expect(isClosedStage(' Closed-Lost ')).toBe(true);
+describe('isClosedOutcome', () => {
+  it('Won and Lost are closed (final), by what the stage does', () => {
+    expect(isClosedOutcome('won')).toBe(true);
+    expect(isClosedOutcome('lost')).toBe(true);
   });
 
-  it('treats every open stage, and a missing one, as not closed', () => {
-    for (const stage of ['Prospect', 'Qualified', 'Negotiation', 'Proposal', '', null, undefined]) {
-      expect(isClosedStage(stage)).toBe(false);
+  it('entry, quotation, open and unknown are not, whatever the name', () => {
+    for (const outcome of ['entry', 'quotation', 'open', 'Closed - Won', '', null, undefined]) {
+      expect(isClosedOutcome(outcome)).toBe(false);
     }
+  });
+});
+
+describe('mapBoardStages: stage fields from API 1.170.0', () => {
+  it('id, colour, lock and the unfiltered total', () => {
+    const [stage] = mapBoardStages([
+      column('AJB', [], { id: 's-won', outcome: 'won', color: '#666CFF', is_locked: true, total_deals: 12, count: 2 }),
+    ]);
+    expect(stage).toMatchObject({ id: 'AJB', stageId: 's-won', outcome: 'won', color: '#666CFF', isLocked: true, totalDeals: 12, count: 2 });
+  });
+
+  it('a stage outside the catalogue: no id, no colour, not locked, no total', () => {
+    const [stage] = mapBoardStages([column('Old', [], { id: null })]);
+    expect(stage).toMatchObject({ stageId: null, color: null, isLocked: false, totalDeals: 0 });
+  });
+
+  it('won/lost dates follow the outcome, not the name', () => {
+    const deal = { ...item('d1', 'AJB'), expected_close_date: '2026-11-20T00:00:00Z' };
+    const [won] = mapBoardStages([column('AJB', [deal], { outcome: 'won' })]);
+    expect(won.deals[0].wonDate).toBeTruthy();
+    expect(won.deals[0].lostDate).toBeUndefined();
+    const [named] = mapBoardStages([column('Closed - Won', [{ ...deal, deal_stage: 'Closed - Won' }], { outcome: 'open' })]);
+    expect(named.deals[0].wonDate).toBeUndefined();
   });
 });

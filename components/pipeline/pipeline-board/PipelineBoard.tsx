@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/sortable"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { AddDealModal, dealStages } from "@/components/pipeline/AddDealModal"
+import { AddDealModal } from "@/components/pipeline/AddDealModal"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
@@ -33,31 +33,27 @@ import {
 
 import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
-import { StageUI, isClosedStage } from "@/lib/helper/transformPipeline"
-import { ConfirmationPopup } from "@/components/ui/confirmation-popup"
+import { StageUI, isClosedOutcome } from "@/lib/helper/transformPipeline"
+import { ConfirmationPopup, useConfirmationPopup } from "@/components/ui/confirmation-popup"
+import { Tooltip } from "@mui/material"
+import PipelineSetupEmpty from "@/components/pipeline/stage-editor/PipelineSetupEmpty"
+import StageColumnMenu from "@/components/pipeline/stage-editor/StageColumnMenu"
+import QuotationStageBadge from "@/components/pipeline/stage-editor/QuotationStageBadge"
+import StageManageDialog from "@/components/pipeline/stage-editor/StageManageDialog"
+import StageSetupDialog from "@/components/pipeline/stage-editor/StageSetupDialog"
+import { canManageStages, deleteConfirmTitle, stageTint } from "@/components/pipeline/stage-editor/stageRules"
+import { useAuth } from "@/lib/context/AuthContext"
+import { useDeletePipelineStage, usePipelineStages } from "@/lib/hooks/usePipelineStages"
 
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { useDebounce } from "@/lib/hooks/useDebounce"
 import { Deal } from "@/lib/types/Pipeline"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Settings } from "lucide-react"
 import { notify } from "@/lib/notifications"
 import { AppInput } from "@/components/ui/app-input"
 import { AppButton } from "@/components/ui/app-button"
 
 
-
-const stageColors: Record<string, string> = {
-  Prospect: "bg-[#F3F4F6]",
-  Qualified: "bg-[#F3EEFF]",
-  Negotiation: "bg-[#EAF6FF]",
-  Proposal: "bg-[#FFF6E8]",
-  "Closed - Won": "bg-[#E8FFE8]",
-  "Closed - Lost": "bg-[#FFE8E8]",
-}
-
-// A stage outside the default six (the company's own, or an inactive one that
-// still has deals) gets a neutral column.
-const DEFAULT_STAGE_COLOR = "bg-gray-50"
 
 // A column's cards as on screen, in column order (read once, on drop).
 const cardRectsIn = (stageName: string) =>
@@ -89,8 +85,27 @@ export default function PipelineBoard() {
     updateStagePipeline,
     fetchPipeline,
     loadMoreDeals,
-    scopeUserId
+    scopeUserId,
+    needsSetup
   } = useGetPipelineStore();
+  // Only an Admin sets up and manages stages (gear, column menu, setup +).
+  const { userProfile, userRole } = useAuth()
+  const canManage = canManageStages(userProfile?.role ?? userRole)
+  const [setupOpen, setSetupOpen] = useState(false)
+  // The gear dialog (every stage) or Edit from a column's menu (one stage).
+  const [manage, setManage] = useState<{ mode: "manage" | "single"; stageId?: string } | null>(null)
+  const deleteStage = useDeletePipelineStage()
+  const { confirm, confirmationPopup } = useConfirmationPopup()
+  // The company's active stages, for the stage filter.
+  const { data: stagesData } = usePipelineStages(false)
+  const stageOptions = useMemo(
+    () => [
+      { value: "all", label: "All" },
+      ...(stagesData?.data?.data ?? []).map((stage) => ({ value: stage.name, label: stage.name, color: stage.color })),
+    ],
+    [stagesData]
+  )
+  const reloadBoard = () => fetchPipeline({ isSilent: true })
   // What is typed. The API searches, so the board reloads once typing pauses.
   const [searchQuery, setSearchQuery] = useState<string>(searchFilter)
   const debouncedSearch = useDebounce(searchQuery, 1000)
@@ -134,6 +149,29 @@ export default function PipelineBoard() {
       setStages(listPipeline)
     }
   }, [listPipeline, feedback])
+
+  // What a stage does (won/lost locks the deal), by the column's outcome.
+  const outcomeOf = (stageName: string | null) => stagesRef.current.find((s) => s.name === stageName)?.outcome
+
+  const askDeleteStage = (stage: StageUI) => {
+    const stageId = stage.stageId
+    if (!stageId) return
+    confirm({
+      title: deleteConfirmTitle(stage.name),
+      description: "The stage is removed from the pipeline. Its name can be used again.",
+      confirmText: "Delete",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteStage.mutateAsync(stageId)
+          notify.success(`${stage.name} deleted`)
+        } catch (error) {
+          notify.error(error instanceof Error ? error.message : "Failed to delete pipeline stage")
+        }
+        await reloadBoard()
+      },
+    })
+  }
 
   const showLatestBoard = () => {
     heldBoardRef.current = false
@@ -206,7 +244,7 @@ export default function PipelineBoard() {
 
   // Won and Lost are final, so a move there waits for the user to confirm.
   const requestStageMove = async (dealId: string, toStage: string) => {
-    if (isClosedStage(toStage)) {
+    if (isClosedOutcome(outcomeOf(toStage))) {
       setPendingClose({ dealId, toStage });
       return;
     }
@@ -242,7 +280,7 @@ export default function PipelineBoard() {
     // its own column (the order inside a column is the API's sort, so there
     // is no manual order), or for a closed deal (its card can't be dragged;
     // this is the backstop).
-    if (!originalStage || !toStage || toStage === originalStage || isClosedStage(originalStage)) {
+    if (!originalStage || !toStage || toStage === originalStage || isClosedOutcome(outcomeOf(originalStage))) {
       return;
     }
 
@@ -353,7 +391,7 @@ export default function PipelineBoard() {
                   placeholder="Select All"
                   value={stageFilter}
                   onChange={setStageFilter}
-                  data={dealStages}
+                  data={stageOptions}
                   className="font-normal"
                 />
               )
@@ -437,17 +475,36 @@ export default function PipelineBoard() {
           />
         </div>
 
-        <AppButton
-          onClick={() => setIsModalOpen(!isModalOpen)}
-          variantStyle="primary"
-          color="primary"
-          startIcon={<Plus />}
-        >
-          <span className="hidden sm:inline">Add Deal</span>
-        </AppButton>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {canManage && !needsSetup && (
+            <Tooltip title="Manage Stages">
+              <button
+                type="button"
+                aria-label="Manage Stages"
+                onClick={() => setManage({ mode: "manage" })}
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-gray-300 text-gray-600 transition hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </Tooltip>
+          )}
+          {/* No deal can be added before the pipeline has stages. */}
+          <AppButton
+            onClick={() => setIsModalOpen(!isModalOpen)}
+            variantStyle="primary"
+            color="primary"
+            startIcon={<Plus />}
+            disabled={needsSetup}
+          >
+            <span className="hidden sm:inline">Add Deal</span>
+          </AppButton>
+        </div>
 
       </div>
 
+      {needsSetup ? (
+        <PipelineSetupEmpty canManage={canManage} onSetUp={() => setSetupOpen(true)} />
+      ) : (
       <div className="w-full overflow-x-auto pb-6 pt-1 px-6">
 
         <DndContext
@@ -470,22 +527,41 @@ export default function PipelineBoard() {
                   <div className="w-80 shrink-0 flex flex-col max-h-[calc(100vh-220px)]">
 
                     <div
-                      className={`rounded-xl p-4 flex flex-col h-full flex-grow shadow-sm border border-gray-200 transition-shadow ${stageColors[stage.name] ?? DEFAULT_STAGE_COLOR} ${overStage === stage.name && overStage !== dragFromStage ? "ring-2 ring-primary ring-offset-2" : ""}`}
+                      className={`rounded-xl p-4 flex flex-col h-full flex-grow shadow-sm border border-gray-200 transition-shadow ${overStage === stage.name && overStage !== dragFromStage ? "ring-2 ring-primary ring-offset-2" : ""}`}
+                      style={{ backgroundColor: stageTint(stage.color, 0.1) }}
                     >
 
-                      <div className="flex items-center justify-between gap-2 mb-4 px-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
+                      {/* The name has the top line to itself (wrapping if it is long,
+                          never cut off), with the menu beside it; the count, the
+                          quotation mark and the total go on the line below. */}
+                      <div className="mb-4 flex flex-col gap-1.5 px-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="min-w-0 break-words font-semibold leading-snug text-gray-900">{stage.name}</h3>
+                          {/* A stage outside the catalogue (no id) has no menu. */}
+                          {canManage && stage.stageId && (
+                            <StageColumnMenu
+                              stageName={stage.name}
+                              color={stage.color}
+                              isLocked={stage.isLocked}
+                              totalDeals={stage.totalDeals}
+                              onEdit={() => setManage({ mode: "single", stageId: stage.stageId! })}
+                              onDelete={() => askDeleteStage(stage)}
+                            />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span
                             title="Deals in this stage"
                             className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-600"
                           >
                             {stage.count}
                           </span>
+                          {/* The stage quotations are built from, whatever it is called now. */}
+                          {stage.outcome === "quotation" && <QuotationStageBadge variant="icon" />}
+                          <span className="ml-auto truncate text-sm font-medium text-gray-600">
+                            {formatRupiah(stage.value)}
+                          </span>
                         </div>
-                        <span className="shrink-0 text-sm font-medium text-gray-600">
-                          {formatRupiah(stage.value)}
-                        </span>
                       </div>
 
                       <SortableContext
@@ -504,10 +580,11 @@ export default function PipelineBoard() {
                             return (
                               <div key={deal.id} data-deal-id={deal.id} className={`pointer-events-auto shrink-0 ${moveFeedbackClass(fx)}`}>
                                 {/* Not draggable while its move is still being saved or fading out. */}
-                                <SortableDeal id={deal.id} disabled={isClosedStage(stage.name) || (fx !== null && fx.phase !== "entering")}>
+                                <SortableDeal id={deal.id} disabled={isClosedOutcome(stage.outcome) || (fx !== null && fx.phase !== "entering")}>
                                   <DealCard
                                     {...deal}
                                     stageName={stage.name}
+                                    stageColor={stage.color}
                                     isSaving={fx?.phase === "saving"}
                                     isHighlighted={fx?.phase === "entering"}
                                   />
@@ -552,6 +629,21 @@ export default function PipelineBoard() {
 
         </DndContext>
       </div>
+      )}
+
+      {canManage && (
+        <>
+          <StageSetupDialog open={setupOpen} onClose={() => setSetupOpen(false)} onDone={reloadBoard} />
+          <StageManageDialog
+            open={manage !== null}
+            mode={manage?.mode ?? "manage"}
+            stageId={manage?.stageId}
+            onClose={() => setManage(null)}
+            onSaved={reloadBoard}
+          />
+        </>
+      )}
+      {confirmationPopup}
     </div>
   )
 }

@@ -26,6 +26,21 @@ import { BEHAVIOUR_MODULES, moduleLabel } from "./moduleLabels";
 import { installButtonLabel, previewCanInstall } from "./previewInstall";
 import { blankOptional, missingRequired } from "./blueprintVariables";
 import BlueprintVariableField from "./BlueprintVariableField";
+import StageMappingSection, { type StageMappingStatus } from "./StageMappingSection";
+import StageMappingPreview from "./StageMappingPreview";
+import {
+    checkPlan,
+    initialPlan,
+    planIsValid,
+    readBlueprintStages,
+    renameCount,
+    toExistingStages,
+} from "./stageMappingRules";
+import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
+import { usePermission } from "@/lib/hooks/usePermission";
+import { useAuth } from "@/lib/context/AuthContext";
+import { canManageStages } from "@/components/pipeline/stage-editor/stageRules";
+import type { PipelineStagePlanItem } from "@/lib/types/IndustryBlueprint";
 
 type Step = "industry" | "details" | "preview" | "done";
 
@@ -69,6 +84,10 @@ export default function BlueprintWizard({
     const [modules, setModules] = useState<Set<string>>(new Set());
     const [preview, setPreview] = useState<BlueprintInstallReport | null>(null);
     const [result, setResult] = useState<BlueprintInstallReport | null>(null);
+    // What "Tahapan penjualan" does with each blueprint stage. Kept HERE, not
+    // in the section: the details step unmounts on the way to the preview,
+    // and the preview and the install must send this same plan.
+    const [stagePlan, setStagePlan] = useState<PipelineStagePlanItem[] | null>(null);
 
     const { data: listData, isLoading, isError, refetch } = useBlueprints();
     const blueprints: BlueprintSummary[] = listData?.data || [];
@@ -107,12 +126,87 @@ export default function BlueprintWizard({
 
     const declaredModules = useMemo(() => moduleNames(detail?.modules), [detail]);
 
+    // ---- Tahapan penjualan: map the blueprint's stages onto the company's.
+    const { can } = usePermission();
+    const { userProfile, userRole } = useAuth();
+    const offersStages = declaredModules.includes("pipeline_stages");
+    const canReadStages = can("pipelines");
+    // The API maps stages for an Admin only (BE 1.171.0); anyone else's plan
+    // would be skipped with a note.
+    const isAdmin = canManageStages(userProfile?.role ?? userRole);
+    const stagesQuery = usePipelineStages(true, offersStages && canReadStages && isAdmin);
+    const existingStages = useMemo(
+        () => toExistingStages(stagesQuery.data?.data?.data ?? []),
+        [stagesQuery.data]
+    );
+    // From the blueprint detail, in manifest order (the plan's `index`).
+    const blueprintStages = useMemo(() => readBlueprintStages(detail?.pipeline_stages), [detail]);
+    const stageModuleOn = modules.has("pipeline_stages");
+    const mappingStatus: StageMappingStatus = !canReadStages
+        ? "no-access"
+        : !isAdmin
+          ? "not-admin"
+          : stagesQuery.isLoading
+            ? "loading"
+            : stagesQuery.isError
+              ? "error"
+              : existingStages.length === 0
+                ? "no-stages"
+                : !blueprintStages?.length
+                  ? "no-template"
+                  : "ready";
+    // The module can't run without access, as a non-Admin, or before the
+    // company has stages.
+    const stageModuleBlocked =
+        offersStages &&
+        (mappingStatus === "no-access" || mappingStatus === "not-admin" || mappingStatus === "no-stages");
+
+    useEffect(() => {
+        if (!stageModuleBlocked) return;
+        setModules((prev) => {
+            if (!prev.has("pipeline_stages")) return prev;
+            const next = new Set(prev);
+            next.delete("pipeline_stages");
+            return next;
+        });
+    }, [stageModuleBlocked, modules]);
+
+    // A starting plan once everything is known; none while the module is off.
+    useEffect(() => {
+        if (!stageModuleOn) {
+            setStagePlan(null);
+            return;
+        }
+        if (mappingStatus === "ready" && blueprintStages && stagePlan === null) {
+            setStagePlan(initialPlan(blueprintStages, existingStages, variables));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stageModuleOn, mappingStatus, blueprintStages, existingStages]);
+
+    const planCheck = useMemo(
+        () =>
+            stagePlan && blueprintStages
+                ? checkPlan(stagePlan, blueprintStages, existingStages, variables)
+                : null,
+        [stagePlan, blueprintStages, existingStages, variables]
+    );
+    // The plan to send: only when the module is on and the API knows the stages.
+    const planToSend = stageModuleOn && mappingStatus === "ready" && stagePlan ? stagePlan : undefined;
+    const stagesNotReady =
+        stageModuleOn && (mappingStatus === "loading" || mappingStatus === "error" || (mappingStatus === "ready" && !stagePlan));
+    const stagesInvalid = Boolean(planToSend && planCheck && !planIsValid(planCheck));
+    const stageRenames =
+        planToSend && blueprintStages ? renameCount(planToSend, blueprintStages, existingStages, variables) : 0;
+    // Errors the API found in the plan on the preview (it then writes nothing).
+    const stagePreviewErrors = planToSend ? (preview?.modules?.pipeline_stages?.errors?.length ?? 0) : 0;
+
     /** Ticked and disabled while `products` is ticked: it comes along regardless. */
     const lockedByProducts = (key: string) =>
         PRODUCT_COUPLED_MODULES.includes(key) && modules.has("products") && declaredModules.includes(key);
 
     const toggleModule = (key: string) => {
         if (lockedByProducts(key)) return;
+        if (key === "pipeline_stages" && stageModuleBlocked) return;
         const next = new Set(modules);
         if (next.has(key)) next.delete(key);
         else next.add(key);
@@ -132,6 +226,7 @@ export default function BlueprintWizard({
                 modules: Array.from(modules),
                 variables,
                 dryRun: true,
+                pipelineStagePlan: planToSend,
             });
             setPreview(res.data);
             setStep("preview");
@@ -142,12 +237,26 @@ export default function BlueprintWizard({
 
     const runInstall = async () => {
         if (!selectedId) return;
+        // The stages may have changed since the preview (another admin, another
+        // tab): check the plan against them again rather than let it fail half way.
+        if (planToSend && blueprintStages) {
+            const fresh = await stagesQuery.refetch();
+            const latest = toExistingStages(fresh.data?.data?.data ?? []);
+            if (fresh.isError || !planIsValid(checkPlan(planToSend, blueprintStages, latest, variables))) {
+                notify.warning("Tahapan pipeline berubah sejak pratinjau", {
+                    description: "Periksa lagi pilihan tahapan penjualan, lalu lihat pratinjau ulang.",
+                });
+                setStep("details");
+                return;
+            }
+        }
         try {
             const res = await install.mutateAsync({
                 blueprintId: selectedId,
                 modules: Array.from(modules),
                 variables,
                 dryRun: false,
+                pipelineStagePlan: planToSend,
             });
             setResult(res.data);
             setStep("done");
@@ -164,6 +273,7 @@ export default function BlueprintWizard({
         setModules(new Set());
         setPreview(null);
         setResult(null);
+        setStagePlan(null);
     };
 
     if (isLoading) {
@@ -207,6 +317,8 @@ export default function BlueprintWizard({
                         <button
                             key={bp.id}
                             onClick={() => {
+                                // Another blueprint has other stages: start its plan afresh.
+                                if (bp.id !== selectedId) setStagePlan(null);
                                 setSelectedId(bp.id);
                                 setStep("details");
                             }}
@@ -268,7 +380,7 @@ export default function BlueprintWizard({
                                     <input
                                         type="checkbox"
                                         checked={modules.has(key)}
-                                        disabled={lockedByProducts(key)}
+                                        disabled={lockedByProducts(key) || (key === "pipeline_stages" && stageModuleBlocked)}
                                         onChange={() => toggleModule(key)}
                                     />
                                     <span className="flex-1">
@@ -294,6 +406,22 @@ export default function BlueprintWizard({
                         </div>
                     </section>
 
+                    {offersStages && (stageModuleOn || stageModuleBlocked) && (
+                        <section>
+                            <h3 className="mb-1 font-medium">Tahapan penjualan</h3>
+                            <StageMappingSection
+                                status={mappingStatus}
+                                stages={blueprintStages ?? []}
+                                existing={existingStages}
+                                variables={variables}
+                                plan={stagePlan}
+                                check={planCheck}
+                                onChange={setStagePlan}
+                                onRetry={() => stagesQuery.refetch()}
+                            />
+                        </section>
+                    )}
+
                     {missingVariables.length > 0 && (
                         <div className="flex gap-2 rounded-lg border-l-4 border-l-amber-500 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -317,7 +445,13 @@ export default function BlueprintWizard({
                             )}
                             <AppButton
                                 onClick={runPreview}
-                                disabled={modules.size === 0 || requiredMissing.length > 0 || install.isPending}
+                                disabled={
+                                    modules.size === 0 ||
+                                    requiredMissing.length > 0 ||
+                                    install.isPending ||
+                                    stagesNotReady ||
+                                    stagesInvalid
+                                }
                             >
                                 Lihat pratinjau
                                 <ChevronRight className="ml-1 h-4 w-4" />
@@ -340,6 +474,16 @@ export default function BlueprintWizard({
 
                     <ReportTable report={preview} />
 
+                    {planToSend && blueprintStages && (
+                        <StageMappingPreview
+                            plan={planToSend}
+                            stages={blueprintStages}
+                            existing={existingStages}
+                            variables={variables}
+                            report={preview.modules?.pipeline_stages}
+                        />
+                    )}
+
                     {(preview.unsubstituted_variables?.length ?? 0) > 0 && (
                         <div className="rounded-lg border-l-4 border-l-amber-500 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
                             Tanda yang masih kosong dan akan terlihat apa adanya di teks:{" "}
@@ -350,18 +494,32 @@ export default function BlueprintWizard({
                     )}
 
                     <div className="flex justify-between">
-                        <AppButton variantStyle="outline" onClick={() => setStep("details")}>
+                        <AppButton
+                            variantStyle="outline"
+                            onClick={() => {
+                                // Back to the choices, kept as they were, against fresh stages.
+                                setStep("details");
+                                if (offersStages && canReadStages) stagesQuery.refetch();
+                            }}
+                        >
                             <ChevronLeft className="mr-1 h-4 w-4" />
                             Ubah pilihan
                         </AppButton>
                         <AppButton
                             onClick={runInstall}
-                            disabled={install.isPending || !previewCanInstall(preview)}
+                            disabled={install.isPending || stagePreviewErrors > 0 || !previewCanInstall(preview, stageRenames)}
                         >
                             <Sparkles className="mr-1.5 h-4 w-4" />
-                            {installButtonLabel(preview)}
+                            {installButtonLabel(preview, stageRenames)}
                         </AppButton>
                     </div>
+                    {/* The API checks the whole plan first and writes nothing
+                        when any part is wrong, so installing it would do nothing. */}
+                    {stagePreviewErrors > 0 && (
+                        <p className="text-right text-xs text-red-600">
+                            Perbaiki pilihan tahapan penjualan dulu (lihat rincian di atas), lalu lihat pratinjau ulang.
+                        </p>
+                    )}
                 </div>
             )}
 

@@ -13,11 +13,13 @@ import {
 } from "@mui/material";
 import { LogOut, Mail, SquareUserRound, Building2 } from "lucide-react";
 import Link from "next/link";
+import { useT } from "@/lib/hooks/useT";
 import React, { useState } from "react";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { logout, userProfile, userRole, userCompany, userPlanName } = useAuth();
+  const { t } = useT();
 
   const open = Boolean(anchorEl);
 
@@ -53,7 +55,7 @@ const ProfileDropdown = () => {
     <Box>
       <IconButton
         size="large"
-        aria-label="profile"
+        aria-label={t.profileMenu.profile}
         color="inherit"
         onClick={handleClick}
         sx={{
@@ -100,11 +102,11 @@ const ProfileDropdown = () => {
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography fontWeight={700} variant="h6" sx={{ lineHeight: 1.2, mb: 0.5 }}>
-              {userProfile ? truncateName(userProfile.fullname, 20) : "Loading..."}
+              {userProfile ? truncateName(userProfile.fullname, 20) : t.profileMenu.loading}
             </Typography>
             <Stack direction="row" alignItems="center" spacing={1} mb={1}>
               <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, fontWeight: 500 }}>
-                {userProfile?.role || userRole || "User"}
+                {userProfile?.role || userRole || t.profileMenu.userFallback}
               </Typography>
               {userPlanName && (
                 <Box
@@ -130,14 +132,14 @@ const ProfileDropdown = () => {
             <Stack direction="row" alignItems="center" spacing={1.5} mt={0.75}>
               <Mail size={16} className="text-gray-500" />
               <Typography variant="body2" sx={{ color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {userProfile?.email || "loading..."}
+                {userProfile?.email || t.profileMenu.loadingEmail}
               </Typography>
             </Stack>
 
             <Stack direction="row" alignItems="center" spacing={1.5} mt={0.75}>
               <Building2 size={16} className="text-gray-500" />
               <Typography variant="body2" sx={{ color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
-                {userProfile?.company || userCompany || "No Company"}
+                {userProfile?.company || userCompany || t.profileMenu.noCompany}
               </Typography>
             </Stack>
           </Box>
@@ -179,9 +181,9 @@ const ProfileDropdown = () => {
             </Paper>
 
             <Box>
-              <Typography fontWeight={600}>My Profile</Typography>
+              <Typography fontWeight={600}>{t.profileMenu.myProfile}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Account Settings
+                {t.profileMenu.accountSettings}
               </Typography>
             </Box>
           </Box>
@@ -218,9 +220,9 @@ const ProfileDropdown = () => {
             </Paper>
 
             <Box>
-              <Typography fontWeight={600}>My Inbox</Typography>
+              <Typography fontWeight={600}>{t.profileMenu.myInbox}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Messages & Emails
+                {t.profileMenu.messagesAndEmails}
               </Typography>
             </Box>
           </Box>
@@ -240,7 +242,7 @@ const ProfileDropdown = () => {
             gap: 1,
           }}
         >
-          <LogOut size={18} /> Logout
+          <LogOut size={18} /> {t.profileMenu.logout}
         </Button>
       </Menu>
     </Box>

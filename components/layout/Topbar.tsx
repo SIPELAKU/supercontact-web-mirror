@@ -6,9 +6,13 @@ import { useNotifications } from "@/lib/context/NotificationsContext"
 import { Bell, Menu } from "lucide-react"
 import Notification from "../modal/Notification"
 import ProfileDropdown from "./ProfileDropdown"
+import LanguageSwitch from "./LanguageSwitch"
+import { useT } from "@/lib/hooks/useT"
+import { formatText } from "@/lib/utils/language"
 import { useState } from "react"
 
 export default function Header() {
+  const { t } = useT()
   const { toggleDesktop, toggleMobile } = useSidebar()
   const { unreadCount } = useNotifications()
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
@@ -20,7 +24,7 @@ export default function Header() {
         <div className="lg:hidden">
           <AppButton
             variantStyle="text"
-            aria-label="Toggle navigation menu"
+            aria-label={t.topbar.toggleNavigation}
             className="h-9 w-9 min-w-0 p-0 text-gray-700 hover:bg-gray-100"
             onClick={() => toggleMobile()}
           >
@@ -31,7 +35,7 @@ export default function Header() {
         <div className="hidden lg:block">
           <AppButton
             variantStyle="text"
-            aria-label="Toggle sidebar"
+            aria-label={t.topbar.toggleSidebar}
             className="h-9 w-9 min-w-0 p-0 text-gray-700 hover:bg-gray-100"
             onClick={() => toggleDesktop()}
           >
@@ -41,10 +45,11 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        <LanguageSwitch />
         <AppButton
           onClick={(e) => setNotifAnchorEl(e.currentTarget)}
           variantStyle="text"
-          aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+          aria-label={unreadCount > 0 ? formatText(t.topbar.notificationsUnread, { count: unreadCount }) : t.topbar.notifications}
           className="relative h-9 w-9 min-w-0 p-0 text-gray-700 hover:bg-gray-100"
         >
           <Bell className="h-5 w-5" />

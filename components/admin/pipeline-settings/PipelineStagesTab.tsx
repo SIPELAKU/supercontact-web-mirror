@@ -11,6 +11,7 @@ import {
     Trash2,
     X,
 } from "lucide-react";
+import { AppAlert } from "@/components/ui/app-alert";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -25,13 +26,15 @@ import {
 } from "@/lib/hooks/usePipelineStages";
 import type { PipelineStage, StageOutcome } from "@/lib/types/PipelineStage";
 
-const OUTCOME_LABEL: Record<StageOutcome, string> = {
+// Still the three outcomes this page knew; Prospect (entry) and Proposal
+// (quotation) show no badge. Stages are managed from the Pipeline page now.
+const OUTCOME_LABEL: Partial<Record<StageOutcome, string>> = {
     open: "Sedang berjalan",
     won: "Menang",
     lost: "Kalah",
 };
 
-const OUTCOME_STYLE: Record<StageOutcome, string> = {
+const OUTCOME_STYLE: Partial<Record<StageOutcome, string>> = {
     open: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
     won: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
     lost: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
@@ -104,7 +107,6 @@ export default function PipelineStagesTab() {
                     id: editingId,
                     data: {
                         name,
-                        outcome: draft.outcome,
                         default_probability: parseProbability(),
                     },
                 });
@@ -124,7 +126,6 @@ export default function PipelineStagesTab() {
             } else {
                 await createMutation.mutateAsync({
                     name,
-                    outcome: draft.outcome,
                     default_probability: parseProbability(),
                 });
                 notify.success("Tahap ditambahkan");
@@ -240,6 +241,16 @@ export default function PipelineStagesTab() {
 
     return (
         <div className="flex flex-col gap-4">
+            <AppAlert
+                variant="info"
+                title="Still under development"
+                description={
+                    <>
+                        This page is still under development. To manage stages, use the gear button next to{" "}
+                        <strong>Add Deal</strong> on the Pipeline page.
+                    </>
+                }
+            />
             <div className="rounded-lg border-l-4 border-l-amber-500 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
                 <p className="font-medium">Mengubah tahap ikut mengubah data yang berjalan.</p>
                 <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-muted-foreground">

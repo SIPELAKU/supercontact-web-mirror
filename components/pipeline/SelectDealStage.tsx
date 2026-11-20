@@ -10,6 +10,8 @@ export interface DealStage {
   label: string;
   bgColor?: string;
   textColor?: string;
+  /** A stage's colour (hex) from the API: the chip is a tint of it. */
+  color?: string | null;
 }
 
 interface Props {

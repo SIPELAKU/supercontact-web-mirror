@@ -148,8 +148,10 @@ export default function ClientDetailsSection({
     // offer a deal because its stage was renamed would silently drop real
     // work, while offering a closed one is caught by the server (A16 moves
     // nothing when the deal is already closed).
+    // Only Won and Lost are closed: Prospect (entry) and Proposal
+    // (quotation) are open stages with a job of their own.
     const closedStageNames = new Set(
-      stages.filter((stage) => stage.outcome !== "open").map((stage) => stage.name)
+      stages.filter((stage) => stage.outcome === "won" || stage.outcome === "lost").map((stage) => stage.name)
     );
     const rows: any[] = pipelinesResponse?.data?.pipelines ?? [];
     const labelFor = (row: any) =>

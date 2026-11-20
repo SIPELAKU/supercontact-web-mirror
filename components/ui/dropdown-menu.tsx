@@ -235,7 +235,11 @@ function DropdownMenuContent({
       MenuListProps={{
         autoFocusItem: false,
         disableListWrap: true,
-        onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
+        // Keys typed in a search field inside the menu stay there, but Escape
+        // still reaches the Menu so it closes.
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key !== "Escape") e.stopPropagation();
+        },
       }}
       anchorOrigin={{
         vertical: "bottom",

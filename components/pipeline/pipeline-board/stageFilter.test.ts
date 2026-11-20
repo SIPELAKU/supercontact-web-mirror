@@ -4,6 +4,11 @@ import { filterStagesBySelection } from './stageFilter';
 
 const stage = (name: string, dealIds: string[]): StageUI => ({
   id: name,
+  stageId: name,
+  outcome: 'open',
+  color: null,
+  isLocked: false,
+  totalDeals: 10 * dealIds.length,
   name,
   value: 1000 * dealIds.length,
   count: 10 * dealIds.length,

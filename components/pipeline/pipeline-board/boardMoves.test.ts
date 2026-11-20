@@ -6,6 +6,11 @@ import { columnCollision, dropIndex, moveDealToColumn, stageNameAt } from './boa
 // Each column says it has more deals than are loaded, as on the real board.
 const stage = (name: string, deals: Array<[string, number]>, count = 50, value = 9000): StageUI => ({
   id: name,
+  stageId: name,
+  outcome: 'open',
+  color: null,
+  isLocked: false,
+  totalDeals: count,
   name,
   value,
   count,

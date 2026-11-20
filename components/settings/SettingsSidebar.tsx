@@ -6,12 +6,14 @@ import { usePermission } from "@/lib/hooks/usePermission";
 import { useSettingsSidebar } from "@/lib/context/SettingsSidebarContext";
 import { settingsNav, findActiveSettingsEntry } from "@/lib/config/settingsNav";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/hooks/useT";
 import SettingsGroup from "./SettingsGroup";
 import SettingsMenuItem from "./SettingsMenuItem";
 
 export default function SettingsSidebar() {
   const pathname = usePathname();
   const { can } = usePermission();
+  const { nav } = useT();
   const { isMobileOpen, openGroups, closeMobile, toggleGroup, openGroup } = useSettingsSidebar();
 
   const activeEntry = findActiveSettingsEntry(pathname);
@@ -28,15 +30,18 @@ export default function SettingsSidebar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // Titles in the chosen language; ids and paths stay as they are.
   const visibleSections = settingsNav
     .map((section) => {
       if (section.children) {
-        const children = section.children.filter((item) => !item.permission || can(item.permission));
+        const children = section.children
+          .filter((item) => !item.permission || can(item.permission))
+          .map((item) => ({ ...item, title: nav(item.title) }));
         if (children.length === 0) return null;
-        return { ...section, children };
+        return { ...section, title: nav(section.title), children };
       }
       if (section.permission && !can(section.permission)) return null;
-      return section;
+      return { ...section, title: nav(section.title) };
     })
     .filter((section): section is NonNullable<typeof section> => section !== null);
 

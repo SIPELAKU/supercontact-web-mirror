@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.142.0] - 2026-11-20
+
+### Detail Versi 1.142.0
+
+#### ✨ Pilihan Bahasa Indonesia/Inggris untuk Aplikasi (Disembunyikan)
+
+- **Deskripsi:**
+  - **Masalah:** aplikasi setelah login hanya berbahasa Inggris. Website publik sudah punya tombol ID/EN, tapi pilihannya tidak tersimpan (setelah refresh kembali ke ID) dan tidak terhubung ke aplikasi.
+  - **Perbaikan (tahap 1 dari penerjemahan bertahap):**
+    - Tombol bahasa di Topbar aplikasi (ikon bahasa + EN/ID), dengan menu English dan Bahasa Indonesia.
+    - Satu pilihan untuk website publik dan aplikasi, disimpan di browser: memilih di salah satu tempat langsung berlaku di tempat lain, juga di tab lain, dan tetap setelah refresh.
+    - Sebelum user memilih, website publik tetap Indonesia dan aplikasi tetap Inggris.
+    - Yang sudah diterjemahkan: menu Sidebar, menu Settings, menu profil (My Profile, My Inbox, Logout), dan label tombol di Topbar. Halaman lain menyusul per modul.
+  - **Disembunyikan dulu:** fitur ini tidak tampil di environment mana pun, termasuk dev, selama `HIDDEN_FEATURES.languageSwitch` di `lib/config/featureFlags.ts` bernilai `true`. Selama disembunyikan, aplikasi tetap bahasa Inggris dan website publik bekerja persis seperti sebelumnya. Untuk menampilkannya, hapus baris itu. Flag ini sengaja bukan variabel env.
+  - **Technical Notes:**
+    - Kamus teks: `lib/constants/i18n/en.ts` dan `id.ts` (key sama, dicek TypeScript dan tes), `index.ts` (bahasa, nilai bawaan, key penyimpanan `smartsales.language`)
+    - `lib/utils/language.ts`: membaca/menyimpan pilihan dengan aman, `siteLanguage`, `appLanguage`, `formatText` untuk `{placeholder}`, `navLabel`
+    - Hook `lib/hooks/useT.ts` untuk komponen aplikasi; `LanguageContext` kini juga memberi `appLanguage`
+    - Menu Sidebar dipindah ke `lib/config/sidebarNav.ts`; nama menu tetap bahasa Inggris dan terjemahannya ada di `navLabels` pada kamus `id`
+    - Komponen baru `components/layout/LanguageSwitch.tsx`
+  - **Rilis:** aman naik ke mana pun selama flag masih `true`, karena tidak ada yang berubah di layar.
+
+- **🧪 Testing:** Vitest 13 tes baru (semua 1123 lulus), 5 dari 5 mutasi tertangkap, tsc bersih, lint bersih (memakai `next/core-web-vitals` saja karena config `next/typescript` tidak tersedia di eslint-config-next 14.2.5 yang terpasang). Chrome dengan API mock: 8 cek dengan flag menyala (tidak ada tombol, aplikasi tetap Inggris walau tersimpan "id", website publik seperti sebelumnya) dan 11 cek dengan flag dihapus (ganti ke Indonesia, tersimpan setelah refresh, terhubung dua arah dengan website publik, muat di lebar HP 390 px). Belum dites manual.
+
+---
+
 ## [1.141.0] - 2026-11-10
 
 ### Detail Versi 1.141.0

@@ -11,3 +11,22 @@
 // redeploy after changing the value.
 export const SHOW_DATA_INTEL_PREVIEW =
   process.env.NEXT_PUBLIC_ENABLE_DATA_INTEL_PREVIEW === "true";
+
+// Finished-in-part features that stay hidden on every environment (dev too)
+// until they are ready. This is a plain constant, not an env variable: to show
+// a feature, delete its line below (a missing or false entry shows it).
+export type HideableFeature = "languageSwitch";
+
+export const HIDDEN_FEATURES: Partial<Record<HideableFeature, boolean>> = {
+  // ID/EN switch in the app Topbar. The app is still being translated, so
+  // while hidden it stays in English whatever was picked on the public site,
+  // and the public site behaves as before (its choice is not remembered).
+  languageSwitch: true,
+};
+
+export function isFeatureHidden(
+  feature: HideableFeature,
+  flags: Partial<Record<HideableFeature, boolean>> = HIDDEN_FEATURES,
+): boolean {
+  return flags[feature] === true;
+}

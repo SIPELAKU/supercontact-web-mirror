@@ -39,30 +39,32 @@ const company = () => [
   stage("Closed - Lost", "lost"),
 ];
 
-/** Multi Financing. */
+/** Multi Financing as API 1.171.2 marks it: an entry and a quotation stage too. */
 const blueprint: BlueprintStage[] = [
-  { name: "Prospek", outcome: "open" },
+  { name: "Prospek", outcome: "entry" },
   { name: "Kunjungan / Survei", outcome: "open" },
-  { name: "Simulasi & Pengajuan", outcome: "open" },
+  { name: "Simulasi & Pengajuan", outcome: "quotation" },
   { name: "Proses Persetujuan", outcome: "open" },
   { name: "Akad / Serah Terima", outcome: "won" },
   { name: "Batal", outcome: "lost" },
 ];
 
 describe("readBlueprintStages", () => {
-  it("objects and bare names, in manifest order; anything else won/lost-free", () => {
+  it("objects and bare names, in manifest order; entry/quotation/won/lost kept, anything else open", () => {
     expect(
       readBlueprintStages([
-        { name: "Prospek", outcome: "open", color: "#26C6F9", default_probability: 10 },
+        { name: "Prospek", outcome: "entry", color: "#26C6F9", default_probability: 10 },
         "Kunjungan",
+        { name: "Penawaran Harga", outcome: "quotation" },
         { name: "Akad", outcome: "won" },
         { name: "Batal", outcome: "lost" },
-        { name: "Aneh", outcome: "entry" },
+        { name: "Aneh", outcome: "strange" },
         null,
       ]),
     ).toEqual([
-      { name: "Prospek", outcome: "open", color: "#26C6F9", default_probability: 10 },
+      { name: "Prospek", outcome: "entry", color: "#26C6F9", default_probability: 10 },
       { name: "Kunjungan", outcome: "open" },
+      { name: "Penawaran Harga", outcome: "quotation", color: null, default_probability: null },
       { name: "Akad", outcome: "won", color: null, default_probability: null },
       { name: "Batal", outcome: "lost", color: null, default_probability: null },
       { name: "Aneh", outcome: "open", color: null, default_probability: null },
@@ -89,17 +91,34 @@ describe("renderStageName (same rule as the BE)", () => {
 });
 
 describe("initialPlan", () => {
-  it("won/lost to won/lost, the first to the entry stage, the rest added up to 8", () => {
+  it("by job: entry → Prospect, quotation → Proposal, won → Won, lost → Lost; the rest added up to 8", () => {
     const plan = initialPlan(blueprint, company(), {});
     expect(plan.map((r) => [r.action, r.stage_id])).toEqual([
       ["assign", "Prospect"],
       ["create", null],
+      ["assign", "Proposal"],
       ["create", null],
-      ["skip", null],
       ["assign", "Closed - Won"],
       ["assign", "Closed - Lost"],
     ]);
     expect(stagesAfterInstall(plan, company())).toBe(8);
+  });
+
+  it("by job, not position", () => {
+    const plan = initialPlan(
+      [{ name: "Lead" }, { name: "Pendaftaran Vendor", outcome: "entry" }, { name: "Penawaran Harga", outcome: "quotation" }],
+      company(),
+      {},
+    );
+    expect(plan.map((r) => [r.action, r.stage_id])).toEqual([
+      ["create", null],
+      ["assign", "Prospect"],
+      ["assign", "Proposal"],
+    ]);
+  });
+
+  it("an open first stage never takes Prospect (the API refuses it)", () => {
+    expect(initialPlan([{ name: "Lead" }], company(), {})[0]).toEqual({ index: 0, action: "create", stage_id: null });
   });
 
   it("inactive stages count towards 8", () => {
@@ -115,15 +134,10 @@ describe("initialPlan", () => {
   });
 
   it("an inactive namesake can't be taken over or duplicated: left out, even with room", () => {
-    const existing = [...company(), stage("Simulasi & Pengajuan", "open", { isActive: false })];
-    expect(initialPlan(blueprint, existing, {})[2].action).toBe("skip");
-    const roomy = initialPlan([{ name: "Prospek" }, { name: "Simulasi & Pengajuan" }], existing, {});
+    const existing = [...company(), stage("Proses Persetujuan", "open", { isActive: false })];
+    expect(initialPlan(blueprint, existing, {})[3].action).toBe("skip");
+    const roomy = initialPlan([{ name: "Prospek", outcome: "entry" }, { name: "Proses Persetujuan" }], existing, {});
     expect(roomy[1].action).toBe("skip");
-  });
-
-  it("only the very first blueprint stage goes to the entry stage", () => {
-    const plan = initialPlan([{ name: "Menang", outcome: "won" }, { name: "Lead" }], company(), {});
-    expect(plan[1]).toEqual({ index: 1, action: "create", stage_id: null });
   });
 
   it("a company already at 8 gets no new stages", () => {
@@ -134,25 +148,25 @@ describe("initialPlan", () => {
   it("names are compared after the variables are filled", () => {
     const existing = [...company(), stage("Demo Mobil", "open")];
     const plan = initialPlan([{ name: "Demo {{PRODUK}}" }], existing, { PRODUK: "Mobil" });
-    expect(plan[0]).toEqual({ index: 0, action: "assign", stage_id: "Prospect" }); // the first goes to the entry stage
-    const plan2 = initialPlan([{ name: "Lead" }, { name: "Demo {{PRODUK}}" }], existing, { PRODUK: "Mobil" });
-    expect(plan2[1]).toEqual({ index: 1, action: "assign", stage_id: "Demo Mobil" });
+    expect(plan[0]).toEqual({ index: 0, action: "assign", stage_id: "Demo Mobil" });
   });
 });
 
 describe("targets", () => {
-  it("won/lost only to won/lost; others to any active stage but won/lost", () => {
+  it("entry/quotation/won/lost only to the stage with the same job; open ones to any active open stage", () => {
+    expect(allowedTargets(blueprint[0], company()).map((s) => s.id)).toEqual(["Prospect"]);
+    expect(allowedTargets(blueprint[2], company()).map((s) => s.id)).toEqual(["Proposal"]);
     expect(allowedTargets(blueprint[4], company()).map((s) => s.id)).toEqual(["Closed - Won"]);
     expect(allowedTargets(blueprint[5], company()).map((s) => s.id)).toEqual(["Closed - Lost"]);
     expect(allowedTargets(blueprint[1], [...company(), stage("Old", "open", { isActive: false })]).map((s) => s.id)).toEqual([
-      "Prospect",
       "Qualified",
       "Negotiation",
-      "Proposal",
     ]);
   });
 
   it("why a stage can't be added", () => {
+    expect(createBlockReason(blueprint[0], company())).toBe("Pipeline hanya punya satu tahapan awal.");
+    expect(createBlockReason(blueprint[2], company())).toBe("Pipeline hanya punya satu tahapan quotation.");
     expect(createBlockReason(blueprint[4], company())).toBe("Pipeline hanya punya satu tahapan menang.");
     expect(createBlockReason(blueprint[5], company())).toBe("Pipeline hanya punya satu tahapan kalah.");
     expect(createBlockReason(blueprint[1], [...company(), stage("A", "open"), stage("B", "open")])).toBe(
@@ -168,9 +182,11 @@ describe("checkPlan", () => {
   });
 
   it("more than 8 blocks the preview", () => {
-    const plan = initialPlan(blueprint, company(), {});
+    const seven = [...company(), stage("Demo", "open")];
+    const plan = initialPlan(blueprint, seven, {});
+    expect(plan[3].action).toBe("skip");
     plan[3] = chooseAction(3, "create");
-    const check = checkPlan(plan, blueprint, company(), {});
+    const check = checkPlan(plan, blueprint, seven, {});
     expect(check.total).toBe(9);
     expect(check.blocking).toBe("Maksimal 8 tahapan, termasuk yang non-aktif. Ubah beberapa jadi ganti nama atau jangan dipasang.");
   });
@@ -185,8 +201,20 @@ describe("checkPlan", () => {
 
   it("one stage can't be picked twice", () => {
     const plan = initialPlan(blueprint, company(), {});
-    plan[1] = chooseAction(1, "assign", "Prospect");
-    expect(checkPlan(plan, blueprint, company(), {}).rowErrors[1]).toBe("“Prospect” sudah dipilih di baris lain.");
+    plan[1] = chooseAction(1, "assign", "Qualified");
+    plan[3] = chooseAction(3, "assign", "Qualified");
+    expect(checkPlan(plan, blueprint, company(), {}).rowErrors[3]).toBe("“Qualified” sudah dipilih di baris lain.");
+  });
+
+  it("an open stage can't take Prospect or Proposal; entry/quotation can't be added", () => {
+    const plan = initialPlan(blueprint, company(), {});
+    plan[1] = chooseAction(1, "assign", "Proposal");
+    plan[0] = chooseAction(0, "create");
+    plan[2] = chooseAction(2, "create");
+    const check = checkPlan(plan, blueprint, company(), {});
+    expect(check.rowErrors[1]).toBe("Tahapan ini tidak bisa diganti dengan tahapan dari template ini.");
+    expect(check.rowErrors[0]).toBe("Pipeline hanya punya satu tahapan awal.");
+    expect(check.rowErrors[2]).toBe("Pipeline hanya punya satu tahapan quotation.");
   });
 
   it("won/lost can't go elsewhere or be added", () => {
@@ -212,7 +240,7 @@ describe("checkPlan", () => {
   });
 
   it("a renamed stage frees its old name for a new one", () => {
-    const stages: BlueprintStage[] = [{ name: "Prospek" }, { name: "Prospect" }];
+    const stages: BlueprintStage[] = [{ name: "Prospek", outcome: "entry" }, { name: "Prospect" }];
     const plan = [chooseAction(0, "assign", "Prospect"), chooseAction(1, "create")];
     expect(checkPlan(plan, stages, company(), {}).rowErrors).toEqual({});
   });
@@ -228,8 +256,8 @@ describe("checkPlan", () => {
 describe("freeTargets / rowUsing", () => {
   it("what a row can still rename: not taken elsewhere, same name first", () => {
     const plan = initialPlan(blueprint, company(), {});
-    // Row 1 (Kunjungan): Prospect is taken by row 0.
-    expect(freeTargets(1, plan, blueprint, company(), {}).map((s) => s.id)).toEqual(["Qualified", "Negotiation", "Proposal"]);
+    // Row 1 (Kunjungan, open): only the open stages, Prospect/Proposal belong to their pairs.
+    expect(freeTargets(1, plan, blueprint, company(), {}).map((s) => s.id)).toEqual(["Qualified", "Negotiation"]);
     // Row 0 keeps its own target.
     expect(freeTargets(0, plan, blueprint, company(), {})[0].id).toBe("Prospect");
     const named = [...company(), stage("Kunjungan / Survei", "open")];
@@ -249,9 +277,9 @@ describe("resultPipeline", () => {
       ["Prospek", "renamed", "Prospect"],
       ["Qualified", "kept", ""],
       ["Negotiation", "kept", ""],
-      ["Proposal", "kept", ""],
+      ["Simulasi & Pengajuan", "renamed", "Proposal"],
       ["Kunjungan / Survei", "new", ""],
-      ["Simulasi & Pengajuan", "new", ""],
+      ["Proses Persetujuan", "new", ""],
       ["Akad / Serah Terima", "renamed", "Closed - Won"],
       ["Batal", "renamed", "Closed - Lost"],
     ]);
@@ -280,12 +308,12 @@ describe("summary and preview", () => {
     expect(describePlan(plan, blueprint, company(), {})).toEqual([
       { index: 0, kind: "rename", text: "Prospect → Prospek" },
       { index: 1, kind: "create", text: "Kunjungan / Survei" },
-      { index: 2, kind: "create", text: "Simulasi & Pengajuan" },
-      { index: 3, kind: "skip", text: "Proses Persetujuan" },
+      { index: 2, kind: "rename", text: "Proposal → Simulasi & Pengajuan" },
+      { index: 3, kind: "create", text: "Proses Persetujuan" },
       { index: 4, kind: "rename", text: "Closed - Won → Akad / Serah Terima" },
       { index: 5, kind: "rename", text: "Closed - Lost → Batal" },
     ]);
-    expect(renameCount(plan, blueprint, company(), {})).toBe(3);
+    expect(renameCount(plan, blueprint, company(), {})).toBe(4);
   });
 
   it("a rename to the same name is not a change", () => {

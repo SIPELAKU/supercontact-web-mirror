@@ -98,7 +98,7 @@ export default function StageSetupDialog({ open, onClose, onDone }: StageSetupDi
       description={
         step === "choose"
           ? "Start with the default stages, or change them first."
-          : "Rename, recolour, reorder, add or remove stages. Prospect stays first; Closed - Won and Closed - Lost stay last."
+          : "Rename, recolour, reorder, add or remove stages (8 at most). Prospect stays first; Closed - Won and Closed - Lost stay last."
       }
       maxWidth="md"
       fullScreen={narrow}
@@ -145,7 +145,7 @@ export default function StageSetupDialog({ open, onClose, onDone }: StageSetupDi
             <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
               <li>Pick a suggested name or type your own</li>
               <li>Choose colours and drag to reorder</li>
-              <li>Add as many stages as you need</li>
+              <li>Add your own stages, up to 8 in total</li>
             </ul>
             <AppButton variantStyle="outline" onClick={() => setStep("customize")} disabled={busy} className="mt-auto">
               Customize

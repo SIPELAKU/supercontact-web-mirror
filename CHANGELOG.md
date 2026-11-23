@@ -9,6 +9,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.147.0] - 2026-11-23
+
+### Detail Versi 1.147.0
+
+#### ✨ Setup Cepat: Tahapan Awal dan Quotation dari Template Dipasangkan Otomatis
+
+- **Deskripsi:**
+  - **Masalah:** tahapan pertama template selalu dianggap pengganti Prospect hanya karena urutannya, dan tahapan template yang berfungsi untuk quotation tidak dikenali, sehingga Proposal tidak pernah ikut diganti dan user harus menebak.
+  - **Perbaikan:**
+    - Template kini menandai tahapan **awal** dan tahapan **quotation** (API 1.171.2), seperti tahapan menang/kalah. Contoh: Pendaftaran Vendor = tahapan awal, Penawaran Harga = tahapan quotation.
+    - Pasangannya tetap dan otomatis berdasarkan fungsi, bukan urutan: tahapan awal → Prospect, tahapan quotation → Proposal, menang → Closed - Won, kalah → Closed - Lost. Di layar tampil "Menggantikan tahapan Anda “Proposal”" tanpa dropdown, beserta hasilnya (misalnya “Proposal” → “Penawaran Harga” · 20 deal tetap di dalamnya).
+    - Keempat tahapan itu tidak bisa "Tambah baru". Alasannya muncul saat kursor diarahkan: "Pipeline hanya punya satu tahapan awal." / "…satu tahapan quotation." / "…menang." / "…kalah."
+    - Tahapan template biasa hanya bisa mengganti nama tahapan biasa milik Anda: Prospect, Proposal, Closed - Won, dan Closed - Lost tidak lagi ditawarkan di dropdown-nya.
+    - Perusahaan yang belum punya tahapan tetap memakai tombol "Buat 6 tahapan bawaan" (1.146.0); setelah itu tahapan awal dan quotation template langsung terpasang ke Prospect dan Proposal yang baru.
+  - **Technical Notes:**
+    - `stageMappingRules.ts`: `readBlueprintStages` menyimpan `entry`/`quotation`; `isPairedStage`; `allowedTargets` dan `createBlockReason` memperlakukan entry/quotation/won/lost sebagai pasangan tetap; `initialPlan` memasangkan berdasarkan `outcome` (aturan "tahapan pertama → Prospect" dihapus)
+    - `BlueprintStage.outcome` kini `entry | quotation | open | won | lost`; `StageMappingSection` menampilkan pasangan tetap untuk keempatnya
+  - **Rilis:** butuh **API 1.171.2**, yang ada di branch BE `fix/blueprint-stages` (commit `125f6d6`) dan akan dinaikkan bersamaan dengan FE ini. Kontraknya sudah dicocokkan dengan kode branch itu: validasi `apply_blueprint_plan` sama dengan aturan FE, dan 27 template industri masing-masing punya tepat 1 tahapan awal (tahapan pertama), 1 quotation, 1 menang, 1 kalah. Dengan API lama, template belum menandai tahapan awal, sehingga tahapan pertama tidak lagi otomatis mengganti Prospect dan akan ditawarkan sebagai tahapan baru. Jangan naik sebelum API 1.171.2.
+
+- **🧪 Testing:** Vitest semua 1201 lulus (tes aturan ditulis ulang untuk data template 1.171.2), 7 dari 7 mutasi aturan baru tertangkap, tsc bersih, lint 0 error di folder yang diubah. Chrome dengan API mock: 31 cek alur utama Setup Cepat (pilihan awal berdasarkan fungsi, pasangan tetap tahapan awal/quotation/menang, alasan di tooltip, dropdown hanya tahapan biasa, hasil pipeline, batas 8, pratinjau, Pasang sama dengan pratinjau, tahapan berubah setelah pratinjau), perusahaan tanpa tahapan 6 cek, tanpa akses 2, Manager 2, server tanpa daftar 2, dan data asli template Multi Financing dari branch BE `fix/blueprint-stages` 4 cek (Prospek → Prospect, Simulasi & Pengajuan → Proposal). Belum dites manual.
+
+---
+
+## [1.146.0] - 2026-11-23
+
+### Detail Versi 1.146.0
+
+#### ✨ Pipeline Kosong Bisa Langsung ke Setup Cepat, dan Teks Batas 8 Tahapan
+
+- **Deskripsi:**
+  - **Masalah:**
+    - Pipeline yang belum punya tahapan hanya menawarkan setup manual, tanpa jalan ke template industri di Setup Cepat.
+    - Kalau perusahaan tanpa tahapan membuka Setup Cepat, yang muncul hanya "Atur tahapan pipeline dulu" dengan link kembali ke Pipeline, jadi user bisa bolak-balik tanpa ujung.
+    - Dialog setup menulis "Add as many stages as you need", padahal maksimal 8 tahapan.
+  - **Perbaikan:**
+    - Layar "Set up your pipeline" (halaman Pipeline dan Settings › Tahapan Penjualan) punya link **"Or start from an industry template in Setup Cepat"** ke `/settings/onboarding`, khusus Admin. Teksnya juga menyebut "up to 8 stages".
+    - Di Setup Cepat, perusahaan yang belum punya tahapan melihat tombol **"Buat 6 tahapan bawaan"** (setup Default yang sama dengan halaman Pipeline). Setelah dibuat, modul "Tahapan penjualan" otomatis tercentang dan tabel pilihan langsung muncul, sehingga tahapan template bisa mengganti nama tahapan bawaan. Link "atau atur sendiri di halaman Pipeline" tetap ada.
+    - Dialog setup: "Add your own stages, up to 8 in total", dan keterangan langkah Customize menyebut "(8 at most)".
+  - **Technical Notes:**
+    - `PipelineSetupEmpty`: prop `showTemplateLink` (bawaan aktif) dan konstanta `SETUP_CEPAT_HREF`
+    - `StageMappingSection`: prop `onCreateDefaultStages`, `creatingDefaults`; `BlueprintWizard` memakai `useSetupPipelineStages({ mode: "default" })`, memuat ulang tahapan, lalu mencentang modul
+    - Setup tahapan tetap lewat `POST /pipeline-stages/setup` oleh Admin, sesuai keputusan BE bahwa Setup Cepat tidak membuat tahapan sebelum pipeline di-setup.
+
+- **🧪 Testing:** Vitest semua 1199 lulus, tsc bersih, lint 0 error di folder yang diubah. Chrome dengan API mock: Setup Cepat tanpa tahapan 6 cek (tombol, body setup Default, modul tercentang, tabel muncul dengan Prospect baru), alur utama Setup Cepat 30 cek, halaman Pipeline 67 cek (termasuk link Setup Cepat dan teks batas 8), Settings tanpa tahapan 3 cek. Belum dites manual.
+
+---
+
+## [1.145.0] - 2026-11-23
+
+### Detail Versi 1.145.0
+
+#### ✨ Settings › Tahapan Penjualan Memakai Editor yang Sama dengan Halaman Pipeline
+
+- **Deskripsi:**
+  - **Masalah:** halaman Settings › Sales › Tahapan Penjualan masih memakai tabel lama (urutan dengan panah, kolom "Arti" open/won/lost, probabilitas, teks berbahasa Indonesia) yang sudah tidak cocok dengan API 1.170.0 dan berbeda dari pengaturan tahapan di halaman Pipeline. Halaman itu hanya diberi keterangan "still under development".
+  - **Perbaikan:**
+    - Halaman ini sekarang menampilkan **editor yang sama** dengan tombol gear di halaman Pipeline, langsung di halaman (tanpa modal): catatan aturan, "Show inactive stages", geser untuk mengurutkan, ganti nama dengan saran atau "Custom name…", warna (Palette/Wheel), tambah tahapan sebelum Closed - Won, hapus, Activate/Deactivate, tanda Required dan Quotation, batas 8 tahapan, dan pratinjau.
+    - **Bilah bawah** berisi status ("You have unsaved changes." / "All changes are saved."), **Discard** (dengan konfirmasi) dan **Save**. Bilah tetap terlihat saat halaman di-scroll, di desktop maupun HP. Setelah Save, halaman tetap terbuka dan menampilkan tahapan terbaru dari API. Activate/Deactivate tersimpan langsung, sama seperti di Pipeline.
+    - Meninggalkan halaman lewat reload, menutup tab, atau mengetik alamat lain saat masih ada perubahan memunculkan peringatan bawaan browser.
+    - Perusahaan yang belum punya tahapan: tampil "Set up your pipeline" dengan tombol yang membuka setup Default/Customize yang sama dengan halaman Pipeline.
+    - Selain Admin: keterangan "Only an Admin can change the pipeline stages." dan pratinjau tahapan yang dipakai sekarang, tanpa tombol ubah (sebelumnya Manager bisa mengubah lalu ditolak API).
+    - Keterangan "still under development" dan tabel lama dihapus. Isian probabilitas tidak ada lagi di halaman ini, sama seperti editor di Pipeline.
+  - **Technical Notes:**
+    - Hook baru `components/pipeline/stage-editor/useStageManager.ts`: memuat semua tahapan, draft, Save (hapus → tambah → ubah → urutkan), Activate/Deactivate, dan muat ulang. Dipakai `StageManageDialog` (gear) dan `components/admin/pipeline-settings/PipelineStagesSettings.tsx` (halaman Settings), jadi keduanya selalu sama.
+    - `StageEditorLoadState.tsx` (memuat / gagal memuat), `PipelineSetupEmpty` menerima `className`
+    - `PipelineStagesTab.tsx` dihapus
+    - Di layar di bawah `lg` bilah Save memakai `fixed`, karena layout aplikasi memakai `overflow-x-hidden` yang membuat `sticky` tidak bekerja saat seluruh halaman di-scroll
+  - **Rilis:** butuh API 1.170.0 ke atas (sama dengan halaman Pipeline).
+
+- **🧪 Testing:** Vitest semua 1199 lulus, tsc bersih, lint 0 error (config `next/core-web-vitals` saja). Chrome dengan API mock: 14 cek halaman Settings untuk Admin (editor sama tanpa modal, tabel lama hilang, status bilah, Discard, Save mengirim rename dan tahapan baru lalu tetap di halaman, Activate langsung tersimpan, bilah terlihat dan tidak menutupi konten di desktop dan HP 390 px), 2 cek non-Admin, 3 cek perusahaan tanpa tahapan. Regresi dialog gear di halaman Pipeline: 65 cek Admin + 4 cek Staff lulus. Belum dites manual.
+
+---
+
 ## [1.144.0] - 2026-11-20
 
 ### Detail Versi 1.144.0

@@ -36,7 +36,7 @@ import {
     renameCount,
     toExistingStages,
 } from "./stageMappingRules";
-import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
+import { usePipelineStages, useSetupPipelineStages } from "@/lib/hooks/usePipelineStages";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { useAuth } from "@/lib/context/AuthContext";
 import { canManageStages } from "@/components/pipeline/stage-editor/stageRules";
@@ -197,6 +197,20 @@ export default function BlueprintWizard({
     const stagesInvalid = Boolean(planToSend && planCheck && !planIsValid(planCheck));
     const stageRenames =
         planToSend && blueprintStages ? renameCount(planToSend, blueprintStages, existingStages, variables) : 0;
+    // A company with no stages yet: create the default six from here (same as
+    // "Use Default" on the Pipeline page), then tick the module so the
+    // mapping table appears against them.
+    const setupStages = useSetupPipelineStages();
+    const createDefaultStages = async () => {
+        try {
+            await setupStages.mutateAsync({ mode: "default" });
+            await stagesQuery.refetch();
+            setModules((prev) => new Set(prev).add("pipeline_stages"));
+            notify.success("6 tahapan bawaan dibuat");
+        } catch (error: any) {
+            notify.error("Gagal membuat tahapan", { description: error?.message });
+        }
+    };
     // Errors the API found in the plan on the preview (it then writes nothing).
     const stagePreviewErrors = planToSend ? (preview?.modules?.pipeline_stages?.errors?.length ?? 0) : 0;
 
@@ -418,6 +432,8 @@ export default function BlueprintWizard({
                                 check={planCheck}
                                 onChange={setStagePlan}
                                 onRetry={() => stagesQuery.refetch()}
+                                onCreateDefaultStages={createDefaultStages}
+                                creatingDefaults={setupStages.isPending}
                             />
                         </section>
                     )}

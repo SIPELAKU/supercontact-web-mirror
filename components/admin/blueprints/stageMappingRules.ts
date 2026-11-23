@@ -56,7 +56,7 @@ export function readBlueprintStages(raw: unknown): BlueprintStage[] | null {
   return raw.map((item) => {
     if (typeof item === "string") return { name: item, outcome: "open" as const };
     const data = (item ?? {}) as Record<string, unknown>;
-    const outcome = data.outcome === "won" || data.outcome === "lost" ? data.outcome : "open";
+    const outcome = PAIRED_OUTCOMES.includes(data.outcome as PairedOutcome) ? (data.outcome as PairedOutcome) : "open";
     return {
       name: typeof data.name === "string" ? data.name : "",
       outcome,
@@ -83,22 +83,32 @@ export function renderStageName(raw: string, variables: Record<string, string>):
 }
 
 const blueprintOutcome = (stage: BlueprintStage) => stage.outcome ?? "open";
+
+/** The template's required stages: each can only take over the company's
+ *  stage with the same job - its one entry, quotation, won or lost stage. */
+type PairedOutcome = "entry" | "quotation" | "won" | "lost";
+const PAIRED_OUTCOMES: PairedOutcome[] = ["entry", "quotation", "won", "lost"];
+export const isPairedStage = (stage: BlueprintStage) => PAIRED_OUTCOMES.includes(blueprintOutcome(stage) as PairedOutcome);
+const isPairedOutcome = (outcome: string) => PAIRED_OUTCOMES.includes(outcome as PairedOutcome);
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-/** The company stages a blueprint stage may take over: the won stage for a won
- *  one, the lost stage for a lost one, any other ACTIVE stage otherwise. */
+/** The company stages a blueprint stage may take over (ACTIVE ones only): an
+ *  entry/quotation/won/lost template stage only the stage with the same job,
+ *  an open one any stage except those four - as the API checks (1.171.2). */
 export function allowedTargets(stage: BlueprintStage, existing: ExistingStage[]): ExistingStage[] {
   const outcome = blueprintOutcome(stage);
   return existing.filter((target) => {
     if (!target.isActive) return false;
-    if (outcome === "won" || outcome === "lost") return target.outcome === outcome;
-    return target.outcome !== "won" && target.outcome !== "lost";
+    if (isPairedOutcome(outcome)) return target.outcome === outcome;
+    return !isPairedOutcome(target.outcome);
   });
 }
 
 /** Why "Tambah sebagai tahapan baru" is not offered, or null when it is. */
 export function createBlockReason(stage: BlueprintStage, existing: ExistingStage[]): string | null {
   const outcome = blueprintOutcome(stage);
+  if (outcome === "entry") return "Pipeline hanya punya satu tahapan awal.";
+  if (outcome === "quotation") return "Pipeline hanya punya satu tahapan quotation.";
   if (outcome === "won") return "Pipeline hanya punya satu tahapan menang.";
   if (outcome === "lost") return "Pipeline hanya punya satu tahapan kalah.";
   if (existing.length >= MAX_STAGES) return `Perusahaan ini sudah punya ${existing.length} tahapan (maksimal ${MAX_STAGES}).`;
@@ -111,10 +121,10 @@ export function stagesAfterInstall(plan: PipelineStagePlanItem[], existing: Exis
 }
 
 /** The starting plan, which the user can change:
- *  1. the won/lost stage -> the company's won/lost stage;
- *  2. the first blueprint stage -> the company's entry stage;
- *  3. a stage the company already has by that name -> that stage (nothing to rename);
- *  4. the rest are added while the total stays within MAX_STAGES, then left out. */
+ *  1. by job, not position: the template's entry/quotation/won/lost stage ->
+ *     the company's entry (Prospect) / quotation (Proposal) / won / lost stage;
+ *  2. an open stage the company already has by that name -> that stage (nothing to rename);
+ *  3. the rest are added while the total stays within MAX_STAGES, then left out. */
 export function initialPlan(
   stages: BlueprintStage[],
   existing: ExistingStage[],
@@ -130,11 +140,8 @@ export function initialPlan(
   };
 
   stages.forEach((stage, index) => {
-    const outcome = blueprintOutcome(stage);
-    if (outcome === "won" || outcome === "lost") assign(index, allowedTargets(stage, existing)[0]);
+    if (isPairedStage(stage)) assign(index, allowedTargets(stage, existing)[0]);
   });
-  const first = stages.findIndex((stage) => blueprintOutcome(stage) === "open");
-  if (first === 0) assign(0, existing.find((target) => target.isActive && target.outcome === "entry"));
 
   let total = existing.length;
   stages.forEach((stage, index) => {

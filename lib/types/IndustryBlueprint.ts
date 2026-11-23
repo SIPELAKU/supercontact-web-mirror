@@ -32,7 +32,8 @@ export interface BlueprintSummary {
  *  won/lost stage. */
 export interface BlueprintStage {
     name: string;
-    outcome?: "open" | "won" | "lost";
+    /** API 1.171.2 marks the template's entry and quotation stages too. */
+    outcome?: "entry" | "quotation" | "open" | "won" | "lost";
     color?: string | null;
     default_probability?: number | null;
 }

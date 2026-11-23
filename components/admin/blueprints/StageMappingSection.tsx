@@ -11,6 +11,7 @@
 import Link from "next/link";
 import { Tooltip } from "@mui/material";
 import { AlertTriangle, ArrowRight, Ban, Info, Lock, Pencil, Plus } from "lucide-react";
+import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { cn } from "@/lib/utils";
 import { stageColor, stageTint } from "@/components/pipeline/stage-editor/stageRules";
@@ -21,6 +22,7 @@ import {
   chooseAction,
   createBlockReason,
   freeTargets,
+  isPairedStage,
   renderStageName,
   resultPipeline,
   rowUsing,
@@ -40,6 +42,9 @@ interface StageMappingSectionProps {
   check: PlanCheck | null;
   onChange: (plan: PipelineStagePlanItem[]) => void;
   onRetry: () => void;
+  /** no-stages: create the six default stages right here. */
+  onCreateDefaultStages: () => void;
+  creatingDefaults: boolean;
 }
 
 const ACTIONS: { action: MappingAction; label: string; icon: typeof Pencil; help: string }[] = [
@@ -83,6 +88,8 @@ export default function StageMappingSection({
   check,
   onChange,
   onRetry,
+  onCreateDefaultStages,
+  creatingDefaults,
 }: StageMappingSectionProps) {
   if (status === "loading" || (status === "ready" && !plan)) {
     return <div className="h-40 animate-pulse rounded-lg bg-muted" aria-busy="true" aria-label="Memuat tahapan" />;
@@ -104,13 +111,24 @@ export default function StageMappingSection({
     return <Notice tone="warning">Hanya Admin yang bisa memasang tahapan penjualan dari template.</Notice>;
   }
   if (status === "no-stages") {
+    // Template stages can only rename existing ones, so a pipeline with none
+    // gets its default six here first (the API keeps them out of Setup Cepat
+    // until an Admin sets the pipeline up) - no trip to the Pipeline page.
     return (
-      <Notice tone="warning">
-        Atur tahapan pipeline dulu, lalu kembali ke sini.{" "}
-        <Link href="/sales/pipeline" className="font-medium text-brand underline">
-          Buka Pipeline
-        </Link>
-      </Notice>
+      <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 text-sm">
+        <p>
+          Pipeline Anda belum punya tahapan. Buat dulu 6 tahapan bawaan (Prospect, Qualified, Negotiation, Proposal, Closed - Won,
+          Closed - Lost), lalu pilih tahapan mana yang diganti namanya dengan tahapan dari template.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <AppButton onClick={onCreateDefaultStages} isLoading={creatingDefaults} disabled={creatingDefaults}>
+            Buat 6 tahapan bawaan
+          </AppButton>
+          <Link href="/sales/pipeline" className="text-sm text-muted-foreground underline-offset-4 hover:text-brand hover:underline">
+            atau atur sendiri di halaman Pipeline
+          </Link>
+        </div>
+      </div>
     );
   }
   if (status === "no-template" || !plan || !check) {
@@ -161,7 +179,8 @@ export default function StageMappingSection({
         {plan.map((row) => {
           const stage = stages[row.index];
           const name = renderStageName(stage.name, variables);
-          const closing = stage.outcome === "won" || stage.outcome === "lost";
+          // entry/quotation/won/lost: the company has exactly one stage with that job.
+          const paired = isPairedStage(stage);
           const targets = allowedTargets(stage, existing);
           const free = freeTargets(row.index, plan, stages, existing, variables);
           const reasons: Record<MappingAction, string | null> = {
@@ -229,8 +248,8 @@ export default function StageMappingSection({
 
               <div className="mt-2 text-sm">
                 {row.action === "assign" &&
-                  (closing ? (
-                    // Won/lost can only go to the one won/lost stage: nothing to pick.
+                  (paired ? (
+                    // Its one entry/quotation/won/lost stage: nothing to pick.
                     <p className="flex flex-wrap items-center gap-1.5 text-muted-foreground">
                       Menggantikan tahapan Anda
                       <strong className="inline-flex items-center gap-1 text-foreground">

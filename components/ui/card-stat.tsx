@@ -7,6 +7,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { CircularProgress } from "@mui/material";
+import { darkTint } from "@/lib/constants/theme";
 
 export type UserStatType = {
   title: string;
@@ -94,6 +95,8 @@ const CardStatistik = (props: UserStatType) => {
             color: avatarColor,
             borderRadius: "12px",
             flexShrink: 0,
+            // The pastel tile glows on a dark card; a faint tint of the icon colour instead.
+            ".dark &": { backgroundColor: darkTint(avatarColor) },
           }}
         >
           <Icon size={24} />

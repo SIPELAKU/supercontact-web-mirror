@@ -16,6 +16,7 @@ import {
   type TopDealItem
 } from "@/lib/api/sales-dashboard";
 import { formatRupiah } from "@/lib/helper/currency";
+import { darkTint, themed } from "@/lib/constants/theme";
 import ProductPerformanceDetailModal from "@/components/dashboard/ProductPerformanceDetailModal";
 import { AppButton } from "@/components/ui/app-button";
 import {
@@ -90,7 +91,7 @@ function ProductTooltip({ active, payload }: { active?: boolean; payload?: Array
   if (!row) return null;
   const units = new Intl.NumberFormat("id-ID").format(row.quantity);
   return (
-    <Box sx={{ bgcolor: "white", border: "1px solid #e5e7eb", borderRadius: "8px", px: 1.5, py: 1, fontSize: 12 }}>
+    <Box sx={{ bgcolor: themed("surface", "white"), border: `1px solid ${themed("line", "#e5e7eb")}`, borderRadius: "8px", px: 1.5, py: 1, fontSize: 12 }}>
       <Typography fontSize={12} fontWeight={600} mb={0.5}>{row.fullName}</Typography>
       <Typography fontSize={12}>Sold: {units} {row.quantity === 1 ? "unit" : "units"}</Typography>
       <Typography fontSize={12} color="text.secondary">Won deals: {row.deals}</Typography>
@@ -470,11 +471,11 @@ export default function DashboardClient() {
                   px: 2,
                   textTransform: "none",
                   borderRadius: "8px",
-                  borderColor: "#D1D5DB",
+                  borderColor: themed("line", "#D1D5DB"),
                   color: "text.primary",
                   fontWeight: 500,
                   fontSize: "14px",
-                  "&:hover": { borderColor: "#9CA3AF", bgcolor: "#f9fafb" },
+                  "&:hover": { borderColor: themed("muted", "#9CA3AF"), bgcolor: themed("raised", "#f9fafb") },
                 }}
               >
                 Export
@@ -490,7 +491,7 @@ export default function DashboardClient() {
                 sx={{
                   minHeight: "unset",
                   p: "3px",
-                  bgcolor: "#f0f2f5",
+                  bgcolor: themed("field", "#f0f2f5"),
                   borderRadius: "8px",
                   "& .MuiTabs-indicator": { display: "none" },
                 }}
@@ -513,10 +514,10 @@ export default function DashboardClient() {
                       py: "6px",
                       borderRadius: "6px",
                       fontSize: "13px",
-                      color: "#64748B",
+                      color: themed("muted", "#64748B"),
                       "&.Mui-selected": {
-                        color: "#0F172A",
-                        bgcolor: "#FFF",
+                        color: themed("text", "#0F172A"),
+                        bgcolor: themed("raised", "#FFF"),
                         boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
                       },
                     }}
@@ -530,7 +531,7 @@ export default function DashboardClient() {
 
       {/* ── ERROR ──────────────────────────────────────────────────── */}
       {error && (
-        <Card sx={{ mb: 3, borderRadius: "16px", border: "1px solid #fecaca", bgcolor: "#fef2f2" }}>
+        <Card sx={{ mb: 3, borderRadius: "16px", border: "1px solid #fecaca", bgcolor: "#fef2f2", ".dark &": { borderColor: darkTint("#EF4444", 40), bgcolor: darkTint("#EF4444", 12) } }}>
           <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
             <Typography color="error" variant="body2">
               ⚠️ {error}
@@ -577,7 +578,7 @@ export default function DashboardClient() {
               sx={{
                 minHeight: "unset",
                 p: "3px",
-                bgcolor: "#f0f2f5",
+                bgcolor: themed("field", "#f0f2f5"),
                 borderRadius: "8px",
                 "& .MuiTabs-indicator": { display: "none" },
               }}
@@ -598,10 +599,10 @@ export default function DashboardClient() {
                     fontWeight: 500,
                     textTransform: "none",
                     borderRadius: "6px",
-                    color: "#6b7280",
+                    color: themed("muted", "#6b7280"),
                     "&.Mui-selected": {
-                      color: "#111827",
-                      bgcolor: "white",
+                      color: themed("text", "#111827"),
+                      bgcolor: themed("raised", "white"),
                       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     },
                   }}
@@ -739,9 +740,9 @@ export default function DashboardClient() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: "#EEF2FD" }}>
+                  <TableRow sx={{ bgcolor: themed("tint", "#EEF2FD") }}>
                     {["Date", "Salesperson", "Customer", "Deal Value", "Status"].map((h) => (
-                      <TableCell key={h} sx={{ fontWeight: 600, color: "#374151", fontSize: "13px" }}>
+                      <TableCell key={h} sx={{ fontWeight: 600, color: themed("text", "#374151"), fontSize: "13px" }}>
                         {h}
                       </TableCell>
                     ))}
@@ -751,7 +752,7 @@ export default function DashboardClient() {
                   {topDeals.map((deal, i) => {
                     const st = getStatusStyle(deal.status);
                     return (
-                      <TableRow key={i} sx={{ "&:hover": { bgcolor: "#f8f9fa" } }}>
+                      <TableRow key={i} sx={{ "&:hover": { bgcolor: themed("raised", "#f8f9fa") } }}>
                         <TableCell><Typography variant="body2" fontSize="13px">{formatDisplayDate(deal.date)}</Typography></TableCell>
                         <TableCell><Typography variant="body2" fontSize="13px">{deal.salesperson}</Typography></TableCell>
                         <TableCell><Typography variant="body2" fontSize="13px">{deal.customer || "-"}</Typography></TableCell>
@@ -768,6 +769,8 @@ export default function DashboardClient() {
                               color: st.color,
                               bgcolor: st.bg,
                               border: `1px solid ${st.color}30`,
+                              // Pastel chips glow on a dark card: a faint tint, lighter text.
+                              ".dark &": { bgcolor: darkTint(st.color), color: `color-mix(in srgb, ${st.color} 70%, white)` },
                             }}
                           >
                             {deal.status}

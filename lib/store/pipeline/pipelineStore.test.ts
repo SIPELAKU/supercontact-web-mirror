@@ -67,6 +67,7 @@ beforeEach(() => {
     loadingMoreStages: {},
     loading: false,
     refreshing: false,
+    boardLoadFailed: false,
     searchFilter: '',
     salespersonFilter: 'all',
     dateRangeFilter: 'all',
@@ -114,15 +115,60 @@ describe('pipeline store: Assigned To filter refresh', () => {
     expect(api.fetchActiveUsers).not.toHaveBeenCalled();
   });
 
-  it('a silent refresh never turns on the board loading', async () => {
+  it('loading the filter never touches the board loading', async () => {
     const seen: boolean[] = [];
     const unsubscribe = useGetPipelineStore.subscribe((s) => seen.push(s.loading));
 
-    await store().fetchActiveUser({ isSilent: true });
+    await store().fetchActiveUser();
     unsubscribe();
 
     expect(seen).not.toContain(true);
     expect(filterNames()).toEqual(['All', 'Tim SmartSales']);
+  });
+});
+
+describe('pipeline store: the board never shows empty while it loads', () => {
+  it('starts with the skeleton on: nothing loaded yet is not "no deals"', () => {
+    expect(useGetPipelineStore.getInitialState().loading).toBe(true);
+    expect(useGetPipelineStore.getInitialState().boardLoadFailed).toBe(false);
+  });
+
+  it('keeps the skeleton when the users come back before the board', async () => {
+    const pending = deferred<ReturnType<typeof board>>();
+    api.fetchPipelineBoard.mockReturnValue(pending.promise);
+
+    // The page loads both at once; the users answer first.
+    const boardLoad = store().fetchPipeline();
+    await store().fetchActiveUser();
+    expect(store().loading).toBe(true);
+
+    pending.resolve(board(column('Prospect', ['d1'])));
+    await boardLoad;
+    expect(store().loading).toBe(false);
+    expect(prospect().deals).toHaveLength(1);
+  });
+
+  it('flags a failed load (the board says so), and the next load clears it', async () => {
+    api.fetchPipelineBoard.mockRejectedValueOnce(new Error('Network Error'));
+
+    expect(await store().fetchPipeline()).toBe(false);
+    expect(store().boardLoadFailed).toBe(true);
+    expect(store().loading).toBe(false);
+
+    expect(await store().fetchPipeline()).toBe(true);
+    expect(store().boardLoadFailed).toBe(false);
+  });
+
+  it('a failed quiet reload keeps the board on screen, flagged', async () => {
+    api.fetchPipelineBoard.mockResolvedValueOnce(board(column('Prospect', ['d1'])));
+    await store().fetchPipeline();
+    api.fetchPipelineBoard.mockRejectedValueOnce(new Error('Network Error'));
+
+    await store().fetchPipeline({ isSilent: true });
+
+    expect(store().boardLoadFailed).toBe(true);
+    expect(store().refreshing).toBe(false);
+    expect(store().listPipeline).toHaveLength(1);
   });
 });
 

@@ -107,58 +107,63 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
         </div>
       )}
 
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <textarea
-            value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              notifyAgentTyping();
-            }}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            rows={3}
-            disabled={isSubmitting}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
+      {/* The box and its buttons share one height: Attach and AI side by side
+          level with the box's top, Send level with its bottom, all 36px high.
+          (The three used to be stacked, taller than the box, in three sizes.) */}
+      <div className="flex items-stretch gap-2">
+        <textarea
+          value={message}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            notifyAgentTyping();
+          }}
+          onKeyPress={handleKeyPress}
+          placeholder="Type your message..."
+          rows={3}
+          disabled={isSubmitting}
+          className="min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-[var(--dk-field)]"
+        />
 
-        <div className="flex flex-col gap-2">
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              onChange={handleFileSelect}
+        <div className="flex w-20 shrink-0 flex-col justify-between gap-2">
+          <div className="flex gap-2">
+            <label className="flex-1 cursor-pointer" title="Attach a file">
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                disabled={isSubmitting}
+                className="hidden"
+                accept="image/*,.pdf,.doc,.docx"
+                aria-label="Attach a file"
+              />
+              <span className="grid h-9 w-full place-items-center rounded-lg border border-gray-300 text-gray-600 transition-colors hover:bg-gray-50">
+                <Paperclip size={18} />
+              </span>
+            </label>
+
+            {/* AI Copilot - full drawer (conversationId is in scope). Output only
+                writes into the message draft state; NEVER auto-sends. */}
+            <CopilotLauncher
               disabled={isSubmitting}
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx"
+              className="h-9 w-auto flex-1 border border-gray-300"
+              conversationId={conversationId}
+              getDraft={() => message}
+              onInsert={(value, mode) =>
+                setMessage((prev) => (mode === "replace" ? value : prev ? `${prev}\n${value}` : value))
+              }
             />
-            <div className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Paperclip size={20} className="text-gray-600" />
-            </div>
-          </label>
-
-          {/* AI Copilot - full drawer (conversationId is in scope). Output only
-              writes into the message draft state; NEVER auto-sends. */}
-          <CopilotLauncher
-            disabled={isSubmitting}
-            className="h-auto w-auto border border-gray-300 p-2"
-            conversationId={conversationId}
-            getDraft={() => message}
-            onInsert={(value, mode) =>
-              setMessage((prev) => (mode === "replace" ? value : prev ? `${prev}\n${value}` : value))
-            }
-          />
+          </div>
 
           <AppButton
             onClick={handleSendMessage}
             disabled={isSubmitting || (!message.trim() && !selectedFile)}
             variantStyle="primary"
-            className="p-2"
+            aria-label="Send"
+            sx={{ height: 36, minWidth: 0, width: "100%", p: 0 }}
           >
             {isSubmitting ? (
-              <Loader2 size={20} className="animate-spin" />
+              <Loader2 size={18} className="animate-spin" />
             ) : (
-              <Send size={20} />
+              <Send size={18} />
             )}
           </AppButton>
         </div>

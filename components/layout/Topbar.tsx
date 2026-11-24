@@ -7,6 +7,7 @@ import { Bell, Menu } from "lucide-react"
 import Notification from "../modal/Notification"
 import ProfileDropdown from "./ProfileDropdown"
 import LanguageSwitch from "./LanguageSwitch"
+import ThemeSwitch from "./ThemeSwitch"
 import { useT } from "@/lib/hooks/useT"
 import { formatText } from "@/lib/utils/language"
 import { useState } from "react"
@@ -45,6 +46,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        <ThemeSwitch />
         <LanguageSwitch />
         <AppButton
           onClick={(e) => setNotifAnchorEl(e.currentTarget)}

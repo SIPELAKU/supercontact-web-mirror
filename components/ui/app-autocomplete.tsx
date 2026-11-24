@@ -4,9 +4,12 @@ import React from "react";
 import { Autocomplete, AutocompleteProps, Box, TextField, Typography } from "@mui/material";
 import { ChevronDown } from "lucide-react";
 import { styled } from "@mui/material/styles";
+import { themed } from "@/lib/constants/theme";
 
 // --- Design Tokens (copied from app-input.tsx for consistency) ---
-const INPUT_BG = "#FAFAF6";
+// themed(): the light colour as is, a dark one in dark mode.
+const INPUT_BG = themed("field", "#FAFAF6");
+const INPUT_BG_WHITE = themed("field", "white");
 const BORDER_COLOR = "#262B43/22"; // soft gray
 const FOCUS_COLOR = "#5479EE";
 
@@ -18,12 +21,12 @@ const StyledTextField = styled(TextField, {
         "& .MuiInputLabel-root": {
             fontSize: "14px",
             fontWeight: 500,
-            color: "#6B7280",
+            color: themed("muted", "#6B7280"),
             marginBottom: "6px",
         },
 
         "& .MuiOutlinedInput-root": {
-            backgroundColor: isBgWhite ? "white" : INPUT_BG,
+            backgroundColor: isBgWhite ? INPUT_BG_WHITE : INPUT_BG,
             borderRadius: rounded ? rounded : "8px",
             fontSize: "14px",
             fontWeight: 400,

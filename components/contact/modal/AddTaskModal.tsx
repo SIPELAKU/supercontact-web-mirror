@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
+import { themed } from "@/lib/constants/theme";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -255,7 +256,7 @@ export default function AddTaskModal({
             </label>
 
             {/* Time Picker */}
-            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa] mb-4">
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa] dark:bg-[var(--dk-field)] mb-4">
               <LocalizationProvider
                 dateAdapter={AdapterDateFns}
                 adapterLocale={enGB}
@@ -269,7 +270,7 @@ export default function AddTaskModal({
                     actionBar: { actions: [] },
                   }}
                   sx={{
-                    backgroundColor: "#fafafa",
+                    backgroundColor: themed("field", "#fafafa"),
                     borderRadius: "12px",
                     "& .MuiPickersLayout-contentWrapper": {
                       alignItems: "center",
@@ -280,7 +281,7 @@ export default function AddTaskModal({
             </div>
 
             {/* Calendar */}
-            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa]">
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa] dark:bg-[var(--dk-field)]">
               <DateCalendar
                 value={date}
                 onChange={(newDate) => setDate(newDate || undefined)}

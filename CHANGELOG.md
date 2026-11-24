@@ -9,6 +9,184 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.150.0] - 2026-11-24
+
+### Detail Versi 1.150.0
+
+#### 💄 Detail Kontak: Activity dan Task Mengisi Layar
+
+- **Deskripsi:**
+  - **Masalah (masukan BO):** di tab Activity, daftar Activity dan Task punya tinggi tetap (200px dan 150px). Di layar besar banyak ruang kosong di bawahnya.
+  - **Perbaikan:**
+    - Di layar `md` ke atas (lebar ≥768px), halaman tab Activity dibuat setinggi layar dikurangi Topbar. Daftar Activity dan Task mengisi sisa ruang sampai bawah, masing-masing dengan scroll sendiri, dan halaman tidak perlu di-scroll.
+    - Pengaturannya memakai flex, bukan angka tetap, jadi tetap pas walaupun tinggi header berbeda di tiap ukuran layar.
+    - **Layar pendek:** tinggi minimum 880px menjaga daftar Activity tetap sekitar 200px, sama seperti sebelumnya. Di layar laptop seperti 1366×768 halaman masih di-scroll sekitar sama dengan sebelumnya. Daftar Task jadi lebih tinggi (±370px, sebelumnya 150px).
+    - **HP** (di bawah 768px): tetap seperti sebelumnya, kolom bertumpuk dan halaman di-scroll biasa.
+    - **Garis timeline Task:**
+      - Sebelumnya tingginya tetap 75px. Pada task dengan deskripsi panjang garisnya terputus sebelum task berikutnya, dan pada task pendek garisnya kelebihan. Sekarang garis mengikuti tinggi tiap task, dari 8px di bawah ikon sampai 8px di atas ikon task berikutnya.
+      - Latar putih di kolom ikon dihapus. Gunanya dulu menutupi garis, padahal tidak ada yang perlu ditutupi. Di mode gelap latar itu tampil sebagai strip abu-abu yang panjangnya berbeda-beda.
+      - Ikon status `todo` dan status lain digabung, karena sebelumnya ditulis dua kali dengan isi yang sama.
+  - **Technical Notes:**
+    - `ContactTasks.tsx`: kolom ikon `relative`, garis `absolute top-9 -bottom-8` (bukan `h-[75px]`)
+    - `ContactDetailClient.tsx`: `FILL_SCREEN` (`md:h-[max(calc(100dvh-52px),880px)]`, flex kolom) hanya di tab Activity; grid `md:grid-rows-[minmax(0,1fr)]`
+    - `ContactNotes.tsx` dan `ContactTasks.tsx`: kolom `md:h-full`, daftar `md:flex-1 md:min-h-0` (batas `max-h` lama hanya di HP)
+  - **Tidak disembunyikan flag:** langsung terlihat setelah naik.
+
+- **🧪 Testing:** lint dan tsc bersih. Chrome dengan API mock (12 catatan, 10 task), diukur di tujuh ukuran layar:
+
+  | Ukuran | Halaman di-scroll | Daftar Activity | Daftar Task |
+  |---|---|---|---|
+  | 1920×969 | tidak (0px) | 234px | 405px |
+  | Tablet 820×1180 | tidak (0px) | 445px | 616px |
+  | 1536×730 | 202px | 197px | 368px |
+  | 1366×657 | 275px | 197px | 368px |
+  | 1280×720 | 212px | 197px | 368px |
+  | 1024×768 | 164px | 197px | 368px |
+  | HP 390×844 | 446px, seperti sebelumnya | 200px | 150px |
+
+  Di semua ukuran, kedua daftar bisa di-scroll.
+
+  Garis timeline Task diuji dengan 4 task setinggi 46 sampai 118px (deskripsi panjang, tanpa deskripsi, tanpa prioritas, terakhir). Di setiap task, garisnya berjarak 8px dari ikon di atas dan di bawahnya. Kolom ikon tidak punya latar, baik di mode terang maupun gelap. Belum dites manual.
+
+#### 💄 Kotak Kirim Pesan Dirapikan
+
+- **Deskripsi:**
+  - **Masalah:** di kotak kirim pesan (percakapan di detail kontak dan Omnichannel), tombol Lampiran, AI Copilot dan Kirim bertumpuk tiga. Tumpukan itu lebih tinggi daripada kotak teks dan menonjol ke atas, dan ketiga tombolnya berbeda ukuran.
+  - **Perbaikan:**
+    - Kotak teks dan tombol sama tinggi. Lampiran dan AI berdampingan sejajar dengan tepi atas kotak, Kirim selebar keduanya sejajar dengan tepi bawah.
+    - Semua tombol setinggi 36px.
+    - Di mode gelap, kotak teks memakai warna kolom input.
+  - **Technical Notes:** `components/omnichannel/MessageInput.tsx`. Tombol Kirim diatur lewat `sx`, karena kelas Tailwind tidak bisa menimpa gaya MUI (`p-2` lama tidak berpengaruh). Tombol AI hanya tampil untuk user yang punya akses; tanpa tombol AI, tombol Lampiran mengisi lebar penuh.
+  - **Tidak disembunyikan flag:** tata letak baru juga terlihat di mode terang.
+
+- **🧪 Testing:** lint dan tsc bersih. Chrome dengan API mock (percakapan WhatsApp terbuka), gelap dan terang:
+  - kotak teks tinggi 90px;
+  - tombol Lampiran 36px, tepi atasnya sejajar dengan kotak;
+  - tombol Kirim 36px, tepi bawahnya sejajar dengan kotak.
+
+  Tampilan dengan tombol AI belum dicek, karena akun tiruan tidak punya aksesnya. Belum dites manual.
+
+---
+
+## [1.149.1] - 2026-11-24
+
+### Detail Versi 1.149.1
+
+#### 🐛 Pipeline Kosong Tanpa Tanda Loading
+
+- **Deskripsi:**
+  - **Masalah:** board Pipeline kadang tampil kosong tanpa skeleton atau pesan apa pun, sehingga terlihat seperti tidak ada deal. Setelah halaman di-reload, deal muncul lagi. Ada tiga penyebab:
+    1. Sebelum role user diketahui, board belum dimuat. Tetapi karena status loading awalnya "tidak loading", yang tampil kolom kosong.
+    2. Daftar user untuk filter Assigned To ikut mematikan status loading board. Kalau daftar user datang lebih dulu, skeleton hilang sementara deal belum datang.
+    3. Kalau request board gagal, kegagalan itu hanya dicatat di store dan tidak pernah ditampilkan. Board tetap kosong sampai halaman di-reload.
+  - **Perbaikan:**
+    - Skeleton tampil sejak halaman dibuka sampai board pertama datang.
+    - Daftar user tidak lagi menyentuh status loading board.
+    - Board yang gagal dimuat menampilkan pesan "Couldn't load the pipeline" dan tombol **Try again**.
+    - Kalau board sudah tampil tetapi pembaruannya gagal (misalnya setelah filter diganti), muncul pesan kecil bahwa isi board mungkin sudah tidak terbaru, juga dengan **Try again**.
+  - **Technical Notes:**
+    - `lib/store/pipeline/index.ts`: `loading` awalnya `true`; `fetchActiveUser()` tanpa parameter `isSilent` dan tidak lagi mengubah `loading`; flag baru `boardLoadFailed`, diisi hanya oleh load board terakhir
+    - `components/pipeline/pipeline-board/BoardLoadError.tsx` (baru), dipasang di `PipelineBoard.tsx`
+  - **Tidak disembunyikan flag:** perubahan ini langsung terlihat oleh semua user setelah naik.
+
+- **🧪 Testing:** Vitest 4 tes baru di store:
+  - status awal `loading`;
+  - skeleton tetap tampil saat daftar user datang lebih dulu;
+  - load yang gagal ditandai, dan load berikutnya menghapus tandanya;
+  - reload diam-diam yang gagal tetap mempertahankan board.
+
+  Satu tes lama disesuaikan (`fetchActiveUser` tanpa `isSilent`); total 27 tes store lulus. Chrome dengan API mock di server dev:
+  - board dibuat lambat 6 detik: yang tampil skeleton, tanpa kolom kosong, lalu board muncul;
+  - board selalu gagal: pesan dan tombol Try again tampil, dan setelah API pulih Try again memuat board.
+
+  Belum dites manual.
+
+---
+
+## [1.149.0] - 2026-11-24
+
+### Detail Versi 1.149.0
+
+#### ✨ Mode Gelap: Kartu, Kolom Input, Grafik, Warna Badge, Notifikasi, dan Dashboard (Masih Disembunyikan)
+
+- **Deskripsi:**
+  - **Masalah:** setelah fondasi 1.148.0, mode gelap di Dashboard masih kurang rapi:
+    - Kartu tidak terlihat karena warnanya sama dengan latar halaman.
+    - Kolom input dan dropdown tetap putih terang.
+    - Tombol pilihan periode, kotak ikon di kartu KPI, header tabel dan badge status masih memakai warna pastel yang "bersinar".
+  - **Perbaikan:**
+    - Latar halaman dibuat lebih gelap daripada kartu. Kartu MUI diberi garis tepi tipis, karena bayangan tidak terlihat di latar gelap.
+    - Semua kolom input bersama (`AppInput`, `AppSelect`, `AppDatePicker`, `AppAutocomplete`, `AppTextarea`) ikut gelap di semua halaman: latar, garis tepi, label, dan teks tanggal.
+    - Semua grafik Recharts di aplikasi ikut gelap sekaligus: garis grid, teks sumbu, sorotan saat hover, dan tooltip.
+    - Kotak ikon di kartu statistik (`CardStatistik`) memakai warna ikonnya yang ditipiskan, bukan pastel terang.
+    - Dashboard: tombol Last 30 days/This Month dan Weekly/Monthly, tombol Export, tabel Top Deal (header, hover, badge status), tooltip Product Performance, dan kartu error.
+    - **Warna pastel dan teks berwarna di semua halaman** (red sampai rose, ±870 pemakaian):
+      - Latar `bg-*-50/100/200`, garis `border-*-100/200`, dan sejenisnya menjadi warna tipis transparan. Contohnya notifikasi yang belum dibaca: sebelumnya kotak abu-abu terang dengan teks yang tidak terbaca.
+      - Teks `text-*-600` menjadi setingkat `400`, dan `text-*-700/800/900` menjadi setingkat `300`, supaya tetap terbaca di latar gelap. Begitu juga saat hover.
+      - Teks terang `text-*-100/200` di atas warna solid (misalnya gelembung chat biru) tetap terang.
+      - Tombol solid (`bg-*-500` sampai `900` dengan teks putih) tidak berubah.
+    - Panel notifikasi: badge "New", tag (reminder, update, mention), dan baris yang belum dibaca terbaca di mode gelap.
+    - Permukaan putih tembus pandang `bg-white/50` sampai `/95` (badge jumlah di kolom Pipeline, overlay kartu, header chat) ikut gelap. `bg-white/10` sampai `/30` tetap putih, karena dipakai sebagai sorotan tipis di atas warna solid.
+    - Detail kontak, tab Activity:
+      - kolom catatan (sebelumnya `#F6F6F8` terang);
+      - badge prioritas Task (Low/Medium/High) berwarna tipis;
+      - garis timeline, judul task yang selesai, dan tanggal;
+      - kalender dan jam di modal Add Task (sebelumnya `#fafafa`).
+    - Area chat berlatar `#F7F8FB` ikut gelap di semua tempat yang memakainya:
+      - drawer percakapan di detail kontak (tab Conversations);
+      - Support Workspace (halaman dan area thread);
+      - Flow Studio.
+    - Jam di gelembung pesan masuk (`MessageList`) dibuat lebih terang. Di mode gelap warnanya terlalu mirip dengan latar gelembung.
+  - **Pola untuk kelas Tailwind dengan hex:** kelas lama dibiarkan, lalu ditambah kelas `dark:`, misalnya `bg-[#F6F6F8] dark:bg-[var(--dk-field)]` atau `bg-[#EAF9E6] dark:bg-[#71D860]/15`. Di dalam `dark:` jangan memakai abu-abu Tailwind (`dark:bg-gray-800`), karena skala abu-abu sudah dibalik di mode gelap. Pakai token `--dk-*`.
+    - Setup Cepat: 5 kelas `dark:` lama yang selama ini tidak pernah aktif dihapus. Kelas itu bentrok dengan aturan di atas (teks `dark:text-*-200`, `dark:bg-slate-800`). Tampilan terang tetap sama.
+  - **Mode terang tidak berubah:** warna gelap disimpan sebagai variabel CSS `--dk-*` yang hanya diisi di mode gelap. Kode memakai `themed("field", "#FAFAF6")`, yang menghasilkan `var(--dk-field, #FAFAF6)`. Di mode terang variabel itu kosong, jadi warna lama yang dipakai.
+  - **Technical Notes:**
+    - `lib/constants/theme.ts`: `DARK_TOKENS`, `themed()`, `darkTint()`
+    - `app/globals.css`: token `--dk-*` di `.dark`, latar `body` gelap, aturan Recharts gelap di akhir file
+    - `lib/theme.ts`: `MuiCard` diberi garis tepi di mode gelap
+    - Untuk warna hex di `sx`: pakai `themed(token, warnaTerang)`, atau `".dark &": { ... }` untuk warna yang dihitung (chip, ikon)
+    - `app/dark-palette.css` (dibuat oleh `scripts/dark-palette.mjs` dari nilai warna Tailwind, diimpor `globals.css`): versi gelap 17 skala warna. Jangan diedit manual; jalankan `node scripts/dark-palette.mjs > app/dark-palette.css`. Ada tes yang gagal kalau file ini tidak sesuai dengan generatornya.
+  - **Rilis:** aman naik selama `themeSwitch` masih `true`.
+
+- **🧪 Testing:** tsc bersih, lint 0 error di file yang diubah. Vitest 7 tes baru:
+  - token di CSS dan di kode sama, dan hanya diisi di `.dark`;
+  - `dark-palette.css` sesuai generator, diimpor, dan hanya berlaku di `.dark`.
+
+  Total 1219 lulus; 1 gagal, yaitu tes flag, karena flag sedang dimatikan di lokal untuk mencoba. Panel notifikasi di Chrome dengan API mock, gelap dan terang: di mode gelap semua teks terbaca; di mode terang warnanya sama dengan sebelumnya (`indigo-50/40`, tag `amber-100`/`amber-700`, badge `indigo-100`/`indigo-600`). Dashboard di Chrome dengan API mock di server dev:
+  - Mode gelap: latar `#030712`, kartu `#111827` bergaris tepi, input `#0B1120`, header tabel `#1A2340`, badge transparan, grid dan teks grafik redup.
+  - Mode terang: nilainya sama dengan sebelumnya (input `#FFFFFF`, track tombol `#F0F2F5`, header tabel `#EEF2FD`, badge `#DCFCE7`, grid `#F0F0F0`, teks grafik `#666`).
+  - Belum dites manual.
+
+---
+
+## [1.148.0] - 2026-11-24
+
+### Detail Versi 1.148.0
+
+#### ✨ Fondasi Tema Terang/Gelap untuk Aplikasi (Disembunyikan)
+
+- **Deskripsi:**
+  - **Masalah:** aplikasi hanya punya tampilan terang. BO meminta pilihan terang/gelap, yang akan dikerjakan bertahap untuk semua halaman.
+  - **Perbaikan (tahap pertama, fondasi):**
+    - Tombol tema (ikon bulan/matahari) di Topbar aplikasi, di kiri lonceng notifikasi (dan di kiri tombol bahasa kalau tombol itu juga ditampilkan). Pilihan **Light/Dark** disimpan di browser dan berlaku di tab lain juga.
+    - Mode gelap hanya berlaku di halaman aplikasi setelah login. Website publik dan halaman login tetap terang walaupun Dark dipilih.
+    - Tidak ada kedipan putih saat membuka atau me-refresh halaman dalam mode gelap: tema dipasang sebelum halaman tampil.
+    - Komponen MUI (menu, dialog, popover, dll.) ikut gelap lewat tema MUI versi gelap.
+    - Sekitar 4.300 kelas warna abu-abu/putih Tailwind di seluruh aplikasi ikut gelap sekaligus. Teks putih di tombol biru tetap putih.
+    - Token warna yang sudah ada (brand light, surface) diberi versi gelap.
+  - **Disembunyikan dulu:** selama `HIDDEN_FEATURES.themeSwitch` di `lib/config/featureFlags.ts` bernilai `true`, tombol tidak muncul di mana pun (termasuk dev), semua halaman tetap terang walaupun browser pernah menyimpan Dark, dan skrip tema tidak disisipkan. Tampilan terang tidak berubah sama sekali. Warna yang ditulis langsung (hex) di komponen dan halaman belum ikut gelap; itu dikerjakan di tahap berikutnya (komponen bersama, lalu per modul).
+  - **Technical Notes:**
+    - `lib/config/appRoutes.ts`: daftar halaman aplikasi (`APP_ROUTE_PREFIXES`, `isAppPath`), kini dipakai `middleware.ts` dan tema, jadi satu sumber. `/knowledge-base` ditambahkan karena sebelumnya terlewat: tanpanya Knowledge Base tidak ikut gelap, dan pengunjung yang belum login tidak dialihkan ke `/login` oleh middleware seperti halaman aplikasi lain. Tes baru gagal kalau ada folder baru di `app/(app)` yang belum masuk daftar.
+    - `lib/constants/theme.ts`, `lib/utils/theme.ts` (`readStoredTheme`, `writeStoredTheme`, `effectiveTheme`, `themeBootScript`), `lib/context/ThemeModeContext.tsx` (kelas `dark` di `<html>`), `components/layout/ThemeSwitch.tsx`
+    - `lib/theme.ts`: `buildTheme(mode)`; `AppThemeProvider` memakai mode halaman
+    - `app/globals.css`: di `.dark`, skala `--color-gray-*` dan `--color-slate-*` dibalik, token brand/surface gelap, `color-scheme: dark`; `bg-white`, `text-black`, `border-white` diganti lewat `:where(.dark)` supaya varian hover/focus tetap menang
+    - `app/layout.tsx`: `ThemeModeProvider`, skrip tema di `<head>` (hanya kalau switch tidak disembunyikan), `<body>` `bg-[#ffffff]` → `bg-white` (warna sama)
+  - **Rilis:** aman naik selama flag masih `true`.
+
+- **🧪 Testing:** Vitest 12 tes baru (semua 1213 lulus dengan flag `true`; satu tes sengaja gagal kalau flag dimatikan, supaya tidak ter-commit dalam keadaan mati), tsc bersih, lint 0 error. Chrome dengan API mock: 6 cek dengan flag menyala (tanpa tombol, tetap terang walau tersimpan Dark, tanpa skrip tema, latar/Topbar/menu MUI putih) dan 11 cek dengan flag dihapus sementara (tombol, berubah gelap dan tersimpan, Topbar/latar/teks abu-abu gelap, teks putih di tombol biru tetap putih, menu MUI gelap, reload langsung gelap tanpa kedipan, website publik tetap terang, kembali ke aplikasi gelap lagi, kembali ke terang). Belum dites manual.
+
+---
+
 ## [1.147.0] - 2026-11-23
 
 ### Detail Versi 1.147.0

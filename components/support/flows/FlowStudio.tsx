@@ -747,7 +747,7 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
     }
 
     return (
-        <div className="flex h-[calc(100vh-52px)] flex-col bg-[#F7F8FB]">
+        <div className="flex h-[calc(100vh-52px)] flex-col bg-[#F7F8FB] dark:bg-[var(--dk-page)]">
             {/* ---- Toolbar ---- */}
             <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-2">
                 <Link

@@ -72,7 +72,7 @@ export const ContactConversationDrawer = ({ contactId, item, onClose }: ContactC
                         </div>
                     ) : (
                         <>
-                            <div className="flex min-h-0 flex-1 flex-col bg-[#F7F8FB]">
+                            <div className="flex min-h-0 flex-1 flex-col bg-[#F7F8FB] dark:bg-[var(--dk-page)]">
                                 <MessageList messages={conversation.messages} channelType={conversation.channel_type} />
                             </div>
                             <div className="border-t border-gray-100">

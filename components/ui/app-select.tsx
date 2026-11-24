@@ -10,9 +10,14 @@ import {
   Typography,
 } from "@mui/material";
 import { ChevronDown } from "lucide-react";
+import { themed } from "@/lib/constants/theme";
 
 // --- Design Tokens ---
-const INPUT_BG = "#FAFAF6";
+// themed(): the light colour as is, a dark one in dark mode.
+const INPUT_BG = themed("field", "#FAFAF6");
+const INPUT_BG_WHITE = themed("field", "white");
+const DISABLED_BG = themed("raised", "#F3F4F6");
+const DISABLED_BORDER = themed("raised", "#E5E7EB");
 
 interface AppSelectProps extends Omit<SelectProps, "label"> {
   label?: string;
@@ -68,7 +73,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
           size="small"
           error={error}
           disabled={props.disabled}
-          sx={{ backgroundColor: props.disabled ? "#F3F4F6" : (isBgWhite ? "white !important" : INPUT_BG) }}
+          sx={{ backgroundColor: props.disabled ? DISABLED_BG : (isBgWhite ? `${INPUT_BG_WHITE} !important` : INPUT_BG) }}
         >
           <Select
             labelId={labelId}
@@ -106,7 +111,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
             sx={{
               height: height ? height : "40px",
               borderRadius: rounded ? rounded : "8px",
-              backgroundColor: isBgWhite ? "white" : INPUT_BG,
+              backgroundColor: isBgWhite ? INPUT_BG_WHITE : INPUT_BG,
               "& .MuiSelect-select": {
                 padding: "10px 14px",
                 display: "flex",
@@ -123,16 +128,16 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
                 borderColor: "#d32f2f", // Error red color
               },
               "&.Mui-disabled": {
-                backgroundColor: "#F3F4F6",
+                backgroundColor: DISABLED_BG,
                 "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#E5E7EB !important",
+                  borderColor: `${DISABLED_BORDER} !important`,
                 },
                 "& .MuiSelect-select": {
                   cursor: "not-allowed",
                 }
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: props.disabled ? "#E5E7EB" : "primary.main",
+                borderColor: props.disabled ? DISABLED_BORDER : "primary.main",
               },
               ...sx,
             }}

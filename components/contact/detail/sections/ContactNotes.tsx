@@ -62,7 +62,8 @@ export const ContactNotes = ({ contactName, notes, onSaveNote, isSaving }: Conta
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        // md and up: as tall as the column; the activity list takes the rest.
+        <div className="flex flex-col gap-6 md:h-full md:min-h-0">
             {/* Add Note */}
             <div className="flex flex-col gap-2">
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -79,7 +80,7 @@ export const ContactNotes = ({ contactName, notes, onSaveNote, isSaving }: Conta
                         value={newNote}
                         onChange={(e) => setNewNote(e.target.value)}
                         placeholder={`Add a note about ${contactName}...`}
-                        className="w-full min-h-[100px] bg-[#F6F6F8] p-3 rounded-lg border border-gray-200 focus:border-primary resize-none placeholder-gray-400 focus:outline-none"
+                        className="w-full min-h-[100px] bg-[#F6F6F8] dark:bg-[var(--dk-field)] p-3 rounded-lg border border-gray-200 focus:border-primary resize-none placeholder-gray-400 focus:outline-none"
                     />
                     <div className="flex justify-end mt-2">
                         <AppButton
@@ -98,10 +99,10 @@ export const ContactNotes = ({ contactName, notes, onSaveNote, isSaving }: Conta
             </div>
 
             {/* Activity Timeline */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 md:min-h-0 md:flex-1">
                 <h3 className="text-lg font-semibold">Activity</h3>
 
-                <div className="relative space-y-8 max-h-[200px] overflow-y-auto">
+                <div className="relative space-y-8 max-h-[200px] overflow-y-auto md:max-h-none md:min-h-0 md:flex-1">
                     {notes.length === 0 && (
                         <p className="text-sm text-gray-400">No activity history.</p>
                     )}

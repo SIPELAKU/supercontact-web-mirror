@@ -68,7 +68,7 @@ export function WorkspaceThread({
 
   if (!conversationId) {
     return (
-      <main className="flex h-full min-w-0 flex-1 items-center justify-center bg-[#F7F8FB]">
+      <main className="flex h-full min-w-0 flex-1 items-center justify-center bg-[#F7F8FB] dark:bg-[var(--dk-page)]">
         <div className="flex flex-col items-center gap-3 px-8 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#EEF2FD] text-[#5479EE]">
             <MessageSquare className="h-6 w-6" />
@@ -98,7 +98,7 @@ export function WorkspaceThread({
   const color = avatarColor(identifier || conversationId);
 
   return (
-    <main className="flex h-full min-w-0 flex-1 flex-col bg-[#F7F8FB]">
+    <main className="flex h-full min-w-0 flex-1 flex-col bg-[#F7F8FB] dark:bg-[var(--dk-page)]">
       <ThreadHeader
         conversationId={conversationId}
         conversation={conversation}

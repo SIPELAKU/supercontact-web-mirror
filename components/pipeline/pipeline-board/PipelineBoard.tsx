@@ -37,6 +37,7 @@ import { StageUI, isClosedOutcome } from "@/lib/helper/transformPipeline"
 import { ConfirmationPopup, useConfirmationPopup } from "@/components/ui/confirmation-popup"
 import { Tooltip } from "@mui/material"
 import PipelineSetupEmpty from "@/components/pipeline/stage-editor/PipelineSetupEmpty"
+import BoardLoadError from "@/components/pipeline/pipeline-board/BoardLoadError"
 import StageColumnMenu from "@/components/pipeline/stage-editor/StageColumnMenu"
 import QuotationStageBadge from "@/components/pipeline/stage-editor/QuotationStageBadge"
 import StageManageDialog from "@/components/pipeline/stage-editor/StageManageDialog"
@@ -86,7 +87,8 @@ export default function PipelineBoard() {
     fetchPipeline,
     loadMoreDeals,
     scopeUserId,
-    needsSetup
+    needsSetup,
+    boardLoadFailed
   } = useGetPipelineStore();
   // Only an Admin sets up and manages stages (gear, column menu, setup +).
   const { userProfile, userRole } = useAuth()
@@ -502,7 +504,12 @@ export default function PipelineBoard() {
 
       </div>
 
-      {needsSetup ? (
+      {/* A failed load over an older board: say it may be out of date. */}
+      {boardLoadFailed && stages.length > 0 && <BoardLoadError hasBoard onRetry={reloadBoard} />}
+
+      {boardLoadFailed && stages.length === 0 ? (
+        <BoardLoadError hasBoard={false} onRetry={() => fetchPipeline()} />
+      ) : needsSetup ? (
         <PipelineSetupEmpty canManage={canManage} onSetUp={() => setSetupOpen(true)} />
       ) : (
       <div className="w-full overflow-x-auto pb-6 pt-1 px-6">

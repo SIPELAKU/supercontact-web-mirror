@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Dark mode for the coloured Tailwind scales (generated). */
+@import "./dark-palette.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -160,6 +162,82 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+
+  /* ---- App dark mode (ThemeModeContext puts .dark on <html>, app pages only).
+     Brand and surface tokens get dark values; the brand blue itself stays. */
+  --brand-light: #1E2A4F;
+  --brand-primary-subtle: #1A2340;
+  --surface-base: #111827;
+  --surface-alt: #030712;
+  --surface-tint: #1A2340;
+
+  /* Colours for code that writes its own (hex in sx, charts): used as
+     var(--dk-x, <light colour>) through themed() in lib/constants/theme.ts.
+     Only dark mode defines them, so light keeps its colours. Keep in sync
+     with DARK_TOKENS there (a test compares them). */
+  --dk-page: #030712;
+  --dk-surface: #111827;
+  --dk-field: #0B1120;
+  --dk-raised: #1F2937;
+  --dk-line: #374151;
+  --dk-text: #F3F4F6;
+  --dk-muted: #9CA3AF;
+  --dk-tint: #1A2340;
+
+  /* Tailwind's grey scales, reversed: the ~4,300 bg-gray-*, text-gray-*,
+     border-gray-* (and slate-*) classes across the app turn dark together,
+     light text on dark backgrounds, without touching each file. 500 stays. */
+  --color-gray-50: oklch(13% 0.028 261.692);
+  --color-gray-100: oklch(21% 0.034 264.665);
+  --color-gray-200: oklch(27.8% 0.033 256.848);
+  --color-gray-300: oklch(37.3% 0.034 259.733);
+  --color-gray-400: oklch(44.6% 0.03 256.802);
+  --color-gray-600: oklch(70.7% 0.022 261.325);
+  --color-gray-700: oklch(87.2% 0.01 258.338);
+  --color-gray-800: oklch(92.8% 0.006 264.531);
+  --color-gray-900: oklch(96.7% 0.003 264.542);
+  --color-gray-950: oklch(98.5% 0.002 247.839);
+  --color-slate-50: oklch(12.9% 0.042 264.695);
+  --color-slate-100: oklch(20.8% 0.042 265.755);
+  --color-slate-200: oklch(27.9% 0.041 260.031);
+  --color-slate-300: oklch(37.2% 0.044 257.287);
+  --color-slate-400: oklch(44.6% 0.043 257.281);
+  --color-slate-600: oklch(70.4% 0.04 256.788);
+  --color-slate-700: oklch(86.9% 0.022 252.894);
+  --color-slate-800: oklch(92.9% 0.013 255.508);
+  --color-slate-900: oklch(96.8% 0.007 247.896);
+  --color-slate-950: oklch(98.4% 0.003 247.858);
+  color-scheme: dark;
+}
+
+/* White surfaces and black text in dark mode. Not through --color-white,
+   which text-white shares (white text on blue buttons must stay white).
+   :where() keeps the specificity of a plain utility, so hover:/focus:
+   variants on the same element still win. */
+@layer utilities {
+  :where(.dark) .bg-white {
+    background-color: oklch(21% 0.034 264.665);
+  }
+  :where(.dark) .text-black {
+    color: oklch(96.7% 0.003 264.542);
+  }
+  :where(.dark) .border-white {
+    border-color: oklch(27.8% 0.033 256.848);
+  }
+  /* The page behind the cards is darker than the cards (bg-white above),
+     so cards stand out without the shadows that dark hides. */
+  :where(.dark) body.bg-white {
+    background-color: var(--dk-page);
+  }
+  /* See-through near-white surfaces (count pills, overlays, sticky headers)
+     turn dark as well. The faint ones (bg-white/10 … /30) are highlights on
+     coloured fills and stay white. */
+  :where(.dark) .bg-white\/50 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 50%, transparent); }
+  :where(.dark) .bg-white\/60 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 60%, transparent); }
+  :where(.dark) .bg-white\/70 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 70%, transparent); }
+  :where(.dark) .bg-white\/80 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 80%, transparent); }
+  :where(.dark) .bg-white\/90 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 90%, transparent); }
+  :where(.dark) .bg-white\/95 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 95%, transparent); }
 }
 
 @layer base {
@@ -254,3 +332,33 @@
   white-space: pre;
 }
 .kb-prose hr { border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
+
+/* Recharts in dark mode, every chart at once: grid lines, axis text, the
+   hover highlight and the default tooltip. CSS wins over the SVG attributes
+   the charts set (stroke="#f0f0f0", fill="#666"); the tooltip's inline
+   colours need !important. Light mode is untouched. */
+.dark .recharts-cartesian-grid line,
+.dark .recharts-polar-grid line,
+.dark .recharts-polar-grid path {
+  stroke: var(--dk-raised);
+}
+.dark .recharts-cartesian-axis-line,
+.dark .recharts-cartesian-axis-tick-line {
+  stroke: var(--dk-line);
+}
+.dark .recharts-cartesian-axis-tick-value,
+.dark .recharts-polar-angle-axis-tick-value,
+.dark .recharts-polar-radius-axis-tick-value {
+  fill: var(--dk-muted);
+}
+.dark .recharts-rectangle.recharts-tooltip-cursor {
+  fill: var(--dk-raised);
+  stroke: none;
+}
+.dark .recharts-curve.recharts-tooltip-cursor {
+  stroke: var(--dk-line);
+}
+.dark .recharts-default-tooltip {
+  background-color: var(--dk-surface) !important;
+  border-color: var(--dk-line) !important;
+}

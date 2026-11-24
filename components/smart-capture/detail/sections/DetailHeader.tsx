@@ -5,6 +5,8 @@ import { SmartCapture, SmartCaptureStatus } from "@/lib/models/types";
 import { Trash2, ChevronDown, Play, Pause, Pencil } from "lucide-react";
 import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
 import { notify } from "@/lib/notifications";
+import { themed } from "@/lib/constants/theme";
+import { magnetStatusChipSx } from "../../magnetStatusChipSx";
 
 interface DetailHeaderProps {
   data: SmartCapture;
@@ -74,15 +76,11 @@ export const DetailHeader = ({ data, onEdit, onDelete }: DetailHeaderProps) => {
                 icon={!isPending ? <ChevronDown size={14} /> : undefined}
                 disabled={isPending}
                 sx={{
-                  bgcolor: isActive ? '#DCFCE7' : isDraft ? '#F1F5F9' : '#FEE2E2',
-                  color: isActive ? '#16A34A' : isDraft ? '#64748B' : '#EF4444',
+                  ...magnetStatusChipSx(status),
                   fontWeight: 600,
                   borderRadius: '6px',
                   cursor: 'pointer',
                   fontSize: '0.75rem',
-                  '&:hover': {
-                    bgcolor: isActive ? '#DCFCE7' : isDraft ? '#E2E8F0' : '#FECACA',
-                  },
                   transition: 'all 0.2s',
                   '.MuiChip-icon': {
                     color: 'inherit',
@@ -100,7 +98,7 @@ export const DetailHeader = ({ data, onEdit, onDelete }: DetailHeaderProps) => {
                     mt: 1,
                     borderRadius: '12px',
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
-                    border: '1px solid #F1F5F9',
+                    border: `1px solid ${themed('line', '#F1F5F9')}`,
                     minWidth: '140px',
                   }
                 }}

@@ -16,6 +16,7 @@ import {
     Type
 } from "lucide-react";
 import { Box, Button, MenuItem, Select, Stack, Tooltip } from "@mui/material";
+import { themed } from "@/lib/constants/theme";
 
 interface RichTextToolbarProps {
     onAction: (command: string, value?: string) => void;
@@ -31,12 +32,12 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ onAction }) => {
         <Box
             sx={{
                 p: 1,
-                borderBottom: "1px solid #e5e7eb",
+                borderBottom: `1px solid ${themed("line", "#e5e7eb")}`,
                 display: "flex",
                 alignItems: "center",
                 flexWrap: "wrap",
                 gap: 0.5,
-                bgcolor: "white",
+                bgcolor: themed("surface", "white"),
             }}
         >
             <Select
@@ -55,7 +56,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ onAction }) => {
                 <MenuItem value="h3">Heading 3</MenuItem>
             </Select>
 
-            <Box sx={{ width: "1px", height: 24, bgcolor: "#e5e7eb", mx: 1 }} />
+            <Box sx={{ width: "1px", height: 24, bgcolor: themed("line", "#e5e7eb"), mx: 1 }} />
 
             <Stack direction="row" spacing={0.5}>
                 <ToolbarButton
@@ -75,7 +76,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ onAction }) => {
                 />
             </Stack>
 
-            <Box sx={{ width: "1px", height: 24, bgcolor: "#e5e7eb", mx: 1 }} />
+            <Box sx={{ width: "1px", height: 24, bgcolor: themed("line", "#e5e7eb"), mx: 1 }} />
 
             <Stack direction="row" spacing={0.5}>
                 <ToolbarButton
@@ -90,7 +91,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ onAction }) => {
                 />
             </Stack>
 
-            <Box sx={{ width: "1px", height: 24, bgcolor: "#e5e7eb", mx: 1 }} />
+            <Box sx={{ width: "1px", height: 24, bgcolor: themed("line", "#e5e7eb"), mx: 1 }} />
 
             <Stack direction="row" spacing={0.5}>
                 <ToolbarButton
@@ -110,7 +111,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ onAction }) => {
                 />
             </Stack>
 
-            <Box sx={{ width: "1px", height: 24, bgcolor: "#e5e7eb", mx: 1 }} />
+            <Box sx={{ width: "1px", height: 24, bgcolor: themed("line", "#e5e7eb"), mx: 1 }} />
 
             <Stack direction="row" spacing={0.5}>
                 <ToolbarButton
@@ -149,10 +150,10 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, onClick, tooltip })
                 width: 32,
                 height: 32,
                 p: 0,
-                color: "#4b5563",
+                color: themed("muted", "#4b5563"),
                 "&:hover": {
-                    bgcolor: "#f3f4f6",
-                    color: "#111827",
+                    bgcolor: themed("raised", "#f3f4f6"),
+                    color: themed("text", "#111827"),
                 },
             }}
         >

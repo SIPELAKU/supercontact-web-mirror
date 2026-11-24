@@ -68,7 +68,9 @@ export const PerformanceStats = ({ data }: PerformanceStatsProps) => {
         </div>
         <div className="relative z-10">
           <h4 className="font-bold text-base mb-1">Live Preview</h4>
-          <p className="text-[10px] text-slate-400 mb-4 font-light max-w-[150px]">See how your magnet appears to prospect in real-time.</p>
+          {/* The card is navy in both modes, but text-slate-400 turns dark in
+              dark mode (greys reversed): the light-mode slate-400 there too. */}
+          <p className="text-[10px] text-slate-400 dark:text-[#90A1B9] mb-4 font-light max-w-[150px]">See how your magnet appears to prospect in real-time.</p>
           <AppButton
             variantStyle="white"
             className="w-full h-10 border-none font-bold text-xs"

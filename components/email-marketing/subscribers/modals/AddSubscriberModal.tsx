@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import { notify } from '@/lib/notifications';
 import { AppButton } from '@/components/ui/app-button';
 import { ApiErrorDisplay } from '@/components/ui/api-error-display';
+import { themed } from "@/lib/constants/theme";
 
 interface AddSubscriberModalProps {
     open: boolean;
@@ -181,7 +182,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                                 setAddress('');
                             }}
                             aria-label="creation mode"
-                            sx={{ borderRadius: '8px', border: '1px solid #ccc' }}
+                            sx={{ borderRadius: '8px', border: `1px solid ${themed('line', '#ccc')}` }}
                         >
                             <ToggleButton value="manual" aria-label="manual">
                                 <IconUser size="1rem" style={{ marginRight: 8 }} /> Manual

@@ -83,7 +83,7 @@ export const SmartCaptureDetailClient = () => {
                         onClick={() => router.push('/smart-capture')}
                         variantStyle="outline"
                         startIcon={<ArrowLeft size={18} />}
-                        className="border-none! bg-transparent! hover:bg-white! shadow-none text-gray-600"
+                        className="border-none! bg-transparent! hover:bg-white! dark:hover:bg-[var(--dk-raised)]! shadow-none text-gray-600"
                     >
                         Back to Magnets
                     </AppButton>

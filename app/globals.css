@@ -225,6 +225,13 @@
   :where(.dark) .border-white {
     border-color: oklch(27.8% 0.033 256.848);
   }
+  /* "Lift to white on hover" over a grey panel (chat input icons, the
+     pipeline column menu, Smart Capture share cards): the raised colour,
+     not a white flash with light text on it. */
+  :where(.dark) .hover\:bg-white:hover,
+  :where(.dark) .group:hover .group-hover\:bg-white {
+    background-color: var(--dk-raised);
+  }
   /* The page behind the cards is darker than the cards (bg-white above),
      so cards stand out without the shadows that dark hides. */
   :where(.dark) body.bg-white {
@@ -240,9 +247,14 @@
   :where(.dark) .bg-white\/90 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 90%, transparent); }
   :where(.dark) .bg-white\/95 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 95%, transparent); }
   /* The brand's pale blue tints written as hex across the app (table heads,
-     picked chips, hover rows: about 60 places) become the dark brand tint. */
-  :where(.dark) :is(.bg-\[\#EEF2FD\], .bg-\[\#EEF2FF\], .bg-\[\#F5F8FF\], .bg-\[\#DDE4FC\]) {
+     picked chips, hover rows: about 60 places) become the dark brand tint;
+     the two a step stronger in light (#DDE4FC, #E1E8FC: count pills, hover)
+     stay a step stronger, so a pill still shows on a tinted row. */
+  :where(.dark) :is(.bg-\[\#EEF2FD\], .bg-\[\#EEF2FF\], .bg-\[\#F5F8FF\], .bg-\[\#E8F0FF\], .bg-\[\#EFF6FF\], .bg-\[\#E8F4FD\], .bg-\[\#F4F7FE\]) {
     background-color: var(--dk-tint);
+  }
+  :where(.dark) :is(.bg-\[\#DDE4FC\], .bg-\[\#E1E8FC\]) {
+    background-color: color-mix(in oklab, var(--brand) 28%, transparent);
   }
   :where(.dark) :is(.hover\:bg-\[\#EEF2FD\], .hover\:bg-\[\#EEF2FF\], .hover\:bg-\[\#DDE4FC\]):hover {
     background-color: color-mix(in oklab, var(--brand) 28%, transparent);
@@ -250,6 +262,52 @@
   :where(.dark) :is(.focus\:ring-\[\#EEF2FD\]:focus, .focus-within\:ring-\[\#EEF2FD\]:focus-within) {
     --tw-ring-color: var(--dk-tint);
   }
+  :where(.dark) .border-\[\#C7D5F8\] {
+    border-color: var(--dk-line);
+  }
+  /* Near-white greys written as hex, mostly input and panel fills (the
+     ticket reply box, the CC and contact search fields): the dark field
+     colour. A `dark:` class next to one still wins. */
+  :where(.dark) :is(.bg-\[\#F6F6F8\], .bg-\[\#fafafa\], .bg-\[\#FAFAFA\], .bg-\[\#F8F9FC\], .bg-\[\#F3F4F6\], .bg-\[\#FAFAF6\], .bg-\[\#F1F5F9\], .bg-\[\#F0F2F5\], .bg-\[\#F7F8FB\]) {
+    background-color: var(--dk-field);
+  }
+  /* Pastel chips written as hex (lead status, lead tags, priorities):
+     a faint tint of their own colour, like the Tailwind pastels in
+     dark-palette.css. Solid fills (#FFB02E, #F34E4E …) are left alone. */
+  :where(.dark) :is(.bg-\[\#FFF0E8\], .bg-\[\#FFF7ED\], .bg-\[\#FFF4E5\], .bg-\[\#FEF5E7\]) {
+    background-color: color-mix(in oklab, #F97316 18%, transparent);
+  }
+  :where(.dark) .bg-\[\#FFFBEB\] { background-color: color-mix(in oklab, #F59E0B 18%, transparent); }
+  :where(.dark) :is(.bg-\[\#FFE8E8\], .bg-\[\#FCE8E8\], .bg-\[\#FFEBEB\]) {
+    background-color: color-mix(in oklab, #EF4444 18%, transparent);
+  }
+  :where(.dark) :is(.bg-\[\#FFE8F0\], .bg-\[\#FFF5F7\]) {
+    background-color: color-mix(in oklab, #EC4899 18%, transparent);
+  }
+  :where(.dark) :is(.bg-\[\#F7EEFF\], .bg-\[\#F3EEFF\], .bg-\[\#F0E8FF\]) {
+    background-color: color-mix(in oklab, #A855F7 20%, transparent);
+  }
+  :where(.dark) :is(.bg-\[\#F0FDF4\], .bg-\[\#EDFDEC\], .bg-\[\#ECFDF5\], .bg-\[\#EAF9E6\]) {
+    background-color: color-mix(in oklab, #22C55E 18%, transparent);
+  }
+  :where(.dark) .bg-\[\#EBEBEB\] { background-color: var(--dk-raised); }
+  /* Dark text written as hex: near-black becomes the light text colour,
+     coloured ones a light shade of their colour. */
+  :where(.dark) :is(.text-\[\#262B43\], .text-\[\#0D121B\], .text-\[\#374151\]) { color: var(--dk-text); }
+  :where(.dark) :is(.text-\[\#617589\], .text-\[\#6B7280\], .text-\[\#6b7280\]) { color: var(--dk-muted); }
+  :where(.dark) .text-\[\#2980B9\] { color: #93C5FD; }
+  :where(.dark) .text-\[\#6B21A8\] { color: #D8B4FE; }
+  :where(.dark) .text-\[\#C0392B\] { color: #FCA5A5; }
+  /* The brand's darker blues, used as text on those tints, are too dark on
+     a dark page: the light brand blue (--dk-accent) instead. */
+  :where(.dark) :is(.text-\[\#3E63D8\], .text-\[\#3f5fd0\], .text-\[\#3F66E0\]) {
+    color: var(--dk-accent);
+  }
+  :where(.dark) :is(.hover\:text-\[\#3E63D8\], .hover\:text-\[\#3f5fd0\], .hover\:text-\[\#3F66E0\]):hover {
+    color: var(--dk-accent);
+  }
+  :where(.dark) .text-\[\#3E63D8\]\/70 { color: color-mix(in oklab, var(--dk-accent) 70%, transparent); }
+  :where(.dark) .text-\[\#3f5fd0\]\/60 { color: color-mix(in oklab, var(--dk-accent) 60%, transparent); }
 }
 
 @layer base {

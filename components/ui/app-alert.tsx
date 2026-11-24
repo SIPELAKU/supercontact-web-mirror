@@ -6,6 +6,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Info,
+  Loader2,
   X,
 } from "lucide-react";
 import React from "react";
@@ -18,6 +19,11 @@ interface AppAlertProps {
   description?: React.ReactNode;
   onClose?: () => void;
   className?: string;
+  /**
+   * A button on the alert, such as "Coba lagi": white, in the alert's colour,
+   * beside the text (never squeezed into the description, which is a <p>).
+   */
+  action?: { label: string; onClick: () => void; loading?: boolean; disabled?: boolean };
 }
 
 const variantConfig = {
@@ -53,6 +59,7 @@ export function AppAlert({
   description,
   onClose,
   className,
+  action,
 }: AppAlertProps) {
   const config = variantConfig[variant];
   const Icon = config.icon;
@@ -81,6 +88,22 @@ export function AppAlert({
           </p>
         )}
       </div>
+
+      {action && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          disabled={action.disabled || action.loading}
+          className={cn(
+            // dark:bg-white: white on the coloured alert in dark mode too.
+            "inline-flex shrink-0 cursor-pointer items-center gap-1.5 self-center whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white",
+            config.colorClass,
+          )}
+        >
+          {action.loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+          {action.label}
+        </button>
+      )}
 
       {onClose && (
         <button

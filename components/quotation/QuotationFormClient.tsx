@@ -1582,24 +1582,12 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
               <AppAlert
                 variant="failed"
                 title="Harga belum bisa dihitung"
-                description={
-                  <div className="flex flex-col items-start gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                    <span>
-                      {previewError.message}
-                      {previewError.code ? ` (${previewError.code})` : ""}
-                    </span>
-                    <AppButton
-                      variantStyle="outline"
-                      color="primary"
-                      size="small"
-                      onClick={() => setPreviewRetry((n) => n + 1)}
-                      disabled={previewing}
-                      isLoading={previewing}
-                    >
-                      Coba lagi
-                    </AppButton>
-                  </div>
-                }
+                description={`${previewError.message}${previewError.code ? ` (${previewError.code})` : ""}`}
+                action={{
+                  label: "Coba lagi",
+                  onClick: () => setPreviewRetry((n) => n + 1),
+                  loading: previewing,
+                }}
               />
             </div>
           )}

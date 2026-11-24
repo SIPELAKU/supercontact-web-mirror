@@ -183,7 +183,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 <Textarea
                     id="description"
                     placeholder="Provide a detailed explanation of the support request"
-                    className="min-h-[140px] !bg-white border-gray-200 focus-visible:ring-[#5479EE]/20 focus-visible:border-[#5479EE]"
+                    className="min-h-[140px] !bg-white dark:!bg-[var(--dk-field)] border-gray-200 focus-visible:ring-[#5479EE]/20 focus-visible:border-[#5479EE]"
                     {...register("description", { required: "Description is required" })}
                 />
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message as string}</p>}

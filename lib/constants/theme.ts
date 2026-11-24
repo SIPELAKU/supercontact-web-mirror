@@ -59,3 +59,12 @@ export function themed(token: DarkToken, light: string): string {
 export function darkTint(color: string, percent = 18): string {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
+
+/**
+ * A coloured status chip in dark mode, for `".dark &": darkChip(color)`:
+ * `color` as a faint tile with a lighter text, instead of a pastel that
+ * glows. Pass the chip's text colour (the strong one, not the pastel).
+ */
+export function darkChip(color: string): { bgcolor: string; color: string } {
+  return { bgcolor: darkTint(color), color: `color-mix(in srgb, ${color} 70%, white)` };
+}

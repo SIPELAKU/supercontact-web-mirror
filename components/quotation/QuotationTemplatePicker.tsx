@@ -123,7 +123,7 @@ export default function QuotationTemplatePicker({
               ) : (
                 <div className="aspect-[800/1131] animate-pulse bg-slate-100" />
               )}
-              <span className="absolute inset-0 flex items-center justify-center bg-slate-900/0 opacity-0 transition group-hover:bg-slate-900/30 group-hover:opacity-100 group-focus-visible:bg-slate-900/30 group-focus-visible:opacity-100">
+              <span className="absolute inset-0 flex items-center justify-center bg-slate-900/0 opacity-0 transition group-hover:bg-slate-900/30 group-hover:opacity-100 group-focus-visible:bg-slate-900/30 group-focus-visible:opacity-100 dark:group-hover:bg-black/40 dark:group-focus-visible:bg-black/40">
                 <span className="rounded-full bg-white p-1.5 text-slate-700 shadow">
                   <ZoomIn className="h-4 w-4" />
                 </span>

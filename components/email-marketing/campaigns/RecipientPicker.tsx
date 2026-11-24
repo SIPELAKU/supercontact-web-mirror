@@ -24,6 +24,7 @@ import { useMailingLists } from "@/lib/hooks/useMailingLists";
 import { useSubscribers } from "@/lib/hooks/useSubscribers";
 import { BRAND_PRIMARY } from "@/lib/theme";
 import RecipientSourceSelector from "./RecipientSourceSelector";
+import { themed } from "@/lib/constants/theme";
 
 export type RecipientSource = "mailing_list" | "subscriber";
 
@@ -253,7 +254,7 @@ function EmptyBox({ text }: { text: string }) {
   return (
     <Paper
       variant="outlined"
-      sx={{ p: 3, textAlign: "center", bgcolor: "#f9fafb", borderStyle: "dashed" }}
+      sx={{ p: 3, textAlign: "center", bgcolor: themed("field", "#f9fafb"), borderStyle: "dashed" }}
     >
       <Typography variant="body2" color="text.secondary">
         {text}

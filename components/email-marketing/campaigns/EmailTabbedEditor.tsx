@@ -31,6 +31,7 @@ import { Edit3, Layout, BookOpen } from "lucide-react";
 import EmailEditor, { EditorRef } from "react-email-editor";
 import RichTextToolbar from "./RichTextToolbar";
 import EmailTemplateGuideDialog from "./EmailTemplateGuideDialog";
+import { themed } from "@/lib/constants/theme";
 
 interface EmailTabbedEditorProps {
     value: string;
@@ -338,11 +339,11 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
             height: height || "auto",
             display: height ? "flex" : "block",
             flexDirection: "column",
-            border: "1px solid #e5e7eb", 
+            border: `1px solid ${themed("line", "#e5e7eb")}`, 
             borderRadius: "8px", 
             overflow: "hidden" 
         }}>
-            <Box sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ borderBottom: 1, borderColor: "divider", bgcolor: themed("raised", "#f9fafb"), display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Tabs value={activeTab} onChange={handleTabChange} aria-label="email editor tabs">
                     <Tab
                         icon={<Edit3 size={18} />}
@@ -381,7 +382,7 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                             display: "flex", 
                             flexDirection: "column", 
                             minHeight: 0, 
-                            bgcolor: "white"
+                            bgcolor: themed("surface", "white")
                         }}>
                             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
                                 Isi Email
@@ -394,8 +395,9 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                                     flex: 1,
                                     width: "100%",
                                     minHeight: height ? 0 : 350,
-                                    border: "1px solid #e5e7eb",
+                                    border: `1px solid ${themed("line", "#e5e7eb")}`,
                                     borderRadius: "4px",
+                                    // The email itself: white in dark mode too, as it lands in inboxes.
                                     backgroundColor: "white",
                                     display: "block",
                                 }}

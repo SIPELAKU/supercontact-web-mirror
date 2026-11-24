@@ -20,6 +20,12 @@ export default function AlertsTestPage() {
           <AppAlert variant="failed" description="Alert content" />
           <AppAlert variant="warning" description="Alert content" />
           <AppAlert variant="info" description="Alert content" />
+          <AppAlert
+            variant="failed"
+            title="Harga belum bisa dihitung"
+            description="Produk 'Kaos Polos Phase 5' punya varian; pilih salah satu variannya (VALIDATION_ERROR)"
+            action={{ label: "Coba lagi", onClick: () => {} }}
+          />
           <AppAlert variant="success" description="Alert content" />
         </div>
       </section>

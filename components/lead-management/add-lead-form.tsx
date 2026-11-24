@@ -16,7 +16,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { GrAdd } from "react-icons/gr";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
-import { Paper, createTheme, ThemeProvider } from "@mui/material";
+import { Paper, createTheme, ThemeProvider, type Theme } from "@mui/material";
+import { DARK_TOKENS } from "@/lib/constants/theme";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
@@ -47,6 +48,23 @@ const theme = createTheme({
     },
   },
 });
+
+// The form's theme in the app's current mode. This standalone light theme
+// used to apply in dark mode too: white inputs with black text. Dark mode now
+// takes the app's dark theme with the same input shape; light mode keeps the
+// theme above exactly as it was.
+const formTheme = (outer: Theme) =>
+  outer.palette.mode === "dark"
+    ? createTheme(outer, {
+        components: {
+          MuiOutlinedInput: {
+            styleOverrides: {
+              root: { borderRadius: "8px", height: "48px", backgroundColor: DARK_TOKENS.field },
+            },
+          },
+        },
+      })
+    : theme;
 
 // Lead status options with colors
 export const leadStatusOptions = [
@@ -360,7 +378,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
           </div>
 
           <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
-            <ThemeProvider theme={theme}>
+            <ThemeProvider theme={formTheme}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                 {/* Name with Autocomplete */}

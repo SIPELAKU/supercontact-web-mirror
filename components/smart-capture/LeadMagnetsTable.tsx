@@ -18,6 +18,8 @@ import {
 import { notify } from '@/lib/notifications';
 import { BulkUpdateStatusModal } from '../modal/BulkUpdateStatusModal';
 import { ConfirmationPopup } from '../ui/confirmation-popup';
+import { themed } from '@/lib/constants/theme';
+import { magnetStatusChipSx } from './magnetStatusChipSx';
 
 export interface LeadMagnet extends Partial<SmartCapture> {
   id: string;
@@ -46,7 +48,6 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
 
   const status = row.status;
   const isActive = status === 'Active';
-  const isDraft = status === 'Draft';
   const isInactive = status === 'Inactive';
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -75,21 +76,20 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
 
   return (
     <>
+      {/* data-st-no-row-click: the chip opens its own menu; without it the
+          same click also opens the row (SuperTable's onRowClick). */}
       <Chip
+        data-st-no-row-click
         label={isPending ? "Updating..." : status}
         size="small"
         onClick={handleClick}
         icon={!isPending ? <ChevronDown size={14} /> : undefined}
         disabled={isPending}
         sx={{
-          bgcolor: isActive ? '#DCFCE7' : isDraft ? '#F1F5F9' : '#FEE2E2',
-          color: isActive ? '#16A34A' : isDraft ? '#64748B' : '#EF4444',
+          ...magnetStatusChipSx(status),
           fontWeight: 600,
           borderRadius: '6px',
           cursor: 'pointer',
-          '&:hover': {
-            bgcolor: isActive ? '#DCFCE7' : isDraft ? '#E2E8F0' : '#FECACA',
-          },
           transition: 'all 0.2s',
           '.MuiChip-icon': {
             color: 'inherit',
@@ -107,7 +107,7 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
             mt: 1,
             borderRadius: '12px',
             boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
-            border: '1px solid #F1F5F9',
+            border: `1px solid ${themed('line', '#F1F5F9')}`,
             minWidth: '140px',
           }
         }}

@@ -17,8 +17,10 @@ import { AppButton } from '@/components/ui/app-button';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { SaveAsModal } from '@/components/modal/SaveAsModal';
 import { notify } from '@/lib/notifications';
+import { darkChip } from '@/lib/constants/theme';
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string }> = {
+// `dark`: the chip's colour in dark mode where `text` is too dark there.
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dark?: string }> = {
 // ... existing status config ...
   // Email Statuses
   opened: { bg: '#DCFCE7', text: '#16A34A' },    // Green
@@ -26,7 +28,7 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string }> = {
   bounced: { bg: '#FEE2E2', text: '#EF4444' },   // Red
   clicked: { bg: '#EEF2FF', text: '#6366F1' },   // Purple/Indigo
   delivered: { bg: '#E0F2FE', text: '#0EA5E9' }, // Light Blue
-  failed: { bg: '#FEF2F2', text: '#991B1B' },    // Dark Red
+  failed: { bg: '#FEF2F2', text: '#991B1B', dark: '#EF4444' }, // Dark Red
   sent: { bg: '#EFF6FF', text: '#2563EB' },       // Blue
   // Phone Statuses
   valid: { bg: '#DCFCE7', text: '#16A34A' },     // Green
@@ -162,6 +164,7 @@ export const CapturedLeadsTable = () => {
                 fontSize: '0.65rem',
                 textTransform: 'capitalize',
                 border: `1px solid ${config.text}20`,
+                '.dark &': darkChip(config.dark ?? config.text),
               }}
             />
           );
@@ -186,6 +189,7 @@ export const CapturedLeadsTable = () => {
                 fontSize: '0.65rem',
                 textTransform: 'capitalize',
                 border: `1px solid ${config.text}20`,
+                '.dark &': darkChip(config.dark ?? config.text),
               }}
             />
           );

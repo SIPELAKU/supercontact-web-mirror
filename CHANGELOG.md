@@ -9,6 +9,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.151.1] - 2026-11-24
+
+### Detail Versi 1.151.1
+
+#### ✨ Mode Gelap: Support (Workspace, Tickets), Leads, Email Marketing, Smart Capture, dan Warna Hex Global (Masih Disembunyikan)
+
+- **Deskripsi:**
+  - **Masalah:** di mode gelap, badge jumlah "Assigned to me" di Support Workspace masih putih (`bg-[#E1E8FC]`), dan teks biru brand yang gelap (`#3E63D8`) kurang terbaca di atas tint gelap.
+  - **Perbaikan** (aturan global di `app/globals.css`, hanya di mode gelap):
+    - `bg-[#E1E8FC]` dan `bg-[#DDE4FC]`, yang di mode terang sedikit lebih pekat daripada `#EEF2FD`, menjadi biru brand 28% (sebelumnya `#DDE4FC` ikut menjadi tint biasa). Badge tetap terlihat di atas baris aktif yang berwarna tint.
+    - `bg-[#E8F0FF]`, `bg-[#EFF6FF]` dan `bg-[#E8F4FD]` menjadi tint biasa (`--dk-tint`).
+    - `border-[#C7D5F8]` menjadi garis gelap.
+    - **Teks biru brand yang gelap** (`text-[#3E63D8]`, `text-[#3f5fd0]`, `text-[#3F66E0]`, ±45 kali, termasuk `hover:` dan varian opacity) memakai `--dk-accent`.
+    - **Abu-abu sangat muda yang ditulis sebagai hex** menjadi warna kolom input gelap (`--dk-field`): `bg-[#F6F6F8]`, `bg-[#fafafa]`, `bg-[#F8F9FC]`, `bg-[#F3F4F6]`, `bg-[#FAFAF6]`, `bg-[#F1F5F9]`, `bg-[#F0F2F5]`, `bg-[#F7F8FB]`. Kelas `dark:` di sebelahnya tetap menang. Contoh di Tickets yang sebelumnya putih:
+      - kotak balasan "Write a reply…" di detail tiket;
+      - input email Followers & CC dan pencarian kontak;
+      - input Side conversations.
+    - `bg-[#F4F7FE]` (kebiruan) masuk ke kelompok tint.
+    - **Description di Add/Edit Ticket** memakai `!bg-white` (putih dengan `!important`, jadi tidak tercakup aturan `bg-white`). Sekarang ditambah `dark:!bg-[var(--dk-field)]`.
+    - **Pastel berwarna yang ditulis sebagai hex**, dipakai untuk badge status lead, tag lead, dan prioritas, menjadi warna tipis dari warnanya sendiri:
+      - oranye: `#FFF0E8`, `#FFF7ED`, `#FFF4E5`, `#FEF5E7`; kuning: `#FFFBEB`;
+      - merah: `#FFE8E8`, `#FCE8E8`, `#FFEBEB`;
+      - pink: `#FFE8F0`, `#FFF5F7`;
+      - ungu: `#F7EEFF`, `#F3EEFF`, `#F0E8FF`;
+      - hijau: `#F0FDF4`, `#EDFDEC`, `#ECFDF5`, `#EAF9E6`;
+      - abu-abu `#EBEBEB` menjadi abu-abu gelap.
+
+      Warna solid (`#FFB02E`, `#F34E4E`, dll.) tidak disentuh.
+    - **Teks hex gelap:**
+      - `#262B43` (12 kali), `#0D121B`, `#374151` menjadi teks terang;
+      - `#617589`, `#6B7280` menjadi abu-abu terang (`--dk-muted`);
+      - `#2980B9`, `#6B21A8`, `#C0392B` menjadi biru, ungu, merah muda.
+    - **`hover:bg-white` dan `group-hover:bg-white`** (efek "terangkat" di atas panel abu-abu, 8 tempat: ikon kotak chat Inbox dan WhatsApp, tombol ⋮ kolom Pipeline, kartu bagikan Smart Capture) membuat elemen putih saat di-hover. Sekarang menjadi `--dk-raised`.
+  - **Leads:**
+    - Tombol Table View / Kanban View (`sx` `#f0f2f5`/`#FFFFFF`) memakai `themed()`, seperti tombol periode di Dashboard.
+    - Badge status di tabel (New, Contacted, Qualified, Unqualified) ikut gelap lewat aturan pastel di atas.
+    - **Ikon WhatsApp** (`public/wa.svg`, digambar `#111418` hampir hitam) hilang di latar gelap. Sekarang ditambah `dark:invert`.
+    - **Form Add Lead** dibungkus tema MUI buatan sendiri yang selalu terang: di mode gelap kolom inputnya putih dengan teks hitam. Sekarang di mode gelap form memakai tema aplikasi dengan bentuk input yang sama (latar `--dk-field`). Di mode terang tetap tema lamanya persis.
+    - **ContactPickerDialog:** header tabel `bg-[#EEF2FD]!` (penanda `!` di belakang) ditambah `dark:bg-[var(--dk-tint)]!`; garis dan teks abu-abu memakai `themed()`.
+  - **Komponen bersama:**
+    - **`AppButtonIcon`** diatur sama seperti `AppButton`: di mode gelap, latar varian `soft` menjadi warna tombolnya sendiri yang transparan (bukan pastel `#DDE4FC`), dan warna `gray` sedikit lebih terang.
+    - **Dialog error API** (`ApiErrorDisplay`, "Validation Errors Detail"): judul berlatar `#FEE2E2` dengan teks `#991B1B` menjadi merah tipis dengan teks merah terang.
+    - **Helper baru `darkChip(warna)`** di `lib/constants/theme.ts` untuk chip status yang warnanya ditulis di `sx`: di mode gelap menjadi tile tipis dari warnanya sendiri dengan teks lebih terang. Badge status deal di Dashboard memakai helper ini (hasilnya sama persis dengan sebelumnya).
+  - **Email Marketing** (`sx` dengan hex abu-abu Tailwind, memakai `themed()`):
+    - **Editor campaign:** header tab (`#f9fafb`; tab "Visual Builder" sebelumnya hampir tak terbaca), toolbar (dropdown "Paragraph" sebelumnya tak terlihat), latar di sekitar area tulis (label "Isi Email" sebelumnya putih di atas putih), dan garis tepi.
+    - **Area tulis email tetap putih** di mode gelap, karena itu tampilan email yang diterima pelanggan. Begitu juga preview email di panel statistik campaign dan contoh HTML email di dialog panduan.
+    - Kotak "No mailing lists yet" di pemilih penerima, label "Recipient Source", panel statistik campaign (Message Preview, Subscribers Status, garis), kotak peringatan dan header tabel di dialog panduan template, dan garis input di modal Add Subscriber.
+    - Visual Builder (Unlayer) adalah editor pihak ketiga di dalam iframe dan tetap terang.
+  - **Smart Capture** (warna chip ditulis di `sx`, jadi tidak tercakup aturan global):
+    - **Chip status lead magnet** (Active/Draft/Inactive) di tabel dan di header detail: kodenya kembar, sekarang satu helper `magnetStatusChipSx` yang memakai `darkChip`. Garis menu ubah status memakai `themed()`.
+    - **Badge jumlah di tab Active/Inactive** (`#EEF2FF`/`#F8FAFC`, putih di mode gelap) memakai tint, raised dan accent.
+    - **Chip Email Status dan Phone Status** di tabel Recent Captured Leads (Sent, Delivered, Opened, Clicked, Pending, Bounced, Failed, Valid, Invalid, Unknown) memakai `darkChip`. "Failed" (teks `#991B1B`, terlalu gelap di mode gelap) memakai merah `#EF4444` di mode gelap.
+    - **Tombol "Back to Magnets"** (`hover:bg-white!`) tidak lagi putih saat di-hover.
+    - **Kartu Live Preview** tetap navy dengan tombol "Open Preview" putih, sama seperti di mode terang. Teks "See how your magnet appears…" (`text-slate-400`) sebelumnya tak terlihat, karena skala abu-abu dibalik di mode gelap sehingga slate-400 menjadi gelap. Sekarang ditambah `dark:text-[#90A1B9]`, yaitu slate-400 versi terang.
+  - **Latar gelap tetap yang ditulis dengan kelas abu-abu gelap** (skala abu-abu dibalik, jadi kelas ini menjadi terang di mode gelap):
+    - avatar platform di Omnichannel › Company activity (`bg-slate-800 text-white`) dan angka di filter jumlah karyawan Data Intelligence (`bg-gray-800 text-white`): sebelumnya teks putih di atas abu-abu terang. Sekarang ditambah `dark:bg-[var(--dk-raised)]`;
+    - overlay hover thumbnail template quotation (Settings › Quotation Templates dan pemilih template di form) dan backdrop sidebar detail percakapan Omnichannel: sebelumnya selubung putih. Sekarang `dark:…bg-black/40`.
+  - **Rilis:** aman naik selama `HIDDEN_FEATURES.themeSwitch` masih `true`.
+
+- **🧪 Testing:** Chrome dengan API mock, elemen uji dengan kelas-kelas di atas:
+  - **Gelap:** `#E1E8FC` dan `#DDE4FC` menjadi biru brand 28%; `#E8F0FF`, `#EFF6FF`, `#E8F4FD` menjadi `rgb(26, 35, 64)`; tiga teks biru menjadi `rgb(143, 164, 243)`, dengan varian `/70` dan `/60` tetap transparan; `border-[#C7D5F8]` menjadi `#374151`.
+  - **Terang:** semua nilainya sama dengan aslinya.
+
+  - Abu-abu muda:
+    - **Gelap:** `#F6F6F8`, `#fafafa`, `#F3F4F6`, `#F0F2F5` menjadi `rgb(11, 17, 32)`; `#F4F7FE` menjadi `rgb(26, 35, 64)`.
+    - **Terang:** semua tetap seperti aslinya.
+  - Description `!bg-white dark:!bg-[var(--dk-field)]`: gelap `rgb(11, 17, 32)`, terang putih.
+  - Kelas `dark:` lama tetap menang: catatan kontak `rgb(11, 17, 32)`, area chat `rgb(3, 7, 18)`.
+  - Halaman Leads dan form Add Lead:
+    - **Gelap:**
+      - tombol view: latar `#0B1120`, terpilih `#1F2937`;
+      - New `#1F2937` dengan teks `#9CA3AF`;
+      - Qualified ungu 20% dengan teks `#D8B4FE`;
+      - Contacted `#1A2340` dengan teks `#93C5FD`;
+      - Unqualified merah 18% dengan teks `#FCA5A5`;
+      - ikon WhatsApp `invert(1)`, teks Kanal/Assigned `#9CA3AF`;
+      - input form `#0B1120` dengan teks putih, tinggi 48px.
+    - **Terang:** semua nilainya sama dengan aslinya (`#F0F2F5`, `#EBEBEB`, `#F7EEFF`, `#E8F4FD`, `#FCE8E8`, ikon tanpa filter, input putih dengan teks hitam).
+  - Halaman New Campaign:
+    - **Gelap:** header tab `#1F2937`; toolbar dan latar area tulis `#111827`; label "Isi Email" terang; kotak mailing list kosong `#0B1120`; label "Recipient Source" `#F3F4F6`; area tulis email tetap putih.
+    - **Terang:** semuanya sama dengan aslinya (`#F9FAFB`, putih, `#374151`).
+  - Smart Capture, list dan detail (4 magnet, 10 status email/telepon):
+    - **Gelap:** chip Active hijau 18% dengan teks `rgb(92, 191, 128)`; badge tab `rgb(26, 35, 64)` dengan teks `rgb(143, 164, 243)` dan `rgb(31, 41, 55)`; garis menu status `#374151`; semua 10 chip status menjadi warnanya sendiri 18% dengan teks terang (Failed merah terang); hover tombol Back `rgb(31, 41, 55)`.
+    - **Terang:** semua nilainya sama dengan aslinya (`#DCFCE7`/`#16A34A`, `#EEF2FF`/`#5479EE`, `#F8FAFC`, garis menu `#F1F5F9`, 10 chip sesuai tabel warna lama, hover Back putih).
+  - `hover:bg-white` dan `group-hover:bg-white` (elemen uji, di-hover dengan mouse): gelap `rgb(31, 41, 55)`, terang tetap putih.
+  - Teks Live Preview: gelap `rgb(144, 161, 185)` (terbaca di kartu navy), terang tetap `oklch(0.704 0.04 256.788)` (slate-400).
+  - Latar gelap tetap (elemen uji dengan kelas yang sama, overlay di-hover dengan mouse):
+    - **Gelap:** avatar dan angka `rgb(31, 41, 55)` dengan teks putih, overlay dan backdrop hitam 40%.
+    - **Terang:** tetap slate-800/gray-800, overlay slate-900 30%, backdrop gray-900 20%.
+  - Lint 0 error di file yang diubah, kecuali 8 error `react/no-unescaped-entities` di `EmailTemplateGuideDialog.tsx` yang sudah ada sebelumnya (jumlah sama di HEAD). tsc bersih.
+
+  Support Workspace dan Tickets sudah dicek user di mode gelap. Leads belum dicek ulang setelah perbaikan; kanban dan detail lead belum dicek.
+
+#### 🐛 Klik Status Lead Magnet Langsung Membuka Halaman Detail
+
+- **Deskripsi:**
+  - **Masalah:** di daftar Smart Capture, klik chip status (Active/Inactive) di sebuah baris seharusnya membuka menu ubah status. Menunya sempat muncul, tetapi klik yang sama juga dihitung sebagai klik baris, sehingga halaman langsung pindah ke detail magnet dan status tidak bisa diubah dari daftar.
+  - **Penyebab:** sejak refactor SuperTable 2026-08-26 (`5f1a49d`), tabel tidak lagi memeriksa klik di chip sendiri. SuperTable hanya mengabaikan klik di elemen bertanda `data-st-no-row-click`, dan chip status tidak diberi tanda itu.
+  - **Perbaikan:** chip status di `LeadMagnetsTable` diberi `data-st-no-row-click`.
+  - **Tabel lain:** semua tabel lain yang memakai row click sudah dicek. Tidak ada kontrol interaktif lain di dalam sel yang belum bertanda (toggle Active di pengaturan tiket sudah bertanda).
+  - **Tidak disembunyikan flag:** perbaikan ini juga berlaku di mode terang.
+
+- **🧪 Testing:** lint dan tsc bersih. Chrome dengan API mock, klik mouse sungguhan:
+  - **Dengan perbaikan:** klik chip membuka menu ("Set as Inactive") dan tetap di `/smart-capture`. Klik item menu mengirim `PATCH /smart-captures/status` `{"smart_capture_ids":["s1"],"status":"Inactive"}` dan tetap di halaman. Klik sel lain di baris tetap membuka `/smart-capture/detail/s1`.
+  - **Tanpa tanda** (dihapus dari DOM, sama dengan kode lama): klik chip langsung pindah ke detail tanpa menu, persis seperti laporan.
+  - Belum dites manual.
+
+#### 💄 Tombol "Coba lagi" di Alert Harga Quotation
+
+- **Deskripsi:**
+  - **Masalah:** di Create dan detail Quotation, alert merah "Harga belum bisa dihitung" berisi tombol "Coba lagi" yang berantakan:
+    - tombol `AppButton` outline biru diselipkan ke dalam teks deskripsi, jadi biru di atas merah;
+    - tombol ikut menyusut sehingga teksnya terpotong dua baris;
+    - deskripsi alert adalah `<p>`, sehingga `<div>` dan tombol di dalamnya tidak valid sebagai HTML.
+  - **Perbaikan:**
+    - `AppAlert` punya properti baru `action` (`label`, `onClick`, `loading`, `disabled`): tombol putih dengan teks sewarna alert, satu baris, di samping teks, tetap putih di mode gelap.
+    - Form quotation memakai properti itu; deskripsinya tinggal teks pesan dan kode error.
+    - Halaman uji `/test/alerts` diberi satu contoh alert bertombol.
+  - **Tidak disembunyikan flag:** perubahan ini juga terlihat di mode terang.
+
+- **🧪 Testing:** tsc dan lint bersih. Di `/test/alerts`, gelap dan terang: tombol `rgb(255, 255, 255)` dengan teks `rgb(243, 78, 78)`, tinggi 32px (satu baris), tepat di tengah secara vertikal. Belum dicek di halaman quotation dengan error harga sungguhan.
+
+---
+
 ## [1.151.0] - 2026-11-24
 
 ### Detail Versi 1.151.0

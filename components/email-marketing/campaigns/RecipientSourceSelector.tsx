@@ -1,5 +1,6 @@
 import React from 'react';
 import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { themed } from "@/lib/constants/theme";
 
 interface RecipientSourceSelectorProps {
   value: 'mailing_list' | 'subscriber';
@@ -22,7 +23,7 @@ const RecipientSourceSelector: React.FC<RecipientSourceSelectorProps> = ({
 
   return (
     <FormControl component="fieldset" disabled={disabled}>
-      <FormLabel component="legend" sx={{ fontSize: '0.875rem', fontWeight: 500, mb: 1, color: '#374151' }}>
+      <FormLabel component="legend" sx={{ fontSize: '0.875rem', fontWeight: 500, mb: 1, color: themed('text', '#374151') }}>
         Recipient Source
       </FormLabel>
       <RadioGroup

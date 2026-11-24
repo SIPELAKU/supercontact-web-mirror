@@ -165,7 +165,7 @@ function TemplateCard({
             <div className="aspect-[800/1131] animate-pulse bg-white" />
           )}
         </div>
-        <span className="absolute inset-0 flex items-center justify-center bg-slate-900/0 opacity-0 transition group-hover:bg-slate-900/30 group-hover:opacity-100">
+        <span className="absolute inset-0 flex items-center justify-center bg-slate-900/0 opacity-0 transition group-hover:bg-slate-900/30 group-hover:opacity-100 dark:group-hover:bg-black/40">
           <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow">
             <Eye className="h-3.5 w-3.5" /> Lihat
           </span>

@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { BookOpen, CheckCircle2, XCircle } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import { darkTint, themed } from "@/lib/constants/theme";
 
 interface EmailTemplateGuideDialogProps {
     open: boolean;
@@ -78,8 +79,8 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
             </DialogTitle>
 
             <DialogContent dividers>
-                <Box sx={{ bgcolor: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 2, p: 2, mb: 1 }}>
-                    <Typography variant="body2" sx={{ color: "#9A3412" }}>
+                <Box sx={{ bgcolor: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 2, p: 2, mb: 1, ".dark &": { bgcolor: darkTint("#F97316"), borderColor: darkTint("#F97316", 40) } }}>
+                    <Typography variant="body2" sx={{ color: "#9A3412", ".dark &": { color: "#FDBA74" } }}>
                         <strong>Golden rule:</strong> An email is not a web page. Gmail, Outlook, and Apple Mail
                         use rendering engines far more limited than a browser — Outlook desktop even
                         renders HTML with Microsoft Word. If a template is written like a modern web page
@@ -155,7 +156,7 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
                 <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                         <TableHead>
-                            <TableRow sx={{ bgcolor: "#F8FAFC" }}>
+                            <TableRow sx={{ bgcolor: themed("raised", "#F8FAFC") }}>
                                 <TableCell sx={{ fontWeight: 700 }}>Flex/Grid Pattern</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Replace With</TableCell>
                             </TableRow>

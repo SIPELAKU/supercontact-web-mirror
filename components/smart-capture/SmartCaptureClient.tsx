@@ -12,6 +12,7 @@ import { useSmartCaptures } from '@/lib/hooks/useSmartCaptures';
 import { SuperTableState } from '@/components/ui/super-table/types';
 import { Box, Chip } from '@mui/material';
 import { AppTabs } from '@/components/ui/app-tabs';
+import { themed } from '@/lib/constants/theme';
 
 type CaptureTab = 'active' | 'inactive';
 const VALID_TABS: CaptureTab[] = ['active', 'inactive'];
@@ -164,8 +165,8 @@ export default function SmartCaptureClient() {
                         height: 20,
                         fontSize: '10px',
                         fontWeight: 700,
-                        bgcolor: isActiveTab ? '#EEF2FF' : '#F8FAFC',
-                        color: isActiveTab ? '#5479EE' : '#94A3B8',
+                        bgcolor: isActiveTab ? themed('tint', '#EEF2FF') : themed('raised', '#F8FAFC'),
+                        color: isActiveTab ? themed('accent', '#5479EE') : '#94A3B8',
                         transition: 'all 0.2s'
                       }}
                     />
@@ -184,8 +185,8 @@ export default function SmartCaptureClient() {
                         height: 20,
                         fontSize: '10px',
                         fontWeight: 700,
-                        bgcolor: !isActiveTab ? '#EEF2FF' : '#F8FAFC',
-                        color: !isActiveTab ? '#5479EE' : '#94A3B8',
+                        bgcolor: !isActiveTab ? themed('tint', '#EEF2FF') : themed('raised', '#F8FAFC'),
+                        color: !isActiveTab ? themed('accent', '#5479EE') : '#94A3B8',
                         transition: 'all 0.2s'
                       }}
                     />

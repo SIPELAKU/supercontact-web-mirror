@@ -9,6 +9,7 @@ import AddLeadForm from "@/components/lead-management/add-lead-form";
 import { Lead } from "@/lib/models/types";
 import { useState, useMemo, useCallback, useRef } from "react";
 import type { SuperTableState } from "@/components/ui/super-table";
+import { themed } from "@/lib/constants/theme";
 
 export default function LeadManagement() {
   const { viewMode, setViewMode } = useViewMode();
@@ -118,7 +119,7 @@ export default function LeadManagement() {
           sx={{
             minHeight: "unset",
             padding: "4px",
-            backgroundColor: "#f0f2f5",
+            backgroundColor: themed("field", "#f0f2f5"),
             borderRadius: "8px",
             "& .MuiTabs-indicator": {
               display: "none",
@@ -137,11 +138,11 @@ export default function LeadManagement() {
               padding: "6px 16px",
               borderRadius: "6px",
               fontSize: "14px",
-              color: "#64748B",
+              color: themed("muted", "#64748B"),
               transition: "all 0.2s",
               "&.Mui-selected": {
-                color: "#0F172A",
-                backgroundColor: "#FFFFFF",
+                color: themed("text", "#0F172A"),
+                backgroundColor: themed("raised", "#FFFFFF"),
                 boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.06)",
               },
             }}
@@ -158,11 +159,11 @@ export default function LeadManagement() {
               padding: "6px 16px",
               borderRadius: "6px",
               fontSize: "14px",
-              color: "#64748B",
+              color: themed("muted", "#64748B"),
               transition: "all 0.2s",
               "&.Mui-selected": {
-                color: "#0F172A",
-                backgroundColor: "#FFFFFF",
+                color: themed("text", "#0F172A"),
+                backgroundColor: themed("raised", "#FFFFFF"),
                 boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.06)",
               },
             }}

@@ -33,13 +33,13 @@ export default function EmployeeRangeFilter({
                 <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-gray-600">
                         <span className="font-medium">Min</span>
-                        <div className="mt-1 flex items-center justify-center rounded-md bg-gray-800 px-3 py-1.5 text-white font-semibold">
+                        <div className="mt-1 flex items-center justify-center rounded-md bg-gray-800 px-3 py-1.5 text-white font-semibold dark:bg-[var(--dk-raised)]">
                             {min}
                         </div>
                     </div>
                     <div className="text-sm text-gray-600">
                         <span className="font-medium">Max</span>
-                        <div className="mt-1 flex items-center justify-center rounded-md bg-gray-800 px-3 py-1.5 text-white font-semibold">
+                        <div className="mt-1 flex items-center justify-center rounded-md bg-gray-800 px-3 py-1.5 text-white font-semibold dark:bg-[var(--dk-raised)]">
                             {max}
                         </div>
                     </div>

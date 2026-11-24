@@ -20,6 +20,7 @@ import {
 import { Search, X } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
+import { themed } from "@/lib/constants/theme";
 
 interface ContactPickerDialogProps {
     open: boolean;
@@ -147,16 +148,16 @@ export default function ContactPickerDialog({
                     <Table size="small">
                         <TableHead>
                             <TableRow
-                                className="bg-[#EEF2FD]!"
+                                className="bg-[#EEF2FD]! dark:bg-[var(--dk-tint)]!"
                                 sx={{
                                     "& th": {
-                                        borderBottom: "1px solid #e5e7eb",
+                                        borderBottom: `1px solid ${themed("line", "#e5e7eb")}`,
                                     },
                                 }}
                             >
                                 <TableCell
                                     sx={{
-                                        color: "#6B7280",
+                                        color: themed("muted", "#6B7280"),
                                         fontWeight: 600,
                                         py: 1.5,
                                         pl: 2.5,
@@ -166,7 +167,7 @@ export default function ContactPickerDialog({
                                 </TableCell>
                                 <TableCell
                                     sx={{
-                                        color: "#6B7280",
+                                        color: themed("muted", "#6B7280"),
                                         fontWeight: 600,
                                         py: 1.5,
                                     }}
@@ -175,7 +176,7 @@ export default function ContactPickerDialog({
                                 </TableCell>
                                 <TableCell
                                     sx={{
-                                        color: "#6B7280",
+                                        color: themed("muted", "#6B7280"),
                                         fontWeight: 600,
                                         py: 1.5,
                                     }}
@@ -184,7 +185,7 @@ export default function ContactPickerDialog({
                                 </TableCell>
                                 <TableCell
                                     sx={{
-                                        color: "#6B7280",
+                                        color: themed("muted", "#6B7280"),
                                         fontWeight: 600,
                                         py: 1.5,
                                     }}

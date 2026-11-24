@@ -56,7 +56,7 @@ export default function RecentActivityCompany() {
               {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-white">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-white dark:bg-[var(--dk-raised)]">
                     <span className="text-sm font-semibold">{item.platform === "linkedin" ? "in" : item.platform === "x" ? "X" : "🌐"}</span>
                   </div>
 

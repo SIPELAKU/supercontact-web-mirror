@@ -31,6 +31,7 @@ import { ExportFormatMenu } from '@/components/ui/export-format-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { notify } from '@/lib/notifications';
 import { downloadRows, statusLabel, type ExportFileFormat } from '@/lib/utils/exportRows';
+import { themed } from "@/lib/constants/theme";
 import {
     subscriberExportColumns,
     subscriberExportFileName,
@@ -94,13 +95,13 @@ const StatCard = ({
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 0.5 }}>
                     {title}
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#111827' }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: themed('text', '#111827') }}>
                     {value}
                 </Typography>
             </Box>
         </Box>
     );
-    const paperSx = { border: '1px solid #E5E7EB', borderRadius: 2, overflow: 'hidden' };
+    const paperSx = { border: `1px solid ${themed('line', '#E5E7EB')}`, borderRadius: 2, overflow: 'hidden' };
 
     if (!onExport) {
         return <Paper elevation={0} sx={paperSx}>{body}</Paper>;
@@ -325,7 +326,7 @@ export function CampaignStatsPanel({
 
             <Grid container sx={{ height }}>
                 {/* Left Column: Stats */}
-                <Grid item xs={12} md={6} sx={{ p: 3, borderRight: '1px solid #E5E7EB', overflowY: 'auto', minHeight: 0 }}>
+                <Grid item xs={12} md={6} sx={{ p: 3, borderRight: `1px solid ${themed('line', '#E5E7EB')}`, overflowY: 'auto', minHeight: 0 }}>
                     <Stack spacing={3}>
                         <Box
                             sx={{
@@ -333,7 +334,7 @@ export function CampaignStatsPanel({
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 p: 2,
-                                bgcolor: '#F3F4F6',
+                                bgcolor: themed('raised', '#F3F4F6'),
                                 borderRadius: 2
                             }}
                         >
@@ -478,7 +479,7 @@ export function CampaignStatsPanel({
                     xs={12}
                     md={6}
                     sx={{
-                        bgcolor: '#F9FAFB',
+                        bgcolor: themed('field', '#F9FAFB'),
                         display: 'flex',
                         flexDirection: 'column',
                         // Stretching to the Status column beside it is what makes
@@ -488,7 +489,7 @@ export function CampaignStatsPanel({
                         minHeight: 320,
                     }}
                 >
-                    <Box sx={{ p: 2, borderBottom: '1px solid #E5E7EB', bgcolor: 'white', flexShrink: 0 }}>
+                    <Box sx={{ p: 2, borderBottom: `1px solid ${themed('line', '#E5E7EB')}`, bgcolor: themed('surface', 'white'), flexShrink: 0 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                             Message Preview
                         </Typography>
@@ -508,14 +509,15 @@ export function CampaignStatsPanel({
                                     flex: 1,
                                     width: '100%',
                                     minHeight: 0,
-                                    border: '1px solid #E5E7EB',
+                                    border: `1px solid ${themed('line', '#E5E7EB')}`,
                                     borderRadius: '8px',
+                                    // The email itself: white in dark mode too.
                                     backgroundColor: '#fff'
                                 }}
                                 title="Campaign Preview"
                             />
                         ) : (
-                            <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', border: '1px dashed #D1D5DB', borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', border: `1px dashed ${themed('line', '#D1D5DB')}`, borderRadius: 2 }}>
                                 <Typography variant="body2" color="text.secondary">
                                     No preview available
                                 </Typography>
@@ -526,7 +528,7 @@ export function CampaignStatsPanel({
             </Grid>
 
             {/* Bottom Section: Subscribers Status Table */}
-            <Box sx={{ p: 3, bgcolor: '#fff', borderTop: '1px solid #E5E7EB' }}>
+            <Box sx={{ p: 3, bgcolor: themed('surface', '#fff'), borderTop: `1px solid ${themed('line', '#E5E7EB')}` }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
                     Subscribers Status
                 </Typography>

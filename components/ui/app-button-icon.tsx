@@ -39,20 +39,25 @@ const StyledIconButton = styled(IconButton, {
 })<{
   variantStyle: AppButtonIconProps["variantStyle"];
   customColor: NonNullable<AppButtonIconProps["color"]>;
-}>(({ variantStyle, customColor }) => {
+}>(({ theme, variantStyle, customColor }) => {
   const isPrimary = customColor === "primary";
   const isGray = customColor === "gray";
+  // Dark mode, as in AppButton: the pale soft fill becomes a see-through tint
+  // of the button's colour and grey is a shade lighter. Light keeps its colours.
+  const isDark = theme.palette.mode === "dark";
   const mainColor = isPrimary
     ? COLORS.primary.main
     : isGray
-      ? COLORS.gray.main
+      ? (isDark ? "#9CA3AF" : COLORS.gray.main)
       : COLORS.danger.main;
   const hoverColor = isPrimary
     ? COLORS.primary.hover
     : isGray
       ? COLORS.gray.hover
       : COLORS.danger.hover;
-  const lightColor = isPrimary
+  const lightColor = isDark
+    ? alpha(mainColor, 0.16)
+    : isPrimary
     ? COLORS.primary.light
     : isGray
       ? COLORS.gray.light
@@ -107,7 +112,7 @@ const StyledIconButton = styled(IconButton, {
         backgroundColor: lightColor,
         color: mainColor,
         "&:hover": {
-          backgroundColor: alpha(mainColor, 0.12),
+          backgroundColor: alpha(mainColor, isDark ? 0.24 : 0.12),
         },
       };
 

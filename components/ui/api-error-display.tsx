@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Maximize2, X } from "lucide-react";
+import { darkTint, themed } from "@/lib/constants/theme";
 import {
   Dialog,
   DialogTitle,
@@ -103,25 +104,25 @@ export const ApiErrorDisplay: React.FC<ApiErrorDisplayProps> = ({
           sx: { borderRadius: '12px' }
         }}
       >
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#FEE2E2' }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#FEE2E2', '.dark &': { bgcolor: darkTint('#F34E4E') } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{ p: 1, bgcolor: '#F34E4E', borderRadius: '8px', display: 'flex' }}>
               <X className="w-5 h-5 text-white" />
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#991B1B', '.dark &': { color: '#FCA5A5' }, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Validation Errors Detail
             </Typography>
           </Box>
           <IconButton
             aria-label="close"
             onClick={() => setIsFullScreen(false)}
-            sx={{ color: '#991B1B' }}
+            sx={{ color: '#991B1B', '.dark &': { color: '#FCA5A5' } }}
           >
             <X className="w-6 h-6" />
           </IconButton>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 3 }}>
-          <Typography variant="body2" sx={{ mb: 3, color: '#6B7280', fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ mb: 3, color: themed('muted', '#6B7280'), fontWeight: 500 }}>
             Found {errors.length} validation issues that need to be fixed before proceeding.
           </Typography>
           <Box sx={{ maxHeight: '60vh', overflowY: 'auto', pr: 1 }}>

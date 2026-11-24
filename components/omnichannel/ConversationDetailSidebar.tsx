@@ -65,7 +65,7 @@ export default function ConversationDetailSidebar({
         <>
             {/* Backdrop for mobile/laptop when sidebar open */}
             <div
-                className="xl:hidden absolute inset-0 bg-gray-900/20 z-10 rounded-2xl"
+                className="xl:hidden absolute inset-0 bg-gray-900/20 dark:bg-black/40 z-10 rounded-2xl"
                 onClick={onClose}
             />
 

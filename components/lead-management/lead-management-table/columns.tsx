@@ -20,7 +20,8 @@ const statusColors: Record<LeadStatus, string> = {
 // Source icon mapping
 export const sourceIcon: Record<LeadSource, React.ReactNode> = {
   "Web Form": <Globe className="h-4 w-4 text-black" />,
-  "WhatsApp": <Image src={WAIcon} className="h-4 w-4 text-black" alt={"wa-icon"} />,
+  // wa.svg is drawn in near-black (#111418): inverted in dark mode, or it disappears.
+  "WhatsApp": <Image src={WAIcon} className="h-4 w-4 text-black dark:invert" alt={"wa-icon"} />,
   "Manual Entry": <Image src={ManualEntry} alt={"manual-entry"} className="h-4 w-4" />,
 };
 

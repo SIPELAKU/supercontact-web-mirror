@@ -16,7 +16,7 @@ import {
   type TopDealItem
 } from "@/lib/api/sales-dashboard";
 import { formatRupiah } from "@/lib/helper/currency";
-import { darkTint, themed } from "@/lib/constants/theme";
+import { darkChip, darkTint, themed } from "@/lib/constants/theme";
 import ProductPerformanceDetailModal from "@/components/dashboard/ProductPerformanceDetailModal";
 import { AppButton } from "@/components/ui/app-button";
 import {
@@ -770,7 +770,7 @@ export default function DashboardClient() {
                               bgcolor: st.bg,
                               border: `1px solid ${st.color}30`,
                               // Pastel chips glow on a dark card: a faint tint, lighter text.
-                              ".dark &": { bgcolor: darkTint(st.color), color: `color-mix(in srgb, ${st.color} 70%, white)` },
+                              ".dark &": darkChip(st.color),
                             }}
                           >
                             {deal.status}

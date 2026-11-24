@@ -62,9 +62,16 @@ interface GetState {
   stage: string;
   id: string;
   stats: Metric[];
+  /**
+   * The board is loading with the skeleton on screen. Starts true: until the
+   * first board arrives there is nothing to show, and an empty board would
+   * read as "no deals". Only the board's own loads turn it off.
+   */
   loading: boolean;
   /** A silent board reload is running (no skeleton). */
   refreshing: boolean;
+  /** The last board load failed (the board shows it, with Try again). */
+  boardLoadFailed: boolean;
   /** Columns whose "Load more" is running, by stage name. */
   loadingMoreStages: Record<string, boolean>;
   /**
@@ -94,7 +101,8 @@ interface GetState {
   setEditId: (val: string) => void;
   setStage: (val: string) => void;
   setIsModalOpen: (val: boolean) => void;
-  fetchActiveUser: (param?: { isSilent?: boolean }) => Promise<void>;
+  /** The Assigned To filter's users. Never touches the board's loading. */
+  fetchActiveUser: () => Promise<void>;
 
   /** Resolves true when this load's board is the one now in the store. */
   fetchPipeline: (param?: PipelineQuery) => Promise<boolean>;
@@ -185,8 +193,9 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   needsSetup: false,
   stats: [],
   listActiveUser: [],
-  loading: false,
+  loading: true,
   refreshing: false,
+  boardLoadFailed: false,
   loadingMoreStages: {},
   boardFilters: null,
   stage: "",
@@ -215,15 +224,13 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
   setIsModalOpen: (v) => set({ isModalOpen: v }),
 
-  // `isSilent` refreshes the Assigned To filter after a write without turning
-  // on the board's global loading (which would flash the skeleton).
-  fetchActiveUser: async (param) => {
+  // It used to turn the board's loading on and off as well: when the users
+  // came back before the board, the skeleton went away and an empty board
+  // showed until the deals arrived.
+  fetchActiveUser: async () => {
     // A scoped user has no Assigned To filter, so there is nothing to load.
     if (get().scopeUserId) return;
     try {
-      if (!param?.isSilent) {
-        set({ loading: true, error: null });
-      }
       const res = await pipelineAPI.fetchActiveUsers();
       const data = res.data
       const temp: DealStage[] = [{ label: "All", value: 'all' }]
@@ -238,10 +245,6 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       set({ listActiveUser: temp })
     } catch (err) {
       set({ error: "Failed to fetch data" });
-    } finally {
-      if (!param?.isSilent) {
-        set({ loading: false });
-      }
     }
   },
 
@@ -252,6 +255,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     set({
       ...(param?.isSilent ? { refreshing: true } : { loading: true }),
       error: null,
+      boardLoadFailed: false,
       // A new board means new cursors: any "Load more" still running is dropped.
       loadingMoreStages: {},
     });
@@ -269,7 +273,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       });
       return true;
     } catch (err) {
-      if (requestId === boardRequestSeq) set({ error: "Failed to fetch data" });
+      if (requestId === boardRequestSeq) set({ error: "Failed to fetch data", boardLoadFailed: true });
       return false;
     } finally {
       if (requestId === boardRequestSeq) set({ loading: false, refreshing: false });
@@ -321,7 +325,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
       if (response.success) {
         // The deal's assignee may be new to the Assigned To filter.
-        await Promise.all([get().fetchPipeline(), get().fetchActiveUser({ isSilent: true })]);
+        await Promise.all([get().fetchPipeline(), get().fetchActiveUser()]);
         return { success: true };
       }
 
@@ -349,7 +353,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       // A stage change can change who still has an active deal.
       const [reloaded] = await Promise.all([
         get().fetchPipeline({ isSilent: true }),
-        get().fetchActiveUser({ isSilent: true }),
+        get().fetchActiveUser(),
       ]);
       return reloaded;
     } catch (error) {
@@ -369,7 +373,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
       if (response.success) {
         // The assignee may have changed, so the Assigned To filter too.
-        await Promise.all([get().fetchPipeline(), get().fetchActiveUser({ isSilent: true })]);
+        await Promise.all([get().fetchPipeline(), get().fetchActiveUser()]);
         return { success: true };
       }
 

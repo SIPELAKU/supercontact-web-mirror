@@ -13,6 +13,7 @@ import { CircularProgress } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
 import PageHeader from "@/components/ui/page-header";
 import { AppTabs } from "@/components/ui/app-tabs";
+import { cn } from "@/lib/utils";
 
 import { ContactHeader } from "./sections/ContactHeader";
 import { ContactInfo } from "./sections/ContactInfo";
@@ -25,6 +26,14 @@ import { ContactConversationsTab } from "./sections/ContactConversationsTab";
 
 type ProfileTab = "overview" | "activity" | "email" | "whatsapp" | "conversations";
 const VALID_TABS: ProfileTab[] = ["overview", "activity", "email", "whatsapp", "conversations"];
+
+// Activity tab, md and up: the page is one screen tall (minus the 52px
+// Topbar) and Notes and Tasks share what the header leaves, each list
+// scrolling on its own: no empty space below, no long page scroll. The
+// floor (880px) keeps the activity list at least as tall as it was before
+// (200px) on short screens, where the page then scrolls as it did. Phones
+// keep the stacked columns and a normal page scroll.
+const FILL_SCREEN = "md:flex md:flex-col md:h-[max(calc(100dvh-52px),880px)]";
 
 // Rebuilding the URL from a template silently discards every OTHER query
 // param - the table's own ?p / ?q / ?sort included - so switching tabs threw
@@ -183,7 +192,7 @@ export const ContactDetailClient = () => {
     }
 
     return (
-        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-8 space-y-6">
+        <div className={cn("w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-8 space-y-6", activeTab === "activity" && FILL_SCREEN)}>
             <PageHeader
                 title={contact.name}
                 breadcrumbs={[{ label: "Contacts", href: "/contact" }, { label: contact.name }]}
@@ -223,7 +232,7 @@ export const ContactDetailClient = () => {
             )}
 
             {activeTab === "activity" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:min-h-0 md:flex-1 md:grid-rows-[minmax(0,1fr)]">
                     <ContactNotes
                         contactName={contact.name}
                         notes={notes}

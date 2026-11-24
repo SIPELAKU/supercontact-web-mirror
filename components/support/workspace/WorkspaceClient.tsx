@@ -224,7 +224,7 @@ export default function WorkspaceClient() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-52px)] w-full overflow-hidden bg-[#F7F8FB]">
+    <div className="flex h-[calc(100vh-52px)] w-full overflow-hidden bg-[#F7F8FB] dark:bg-[var(--dk-page)]">
       {/* Views rail - collapses below lg */}
       <div className="hidden w-[230px] shrink-0 lg:flex">
         <WorkspaceViewsRail

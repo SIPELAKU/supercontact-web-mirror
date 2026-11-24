@@ -30,16 +30,45 @@ export const GRADIENT_BRAND = "linear-gradient(135deg, #597CFF 0%, #7692FF 100%)
 export const GRADIENT_BRAND_H = "linear-gradient(90deg, #597CFF 0%, #7692FF 100%)";
 export const GRADIENT_DEEP = "linear-gradient(135deg, #4264D0 0%, #2A408E 100%)";
 
-export const theme = createTheme({
-  palette: {
-    primary: {
-      main: BRAND_PRIMARY,
-      dark: BRAND_PRIMARY_HOVER,
-      light: BRAND_PRIMARY_LIGHT,
+/** Dark surfaces, matching the dark Tailwind greys in app/globals.css
+ *  (gray-950 page, gray-900 cards, gray-800 lines). */
+export const DARK_BACKGROUND = "#030712";
+export const DARK_PAPER = "#111827";
+export const DARK_DIVIDER = "#1F2937";
+
+/** The MUI theme for a mode. Light is the theme the app always had. */
+export function buildTheme(mode: "light" | "dark") {
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: BRAND_PRIMARY,
+        dark: BRAND_PRIMARY_HOVER,
+        light: BRAND_PRIMARY_LIGHT,
+      },
+      error: {
+        main: DANGER,
+        dark: DANGER_HOVER,
+      },
+      ...(mode === "dark"
+        ? {
+            background: { default: DARK_BACKGROUND, paper: DARK_PAPER },
+            divider: DARK_DIVIDER,
+          }
+        : {}),
     },
-    error: {
-      main: DANGER,
-      dark: DANGER_HOVER,
-    },
-  },
-});
+    ...(mode === "dark"
+      ? {
+          components: {
+            // MUI lightens dark papers by elevation with a white overlay; flat
+            // cards read better against the app's dark greys.
+            MuiPaper: { styleOverrides: { root: { backgroundImage: "none" } } },
+            // Shadows do not show on a dark page, so a card gets a thin edge.
+            MuiCard: { styleOverrides: { root: { border: `1px solid ${DARK_DIVIDER}` } } },
+          },
+        }
+      : {}),
+  });
+}
+
+export const theme = buildTheme("light");

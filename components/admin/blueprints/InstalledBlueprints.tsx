@@ -57,7 +57,7 @@ export default function InstalledBlueprints() {
                                     <div className="text-xs text-muted-foreground">
                                         versi {row.installed_version}
                                         {row.update_available && (
-                                            <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-900 dark:bg-sky-900/40 dark:text-sky-200">
+                                            <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-900">
                                                 versi {row.current_version} tersedia
                                             </span>
                                         )}

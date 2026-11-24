@@ -9,9 +9,12 @@ import Checkbox, { CheckboxProps } from "@mui/material/Checkbox";
 import { styled } from "@mui/material/styles";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { themed } from "@/lib/constants/theme";
 
 // --- Design Tokens ---
-const INPUT_BG = "#FAFAF6";
+// themed(): the light colour as is, a dark one in dark mode.
+const INPUT_BG = themed("field", "#FAFAF6");
+const INPUT_BG_WHITE = themed("field", "white");
 const BORDER_COLOR = "#262B43/22"; // soft gray
 const FOCUS_COLOR = "#5479EE";
 
@@ -107,12 +110,12 @@ const StyledTextField = styled(TextField, {
     "& .MuiInputLabel-root": {
       fontSize: "14px",
       fontWeight: 500,
-      color: "#6B7280",
+      color: themed("muted", "#6B7280"),
       marginBottom: "6px",
     },
 
     "& .MuiOutlinedInput-root": {
-      backgroundColor: isBgWhite ? "white" : INPUT_BG,
+      backgroundColor: isBgWhite ? INPUT_BG_WHITE : INPUT_BG,
       borderRadius: rounded ? rounded : "6px",
       fontSize: "16px",
       fontWeight: 400,
@@ -138,13 +141,13 @@ const StyledTextField = styled(TextField, {
       },
 
       "&.Mui-disabled": {
-        backgroundColor: "#F9FAFB",
+        backgroundColor: themed("raised", "#F9FAFB"),
         "& fieldset": {
           borderColor: "rgba(0, 0, 0, 0.05) !important",
         },
         "& .MuiInputBase-input": {
-          color: "#4B5563",
-          WebkitTextFillColor: "#4B5563",
+          color: themed("muted", "#4B5563"),
+          WebkitTextFillColor: themed("muted", "#4B5563"),
         },
       },
     },

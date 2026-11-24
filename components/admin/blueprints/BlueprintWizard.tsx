@@ -315,7 +315,7 @@ export default function BlueprintWizard({
                             i === stepIndex
                                 ? "bg-primary text-primary-foreground"
                                 : i < stepIndex
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                                  ? "bg-emerald-100 text-emerald-800"
                                   : "bg-muted text-muted-foreground"
                         }`}
                     >
@@ -411,7 +411,7 @@ export default function BlueprintWizard({
                                         )}
                                     </span>
                                     {BEHAVIOUR_MODULES.has(key) && (
-                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900">
                                             mati
                                         </span>
                                     )}
@@ -583,12 +583,12 @@ function ReportTable({ report }: { report: BlueprintInstallReport }) {
                             <td className="px-3 py-2">
                                 {moduleLabel(key)}
                                 {(r.installed_disabled || r.installed_as_draft) && (
-                                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+                                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900">
                                         {r.installed_as_draft ? "draft" : "mati"}
                                     </span>
                                 )}
                                 {r.sample_data && (
-                                    <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                    <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">
                                         contoh
                                     </span>
                                 )}

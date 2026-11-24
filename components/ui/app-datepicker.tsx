@@ -14,10 +14,13 @@ import { PickersDay, PickersDayProps } from "@mui/x-date-pickers/PickersDay";
 import { format, isSameDay, isWithinInterval, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon, ChevronDown, X } from "lucide-react";
 import React, { useMemo, useState } from "react";
+import { themed } from "@/lib/constants/theme";
 
 // --- Design Tokens ---
-const INPUT_BG = "#FAFAF6";
-const BORDER_COLOR = "#D1D5DB";
+// themed(): the light colour as is, a dark one in dark mode.
+const INPUT_BG = themed("field", "#FAFAF6");
+const INPUT_BG_WHITE = themed("field", "white");
+const BORDER_COLOR = themed("line", "#D1D5DB");
 const FOCUS_COLOR = "#5479EE";
 const PRIMARY_COLOR = "#2563eb";
 
@@ -48,7 +51,7 @@ const TriggerButton = styled(Box, {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: isBgWhite ? "white" : INPUT_BG,
+    backgroundColor: isBgWhite ? INPUT_BG_WHITE : INPUT_BG,
     border: `1px solid ${isError ? "#EF4444" : isFocused ? FOCUS_COLOR : BORDER_COLOR}`,
     borderRadius: "8px",
     padding: "10px 14px",
@@ -58,7 +61,7 @@ const TriggerButton = styled(Box, {
     width: "100%",
     boxShadow: isError ? "none" : isFocused ? `0 0 0 2px ${FOCUS_COLOR}33` : "none",
     "&:hover": {
-      borderColor: isError ? "#EF4444" : isFocused ? FOCUS_COLOR : "#9CA3AF",
+      borderColor: isError ? "#EF4444" : isFocused ? FOCUS_COLOR : themed("muted", "#9CA3AF"),
     },
   }),
 );
@@ -227,7 +230,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
       sx={{ width: fullWidth ? "100%" : "auto" }}
     >
       {label && (
-        <Typography variant="body2" sx={{ fontWeight: 500, color: "#6B7280" }}>
+        <Typography variant="body2" sx={{ fontWeight: 500, color: themed("muted", "#6B7280") }}>
           {label}
         </Typography>
       )}
@@ -244,7 +247,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
             variant="body2"
             noWrap
             sx={{
-              color: hasValue ? "#111827" : "#9CA3AF",
+              color: hasValue ? themed("text", "#111827") : themed("muted", "#9CA3AF"),
               fontSize: "0.875rem",
             }}
           >
@@ -303,7 +306,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
             borderRadius: "12px",
             boxShadow:
               "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-            border: "1px solid #E5E7EB",
+            border: `1px solid ${themed("raised", "#E5E7EB")}`,
           },
         }}
       >

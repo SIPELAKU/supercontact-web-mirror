@@ -277,7 +277,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
                     {/* Timestamp and Status */}
                     <div
-                      className={`flex items-center gap-1 mt-1 text-[10px] ${isOutbound ? 'text-blue-100' : 'text-gray-400'
+                      className={`flex items-center gap-1 mt-1 text-[10px] ${isOutbound ? 'text-blue-100' : 'text-gray-400 dark:text-[var(--dk-muted)]'
                         }`}
                     >
                       <span>{format(new Date(message.sent_at || message.created_at), 'HH:mm')}</span>

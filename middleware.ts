@@ -1,26 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-
-const PROTECTED_ROUTES_PREFIX = [
-    '/analytics',
-    '/contact',
-    '/dashboard',
-    '/data-intelligence',
-    '/demo',
-    '/email-marketing',
-    '/inbox',
-    '/lead-management',
-    '/notes',
-    '/notifications',
-    '/omnichannel',
-    '/profile',
-    '/sales',
-    '/settings',
-    '/smart-capture',
-    '/support',
-    '/test',
-    '/whatsapp-marketing',
-];
+import { isAppPath } from '@/lib/config/appRoutes';
 
 const AUTH_ROUTES = [
     '/login',
@@ -48,8 +28,8 @@ export function middleware(request: NextRequest) {
         return response;
     };
 
-    // Function to check if the path starts with any of the protected prefixes
-    const isProtectedRoute = PROTECTED_ROUTES_PREFIX.some(prefix => pathname.startsWith(prefix));
+    // The app's pages (lib/config/appRoutes.ts, shared with the theme).
+    const isProtectedRoute = isAppPath(pathname);
 
     // Function to check if the path is an auth route
     const isAuthRoute = AUTH_ROUTES.some(route => pathname === route);

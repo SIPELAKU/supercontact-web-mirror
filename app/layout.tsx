@@ -6,6 +6,9 @@ import { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { LanguageProvider } from "@/lib/context/LanguageContext";
 import { AppThemeProvider } from "@/components/providers/AppThemeProvider";
+import { ThemeModeProvider } from "@/lib/context/ThemeModeContext";
+import { isFeatureHidden } from "@/lib/config/featureFlags";
+import { themeBootScript } from "@/lib/utils/theme";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { ogImageUrl } from "@/lib/utils/og-image";
 
@@ -71,8 +74,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    // suppressHydrationWarning: the theme script below may add "dark" to
+    // <html> before React hydrates.
+    <html lang="id" suppressHydrationWarning>
       <head>
+        {/* Dark mode applied before the first paint, so a dark page does not
+            flash white. Left out while the switch is hidden. */}
+        {!isFeatureHidden("themeSwitch") && <script dangerouslySetInnerHTML={{ __html: themeBootScript() }} />}
         {/* Preload critical SVG icons */}
         <link
           rel="preload"
@@ -89,7 +97,7 @@ export default function RootLayout({
         <link rel="preload" href="/assets/sc-logo-primary.svg" as="image" type="image/svg+xml" />
       </head>
       <body
-        className={`${poppins.className} antialiased min-h-screen bg-[#ffffff]`}
+        className={`${poppins.className} antialiased min-h-screen bg-white`}
       >
         <GoogleAnalytics />
         <Toaster
@@ -98,13 +106,15 @@ export default function RootLayout({
             zIndex: 100000,
           }}
         />
-        <AppThemeProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </LanguageProvider>
-        </AppThemeProvider>
+        <ThemeModeProvider>
+          <AppThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </LanguageProvider>
+          </AppThemeProvider>
+        </ThemeModeProvider>
       </body>
     </html>
   );

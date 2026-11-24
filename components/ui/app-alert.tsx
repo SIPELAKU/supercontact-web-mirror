@@ -65,7 +65,9 @@ export function AppAlert({
         className,
       )}
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+      {/* White on the coloured alert in dark mode too: `bg-white` alone turns
+          into a dark surface there (app/globals.css), `dark:bg-white` keeps it. */}
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-white">
         <Icon className={cn("h-7 w-7", config.colorClass)} />
       </div>
 

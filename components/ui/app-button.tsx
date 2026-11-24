@@ -63,6 +63,10 @@ const StyledButton = styled(Button, {
   const isPrimary = customColor === "primary";
   const isGray = customColor === "gray";
   const isSuccess = customColor === "success";
+  // Dark mode: pale fills (the soft background, the text button's hover)
+  // glow on a dark page, so they become see-through tints of the button's own
+  // colour, and grey text is a shade lighter. Light mode keeps its colours.
+  const isDark = theme.palette.mode === "dark";
   // Consume the global theme for brand/danger colors.
   const primaryMain = theme.palette.primary.main || COLORS.primary.main;
   const primaryHover = theme.palette.primary.dark || COLORS.primary.hover;
@@ -71,7 +75,7 @@ const StyledButton = styled(Button, {
   const mainColor = isPrimary
     ? primaryMain
     : isGray
-      ? COLORS.gray.main
+      ? (isDark ? "#9CA3AF" : COLORS.gray.main)
       : isSuccess
         ? COLORS.success.main
         : dangerMain;
@@ -82,7 +86,9 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.hover
         : dangerHover;
-  const lightColor = isPrimary
+  const lightColor = isDark
+    ? alpha(mainColor, 0.16)
+    : isPrimary
     ? COLORS.primary.light
     : isGray
       ? COLORS.gray.light
@@ -157,7 +163,7 @@ const StyledButton = styled(Button, {
         padding: "6px 8px", // Slightly tighter for text links
         "&:hover": {
           textDecoration: "none", // Or 'underline' if requested, req says "underline or background very light"
-          backgroundColor: COLORS.primary.light,
+          backgroundColor: isDark ? alpha(primaryMain, 0.16) : COLORS.primary.light,
         },
       };
 
@@ -167,7 +173,7 @@ const StyledButton = styled(Button, {
         backgroundColor: lightColor,
         color: mainColor,
         "&:hover": {
-          backgroundColor: alpha(mainColor, 0.12),
+          backgroundColor: alpha(mainColor, isDark ? 0.24 : 0.12),
         },
         "&.Mui-disabled": {
           backgroundColor: alpha(mainColor, 0.05),

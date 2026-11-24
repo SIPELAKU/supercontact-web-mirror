@@ -36,6 +36,8 @@ export const DARK_TOKENS = {
   muted: "#9CA3AF",
   /** Brand-tinted rows, such as table heads. */
   tint: "#1A2340",
+  /** Brand-coloured text and lines on dark (the brand blue itself is too dark there). */
+  accent: "#8FA4F3",
 } as const;
 
 export type DarkToken = keyof typeof DARK_TOKENS;

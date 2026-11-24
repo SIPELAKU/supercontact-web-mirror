@@ -625,6 +625,13 @@ export function useTableConfig<TData extends object>(
     },
   };
 
+  // MRT draws the sticky header at opacity 0.97. Unseen on the light blue
+  // header, but in dark mode the light text of the rows scrolling under it
+  // showed through.
+  mrtConfig.muiTableHeadProps = {
+    sx: (theme) => (theme.palette.mode === 'dark' ? { opacity: 1 } : {}),
+  };
+
   mrtConfig.muiTableHeadCellProps = {
     sx: (theme) => ({
       fontWeight: 600,

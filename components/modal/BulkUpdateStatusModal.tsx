@@ -19,6 +19,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
 import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
 import { SmartCaptureStatus } from "@/lib/models/types";
+import { darkTint, themed } from "@/lib/constants/theme";
 
 interface BulkUpdateStatusModalProps {
   open: boolean;
@@ -81,12 +82,12 @@ export const BulkUpdateStatusModal: React.FC<BulkUpdateStatusModalProps> = ({
           sx={{
             mb: 3,
             p: 2,
-            bgcolor: "#F0F4FF",
+            bgcolor: themed("tint", "#F0F4FF"),
             borderRadius: 2,
-            border: "1px solid #D1DBFF",
+            border: `1px solid ${themed("line", "#D1DBFF")}`,
           }}
         >
-          <Typography variant="body2" color="#4F70DD" sx={{ lineHeight: 1.6 }}>
+          <Typography variant="body2" color={themed("accent", "#4F70DD")} sx={{ lineHeight: 1.6 }}>
             You are updating the status for <strong>{selectedIds.length}</strong> selected item(s).
           </Typography>
         </Box>
@@ -111,13 +112,17 @@ export const BulkUpdateStatusModal: React.FC<BulkUpdateStatusModalProps> = ({
                   mb: 1,
                   borderRadius: 2,
                   border: "1px solid",
-                  borderColor: selectedStatus === option.value ? option.color : "#E5E7EB",
+                  borderColor: selectedStatus === option.value ? option.color : themed("line", "#E5E7EB"),
                   bgcolor: selectedStatus === option.value ? option.bg : "transparent",
                   cursor: "pointer",
                   transition: "all 0.2s",
                   "&:hover": {
-                    bgcolor: selectedStatus === option.value ? option.bg : "#F9FAFB",
+                    bgcolor: selectedStatus === option.value ? option.bg : themed("raised", "#F9FAFB"),
                   },
+                  // The picked option's pastel glows on a dark dialog: a faint tint of its colour.
+                  ...(selectedStatus === option.value && {
+                    ".dark &, .dark &:hover": { bgcolor: darkTint(option.color) },
+                  }),
                 }}
               >
                 <FormControlLabel

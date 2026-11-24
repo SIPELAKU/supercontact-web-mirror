@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.151.0] - 2026-11-24
+
+### Detail Versi 1.151.0
+
+#### ✨ Mode Gelap per Halaman, Lanjutan (Masih Disembunyikan)
+
+- **Deskripsi:**
+  - Perbaikan mode gelap dari pengecekan halaman demi halaman. Semuanya hanya berlaku di mode gelap. Selama `HIDDEN_FEATURES.themeSwitch` masih `true`, tidak ada yang terlihat berubah.
+  - **Toast dan alert (`AppAlert`):** kotak ikon putih di atas warna hijau, merah, kuning atau biru berubah jadi hitam di mode gelap. Penyebabnya, `bg-white` di mode gelap dijadikan permukaan gelap. Sekarang kotak itu tetap putih. Ini berlaku di semua toast (`notify.*`) dan alert di halaman.
+  - **Pola untuk putih yang harus tetap putih** (di atas warna solid): tambahkan `dark:bg-white` di samping `bg-white`.
+  - **Tint biru brand yang ditulis sebagai hex**, diatur global di `app/globals.css`:
+    - kelasnya `bg-[#EEF2FD]`, `bg-[#DDE4FC]`, `bg-[#EEF2FF]`, `bg-[#F5F8FF]`, dipakai ±60 kali untuk header tabel, chip terpilih, dan baris hover;
+    - di mode gelap, keempatnya menjadi tint biru gelap (`--dk-tint`), termasuk `hover:` (biru brand 28%) dan ring fokus;
+    - contohnya header tabel Field/Existing/New di dialog duplikat Import, yang sebelumnya putih kebiruan.
+  - **Import History:** dropdown Auto-refresh (sebelumnya `backgroundColor: 'white'` sehingga teks putih tidak terbaca) memakai warna kolom input.
+  - **Tombol (`AppButton`), di mode gelap:**
+    - hover varian `text` (misalnya tombol **Urutkan** di tabel) sebelumnya `#DDE4FC` yang menyala, sekarang biru brand transparan 16%;
+    - latar varian `soft` menjadi warna tombolnya sendiri yang transparan 16% (hover 24%), bukan pastel;
+    - warna `gray` sedikit lebih terang (`#9CA3AF`) supaya terbaca.
+
+    Diatur lewat `theme.palette.mode`, jadi mode terang tidak berubah.
+  - **Tema MUI mode gelap: `primary.light`** sebelumnya tetap `#DDE4FC`, sekarang `#1E2A4F` (`DARK_BRAND_LIGHT` di `lib/theme.ts`). Semua yang memakainya ikut gelap:
+    - bar aksi massal di tabel ("2 selected", Save As, Duplicate, Delete);
+    - kartu terpilih di pemilih penerima Email;
+    - kotak ikon di Email Overview;
+    - contoh variabel template WA.
+  - **Modal Save As dan Bulk Update Status:** kotak info biru muda, pilihan tujuan atau status, dan garis tombol Cancel (`#F0F4FF`, `#D1DBFF`, `#F9FAFB`) sekarang gelap. Teks biru (`#4F70DD`) menjadi biru terang. Status terpilih di Bulk Update Status (Active/Inactive/Archived) memakai warna tipis, bukan pastel. Save As dipakai di Contacts, Subscribers, Recipients WA dan Smart Capture; Bulk Update Status di Smart Capture.
+  - **Token baru `accent`** (`#8FA4F3`): biru brand untuk teks dan garis di mode gelap, karena biru brand aslinya terlalu gelap di atas latar gelap. Dipakai lewat `themed("accent", "#4F70DD")`.
+  - **Header tabel (SuperTable):** material-react-table memberi header yang menempel di atas (sticky) `opacity: 0.97`. Di mode gelap, teks baris yang lewat di bawahnya ikut terlihat menembus header. Sekarang di mode gelap header buram penuh (`muiTableHeadProps`). Mode terang tetap 0.97.
+  - **Rilis:** aman naik selama flag masih `true`.
+
+- **🧪 Testing:** tsc bersih, lint 0 error. Chrome dengan API mock:
+  - Di `/test/alerts`, kotak ikon keempat varian (failed, warning, info, success) bernilai `rgb(255, 255, 255)` di mode gelap maupun terang.
+  - Elemen uji dengan kelas tint biru:
+    - **Gelap:** keempatnya `rgb(26, 35, 64)`; dengan `:hover` dipaksa, biru brand 28%.
+    - **Terang:** tetap `#EEF2FD`, `#DDE4FC`, `#F5F8FF`, `#EEF2FF`, dan hover `#DDE4FC`.
+  - Di `/test/buttons`, hover tombol varian `text`: gelap `rgba(84, 121, 238, 0.16)`, terang tetap `#DDE4FC`.
+  - Daftar kontak dengan 2 baris dipilih:
+    - **Gelap:** bar aksi massal `rgb(30, 42, 79)`, tombol Delete All Data (varian `soft`) merah 16%, opacity header 1.
+    - **Terang:** bar `#DDE4FC`, Delete All Data `#FEF2F2`, opacity header 0.97, sama seperti sebelumnya.
+  - Modal Save As dengan Subscriber dicentang:
+    - **Gelap:** kotak info `rgb(26, 35, 64)` dengan teks `rgb(143, 164, 243)`; pilihan tercentang bergaris biru terang; pilihan lain dan tombol Cancel bergaris `#374151`.
+    - **Terang:** `#F0F4FF`, `#D1DBFF`, `#4F70DD`, `#E5E7EB`, sama seperti sebelumnya.
+  - Bulk Update Status belum dicek di browser.
+  - Tes sinkronisasi token (CSS dan kode) tetap lulus setelah token `accent` ditambahkan.
+
+  Belum dites manual.
+
+---
+
 ## [1.150.0] - 2026-11-24
 
 ### Detail Versi 1.150.0

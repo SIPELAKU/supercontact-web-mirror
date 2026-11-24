@@ -13,6 +13,7 @@ import { useImportWatch } from "@/lib/store/importWatch";
 import { BulkJob } from "@/lib/types/email-marketing";
 import { IMPORT_VIEWS, type ImportView } from "@/lib/utils/importModules";
 import { AppButton } from "@/components/ui/app-button";
+import { themed } from "@/lib/constants/theme";
 import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
 import { importProgressPercent } from "./importProgress";
@@ -472,7 +473,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
                   sx={{
                     minWidth: 160,
                     height: 36,
-                    backgroundColor: 'white',
+                    backgroundColor: themed('field', 'white'),
                     '.MuiSelect-select': { py: 0.5 }
                   }}
                 >

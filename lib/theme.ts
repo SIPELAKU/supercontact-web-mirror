@@ -35,6 +35,9 @@ export const GRADIENT_DEEP = "linear-gradient(135deg, #4264D0 0%, #2A408E 100%)"
 export const DARK_BACKGROUND = "#030712";
 export const DARK_PAPER = "#111827";
 export const DARK_DIVIDER = "#1F2937";
+/** primary.light in dark mode: the brand's pale blue (bulk-action bar,
+ *  picked rows, icon tiles) as a dark blue, like --brand-light in globals.css. */
+export const DARK_BRAND_LIGHT = "#1E2A4F";
 
 /** The MUI theme for a mode. Light is the theme the app always had. */
 export function buildTheme(mode: "light" | "dark") {
@@ -44,7 +47,7 @@ export function buildTheme(mode: "light" | "dark") {
       primary: {
         main: BRAND_PRIMARY,
         dark: BRAND_PRIMARY_HOVER,
-        light: BRAND_PRIMARY_LIGHT,
+        light: mode === "dark" ? DARK_BRAND_LIGHT : BRAND_PRIMARY_LIGHT,
       },
       error: {
         main: DANGER,

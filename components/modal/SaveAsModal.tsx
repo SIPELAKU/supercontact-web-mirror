@@ -22,6 +22,12 @@ import { saveAsContacts } from "@/lib/api/contacts";
 import { saveAsSubscribers } from "@/lib/api/email-marketing/subscribers";
 import { saveAsRecipients } from "@/lib/api/whatsapp-marketing";
 import { useAuth } from "@/lib/context/AuthContext";
+import { themed } from "@/lib/constants/theme";
+
+// themed(): these light colours as they are, dark ones in dark mode.
+const INFO_BG = themed("tint", "#F0F4FF");
+const INFO_LINE = themed("line", "#D1DBFF");
+const INFO_TEXT = themed("accent", "#4F70DD");
 
 export type SaveAsSourceType = "contact" | "subscriber" | "recipient" | "submission";
 
@@ -111,12 +117,12 @@ export const SaveAsModal: React.FC<SaveAsModalProps> = ({
                     sx={{
                         mb: 3,
                         p: 2,
-                        bgcolor: "#F0F4FF",
+                        bgcolor: INFO_BG,
                         borderRadius: 1,
-                        border: "1px solid #D1DBFF",
+                        border: `1px solid ${INFO_LINE}`,
                     }}
                 >
-                    <Typography variant="body2" color="#4F70DD" sx={{ lineHeight: 1.6 }}>
+                    <Typography variant="body2" color={INFO_TEXT} sx={{ lineHeight: 1.6 }}>
                         There are {selectedIds.length} selected contacts. How would you like to save them?
                     </Typography>
                 </Box>
@@ -134,12 +140,12 @@ export const SaveAsModal: React.FC<SaveAsModalProps> = ({
                                     p: 1.5,
                                     borderRadius: 1,
                                     border: "1px solid",
-                                    borderColor: targets.includes(target) ? "#D1DBFF" : "#E5E7EB",
-                                    bgcolor: targets.includes(target) ? "#F0F4FF" : "transparent",
+                                    borderColor: targets.includes(target) ? themed("accent", "#D1DBFF") : themed("line", "#E5E7EB"),
+                                    bgcolor: targets.includes(target) ? INFO_BG : "transparent",
                                     cursor: "pointer",
                                     transition: "all 0.2s",
                                     "&:hover": {
-                                        bgcolor: targets.includes(target) ? "#F0F4FF" : "#F9FAFB",
+                                        bgcolor: targets.includes(target) ? INFO_BG : themed("raised", "#F9FAFB"),
                                     },
                                 }}
                             >
@@ -160,7 +166,7 @@ export const SaveAsModal: React.FC<SaveAsModalProps> = ({
                 <AppButton
                     variantStyle="outline"
                     onClick={onClose}
-                    sx={{ flex: 1, borderColor: "#D1DBFF", color: "#4F70DD" }}
+                    sx={{ flex: 1, borderColor: INFO_LINE, color: INFO_TEXT }}
                 >
                     Cancel
                 </AppButton>

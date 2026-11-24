@@ -183,6 +183,7 @@
   --dk-text: #F3F4F6;
   --dk-muted: #9CA3AF;
   --dk-tint: #1A2340;
+  --dk-accent: #8FA4F3;
 
   /* Tailwind's grey scales, reversed: the ~4,300 bg-gray-*, text-gray-*,
      border-gray-* (and slate-*) classes across the app turn dark together,
@@ -238,6 +239,17 @@
   :where(.dark) .bg-white\/80 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 80%, transparent); }
   :where(.dark) .bg-white\/90 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 90%, transparent); }
   :where(.dark) .bg-white\/95 { background-color: color-mix(in oklab, oklch(21% 0.034 264.665) 95%, transparent); }
+  /* The brand's pale blue tints written as hex across the app (table heads,
+     picked chips, hover rows: about 60 places) become the dark brand tint. */
+  :where(.dark) :is(.bg-\[\#EEF2FD\], .bg-\[\#EEF2FF\], .bg-\[\#F5F8FF\], .bg-\[\#DDE4FC\]) {
+    background-color: var(--dk-tint);
+  }
+  :where(.dark) :is(.hover\:bg-\[\#EEF2FD\], .hover\:bg-\[\#EEF2FF\], .hover\:bg-\[\#DDE4FC\]):hover {
+    background-color: color-mix(in oklab, var(--brand) 28%, transparent);
+  }
+  :where(.dark) :is(.focus\:ring-\[\#EEF2FD\]:focus, .focus-within\:ring-\[\#EEF2FD\]:focus-within) {
+    --tw-ring-color: var(--dk-tint);
+  }
 }
 
 @layer base {

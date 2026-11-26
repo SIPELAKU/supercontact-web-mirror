@@ -119,7 +119,7 @@ export default function Sidebar() {
     <>
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-40 h-screen bg-white border-r border-border transition-all duration-300 overflow-hidden",
+          "scrollbar-hover-zone fixed lg:sticky top-0 left-0 z-40 h-screen bg-white border-r border-border transition-all duration-300 overflow-hidden",
           isMobileOpen
             ? "translate-x-0 w-[280px]"
             : "-translate-x-full w-[280px] lg:translate-x-0",
@@ -155,8 +155,8 @@ export default function Sidebar() {
             )}
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 overflow-y-auto">
+          {/* Navigation: its scrollbar shows only while the pointer is on the sidebar. */}
+          <nav className="flex-1 px-4 py-4 overflow-y-auto scrollbar-on-hover">
             {visibleMenuData.map((section) => (
               <div key={section.title} className="mb-6">
                 <h3

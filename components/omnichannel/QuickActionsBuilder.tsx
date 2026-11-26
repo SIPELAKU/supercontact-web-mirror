@@ -22,24 +22,15 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { useKbCategories } from "@/lib/hooks/useKnowledge";
 import type { QuickAction } from "@/lib/types/omnichannel";
+import {
+  WIDGET_QUICK_ACTION_ICON_KEYS,
+  quickActionEmoji,
+  quickActionIconKey,
+  type WidgetQuickActionIconKey,
+} from "@/lib/utils/widgetQuickActionIcon";
 
-// FIXED icon key set the widget client (widget/) knows how to render. These
-// exact 8 keys must stay in sync with the widget - do NOT add keys it can't
-// render. The lucide icon here is only the admin-side preview; the widget maps
-// the same keys to its own glyphs.
-export const WIDGET_QUICK_ACTION_ICON_KEYS = [
-  "chat",
-  "quote",
-  "order",
-  "sales",
-  "help",
-  "info",
-  "calendar",
-  "star",
-] as const;
-
-export type WidgetQuickActionIconKey = (typeof WIDGET_QUICK_ACTION_ICON_KEYS)[number];
-
+// The icon keys' glyphs. The widget (widget/src/widget.ts) draws the same
+// lucide glyphs on its cards, so this preview is what visitors see.
 const ICON_GLYPHS: Record<WidgetQuickActionIconKey, LucideIcon> = {
   chat: MessageCircle,
   quote: FileText,
@@ -75,15 +66,35 @@ const ICON_OPTIONS = WIDGET_QUICK_ACTION_ICON_KEYS.map((key) => {
   };
 });
 
-// Small live preview of the selected icon, so admins see what the card shows.
+// The keys, plus the action's emoji while it has one from a Setup Cepat
+// template, so the select shows it and the admin can keep or replace it.
+function iconOptions(icon: string) {
+  const emoji = quickActionEmoji(icon);
+  if (!emoji) return ICON_OPTIONS;
+  const fromTemplate = {
+    value: icon,
+    label: (
+      <span className="flex items-center gap-2">
+        <span className="text-base leading-none">{emoji}</span>
+        <span>From template</span>
+      </span>
+    ),
+  };
+  return [fromTemplate, ...ICON_OPTIONS];
+}
+
+// Small live preview of the selected icon, so admins see what the card shows:
+// a template's emoji as it is, otherwise the key's glyph.
 const IconPreview: React.FC<{ icon: string }> = ({ icon }) => {
-  const Glyph = ICON_GLYPHS[(icon as WidgetQuickActionIconKey)] ?? MessageCircle;
+  const emoji = quickActionEmoji(icon);
+  const key = quickActionIconKey(icon);
+  const Glyph = key ? ICON_GLYPHS[key] : MessageCircle;
   return (
     <span
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600"
       aria-hidden
     >
-      <Glyph size={18} />
+      {emoji ? <span className="text-lg leading-none">{emoji}</span> : <Glyph size={18} />}
     </span>
   );
 };
@@ -217,7 +228,7 @@ const QuickActionsBuilder: React.FC<QuickActionsBuilderProps> = ({
                 isBgWhite
                 value={action.icon}
                 disabled={disabled}
-                options={ICON_OPTIONS}
+                options={iconOptions(action.icon)}
                 onChange={(e: SelectChangeEvent<unknown>) =>
                   patch(index, { icon: e.target.value as string })
                 }

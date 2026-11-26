@@ -44,6 +44,7 @@ import {
   Users
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { themed } from "@/lib/constants/theme";
 import {
   CartesianGrid,
   Line,
@@ -304,11 +305,11 @@ export default function AnalyticsDashboardClient() {
                   px: 2,
                   textTransform: "none",
                   borderRadius: "8px",
-                  borderColor: "#D1D5DB",
+                  borderColor: themed("line", "#D1D5DB"),
                   color: "text.primary",
                   fontWeight: 500,
                   fontSize: "14px",
-                  "&:hover": { borderColor: "#9CA3AF", bgcolor: "#f9fafb" },
+                  "&:hover": { borderColor: themed("muted", "#9CA3AF"), bgcolor: themed("raised", "#f9fafb") },
                 }}
               >
                 Export
@@ -324,7 +325,7 @@ export default function AnalyticsDashboardClient() {
                 sx={{
                   minHeight: "unset",
                   p: "3px",
-                  bgcolor: "#f0f2f5",
+                  bgcolor: themed("field", "#f0f2f5"),
                   borderRadius: "8px",
                   "& .MuiTabs-indicator": { display: "none" },
                 }}
@@ -347,10 +348,10 @@ export default function AnalyticsDashboardClient() {
                       py: "6px",
                       borderRadius: "6px",
                       fontSize: "13px",
-                      color: "#64748B",
+                      color: themed("muted", "#64748B"),
                       "&.Mui-selected": {
-                        color: "#0F172A",
-                        bgcolor: "#FFF",
+                        color: themed("text", "#0F172A"),
+                        bgcolor: themed("raised", "#FFF"),
                         boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
                       },
                     }}
@@ -400,9 +401,9 @@ export default function AnalyticsDashboardClient() {
                 mb: 2,
                 py: 1.5,
                 px: 2,
-                bgcolor: '#f9fafb',
+                bgcolor: themed('field', '#f9fafb'),
                 borderRadius: '8px',
-                border: '1px solid #f0f0f0',
+                border: `1px solid ${themed('line', '#f0f0f0')}`,
               }}
             >
               {seriesKeys.map((key, idx) => {
@@ -420,7 +421,7 @@ export default function AnalyticsDashboardClient() {
                         borderRadius: '50%',
                       }}
                     />
-                    <Typography variant="body2" fontWeight="bold" sx={{ color: '#374151' }}>
+                    <Typography variant="body2" fontWeight="bold" sx={{ color: themed('text', '#374151') }}>
                       {formatCurrency(total)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -528,7 +529,7 @@ export default function AnalyticsDashboardClient() {
                       sx={{
                         height: 12,
                         borderRadius: 6,
-                        bgcolor: '#f5f5f5',
+                        bgcolor: themed('raised', '#f5f5f5'),
                         '& .MuiLinearProgress-bar': {
                           borderRadius: 6,
                           bgcolor: '#2196f3'
@@ -576,7 +577,7 @@ export default function AnalyticsDashboardClient() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow className="bg-[#EEF2FD]!">
+                  <TableRow className="bg-[#EEF2FD]! dark:bg-[var(--dk-tint)]!">
                     <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Name</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Total Sales</TableCell>
                     <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Conversion Rate</TableCell>
@@ -586,7 +587,7 @@ export default function AnalyticsDashboardClient() {
                 </TableHead>
                 <TableBody>
                   {rankingItems.map((person, index) => (
-                    <TableRow key={index} sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}>
+                    <TableRow key={index} sx={{ '&:hover': { bgcolor: themed('raised', '#f8f9fa') } }}>
                       <TableCell>
                         <Typography variant="body2" fontWeight="medium">
                           {person.name}
@@ -641,7 +642,7 @@ export default function AnalyticsDashboardClient() {
           ) : (
             <Stack spacing={2}>
               {activityItems.map((activity, index) => (
-                <Paper key={index} sx={{ p: 2, bgcolor: '#fafafa' }}>
+                <Paper key={index} sx={{ p: 2, bgcolor: themed('field', '#fafafa') }}>
                   <Box display="flex" alignItems="flex-start" gap={2}>
                     <Box
                       sx={{

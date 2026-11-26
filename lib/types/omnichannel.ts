@@ -417,8 +417,8 @@ export interface UpdateAccountRequest {
 
 // One visitor-facing "option card" rendered on the widget home screen. The
 // widget client (widget/, owned separately) renders `icon` from a FIXED key
-// set (see WIDGET_QUICK_ACTION_ICON_KEYS in
-// components/omnichannel/QuickActionsBuilder.tsx) - keep the two in sync.
+// set, or as it is when it's an emoji from a Setup Cepat template (see
+// lib/utils/widgetQuickActionIcon.ts, shared by Settings and the widget).
 // `target_queue_id` routes a conversation started from this card to a specific
 // conversation queue (null = unrouted); `prefill` seeds the composer text.
 export interface QuickAction {

@@ -72,13 +72,15 @@ export default function SettingsSidebar() {
     <>
       <aside
         className={cn(
-          // lg: a plain column, as tall as SettingsLayout; scrolls on its own.
-          "fixed lg:static top-0 left-0 z-40 h-screen lg:h-full w-[260px] shrink-0",
-          "bg-white border-r border-border overflow-y-auto transition-transform duration-300",
+          // lg: a plain column, as tall as SettingsLayout. The menu scrolls
+          // inside it, with a slim scrollbar shown while the pointer is on the
+          // sidebar (the hover has to be on a parent, see scrollbar-on-hover).
+          "scrollbar-hover-zone fixed lg:static top-0 left-0 z-40 h-screen lg:h-full w-[260px] shrink-0",
+          "flex flex-col bg-white border-r border-border transition-transform duration-300",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        {navContent}
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-on-hover">{navContent}</div>
       </aside>
 
       {isMobileOpen && (

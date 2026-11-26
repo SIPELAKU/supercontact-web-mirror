@@ -25,7 +25,7 @@ export const HIDDEN_FEATURES: Partial<Record<HideableFeature, boolean>> = {
   // Light/Dark switch in the app Topbar. Pages are moved to dark colours one
   // module at a time, so while hidden every page stays light, whatever was
   // picked before.
-  themeSwitch: true, // hidden until all pages are dark-mode ready
+  themeSwitch: false, // hidden until all pages are dark-mode ready
 };
 
 export function isFeatureHidden(

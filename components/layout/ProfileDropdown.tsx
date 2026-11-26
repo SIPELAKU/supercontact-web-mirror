@@ -15,6 +15,10 @@ import { LogOut, Mail, SquareUserRound, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useT } from "@/lib/hooks/useT";
 import React, { useState } from "react";
+import { darkChip, themed } from "@/lib/constants/theme";
+
+/** The menu icons: the brand's blue, the light brand blue in dark mode. */
+const MENU_ICON_CLASS = "text-[#4c5cff] dark:text-[var(--dk-accent)]";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -121,7 +125,9 @@ const ProfileDropdown = () => {
                     textTransform: 'uppercase',
                     display: 'flex',
                     alignItems: 'center',
-                    lineHeight: 1
+                    lineHeight: 1,
+                    // MUI's dark success/warning.light is a bright pastel.
+                    '.dark &': darkChip(userPlanName.toLowerCase() === 'trial' ? '#FF9800' : '#4CAF50'),
                   }}
                 >
                   {userPlanName}
@@ -162,7 +168,7 @@ const ProfileDropdown = () => {
               borderRadius: 2,
               textDecoration: "none",
               color: "inherit",
-              "&:hover": { background: "#f5f7fc" },
+              "&:hover": { background: themed("raised", "#f5f7fc") },
             }}
           >
             <Paper
@@ -173,11 +179,11 @@ const ProfileDropdown = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                bgcolor: "#e7e9fc",
+                bgcolor: themed("tint", "#e7e9fc"),
                 borderRadius: 2,
               }}
             >
-              <SquareUserRound size={22} color="#4c5cff" />
+              <SquareUserRound size={22} className={MENU_ICON_CLASS} />
             </Paper>
 
             <Box>
@@ -201,7 +207,7 @@ const ProfileDropdown = () => {
               borderRadius: 2,
               textDecoration: "none",
               color: "inherit",
-              "&:hover": { background: "#f5f7fc" },
+              "&:hover": { background: themed("raised", "#f5f7fc") },
             }}
           >
             <Paper
@@ -212,11 +218,11 @@ const ProfileDropdown = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                bgcolor: "#e7e9fc",
+                bgcolor: themed("tint", "#e7e9fc"),
                 borderRadius: 2,
               }}
             >
-              <Mail size={22} color="#4c5cff" />
+              <Mail size={22} className={MENU_ICON_CLASS} />
             </Paper>
 
             <Box>

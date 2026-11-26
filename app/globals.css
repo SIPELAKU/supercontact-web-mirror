@@ -355,6 +355,42 @@
     display: none;
   }
 }
+
+/* A slim, rounded scrollbar that shows only while the pointer is anywhere on
+   a parent marked `scrollbar-hover-zone` (e.g. the whole sidebar). Put the
+   two on different elements: Chrome ignores the scroller's own :hover for its
+   scrollbar, but repaints it when a parent's :hover changes. Its width stays
+   reserved, so nothing shifts when it appears, and scrolling still works
+   while it is hidden. The slate colours follow dark mode on their own (the
+   scale is reversed there). */
+@utility scrollbar-on-hover {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: transparent;
+  }
+  :where(.scrollbar-hover-zone:hover) &::-webkit-scrollbar-thumb {
+    background-color: var(--color-slate-300);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-slate-400);
+  }
+  /* Firefox has no ::-webkit-scrollbar. */
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    :where(.scrollbar-hover-zone:hover) & {
+      scrollbar-color: var(--color-slate-300) transparent;
+    }
+  }
+}
 /* Knowledge Base Markdown preview (components/knowledge/MarkdownEditor.tsx,
    ArticleVersionHistory read-only previews). Plain CSS so it doesn't depend on
    Tailwind's typography plugin (not installed). */

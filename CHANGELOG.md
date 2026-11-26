@@ -9,6 +9,168 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.152.1] - 2026-11-26
+
+### Detail Versi 1.152.1
+
+#### 🐛 Ikon Quick Action di Widget Sama Semua, Tidak Sesuai yang Dipilih di Settings
+
+- **Deskripsi:**
+  - **Masalah:** di Home widget, semua kartu quick action memakai ikon yang sama (bintang abu-abu), padahal ikonnya sudah diisi di Settings › Web Widget. Ini terjadi pada widget yang quick action-nya dibuat oleh **Setup Cepat**.
+  - **Akar masalah:**
+    - template industri di BE (`app/db/seeds/data/industry_blueprints/*.json`, `widget_quick_actions`) mengisi `icon` dengan **emoji**, misalnya banking: 🏦 📋 💳 🔒. Ada 64 emoji berbeda di semua template;
+    - widget hanya mengenali kata (`chat`, `quote`, `order`, …), jadi emoji jatuh ke ikon default yang sama;
+    - Settings hanya punya 8 pilihan ikon: emoji tampil mentah di dropdown, dan pratinjau di sebelah "ACTION 1" jatuh ke ikon chat;
+    - selain itu, 4 dari 8 ikon pilihan Settings digambar berbeda di widget (contoh: "Sales" di Settings berupa grafik naik, di widget berupa orang; "Calendar" di widget jatuh ke bintang).
+  - **Perbaikan** (di FE, karena emoji sudah tersimpan di data widget tenant yang memakai Setup Cepat):
+    - helper baru `lib/utils/widgetQuickActionIcon.ts`, dipakai bersama oleh Settings dan widget: daftar 8 kunci ikon, `quickActionIconKey()`, dan `quickActionEmoji()` (mengenali emoji, termasuk yang terdiri dari beberapa karakter seperti ⚠️ dan 👩‍⚕️);
+    - **widget:** emoji tampil apa adanya di kotak ikon (latar warna brand tipis). Ke-8 kunci digambar dengan ikon yang sama dengan pratinjau Settings (Chat, Quote, Order, Sales, Help, Info, Calendar, Star), masing-masing dengan warnanya sendiri. Kata lama seperti `question`/`dollar` tetap dikenali seperti sebelumnya;
+    - **Settings › Web Widget:** pratinjau menampilkan emoji dari template, dan dropdown Icon menampilkan "🏦 From template" sebagai pilihan pertama. Admin bisa mempertahankannya atau mengganti ke salah satu dari 8 ikon.
+  - File: `lib/utils/widgetQuickActionIcon.ts` (baru), `widget/src/widget.ts`, `components/omnichannel/QuickActionsBuilder.tsx`, `lib/types/omnichannel.ts` (komentar).
+  - **Rilis:** tidak perlu perubahan BE. Tampilan widget berubah di semua situs klien saat versi ini naik.
+
+- **🧪 Testing:**
+  - Vitest `widgetQuickActionIcon.test.ts`: 6 tes lulus (kunci dengan huruf besar/spasi; 10 emoji dari template; bendera; kata, teks campur emoji, dan string kosong menghasilkan null). Dicek juga bahwa tes gagal kalau pengecekan huruf di `quickActionEmoji` dihapus.
+  - Widget di Chrome headless dengan API mock:
+    - quick action banking (🏦 📋 💳 🔒): keempat emoji tampil;
+    - 8 kunci ikon: setiap kartu memakai ikon dan warnanya sendiri, sama dengan pratinjau Settings.
+  - Settings › Web Widget di Chrome dengan API mock:
+    - pratinjau "Buka Rekening" = 🏦, "Info Kredit" = 📋, "Jadwal" (`calendar`) = ikon kalender;
+    - dropdown berisi "🏦 From template" lalu 8 ikon.
+  - tsc dan lint bersih.
+  - Belum dites manual dengan data DEV.
+  - **Saran untuk BE (belum dikerjakan):** komentar di FE dulu menyebut ikon harus salah satu dari 8 kunci, sedangkan template mengisi emoji. Sekarang keduanya didukung FE, jadi template tidak wajib diubah.
+
+---
+
+## [1.152.0] - 2026-11-26
+
+### Detail Versi 1.152.0
+
+#### 💄 Tampilan Baru Widget Chat: Lebih Modern, Jelas Kapan Bot yang Menjawab
+
+- **Deskripsi:**
+  - **Tujuan:** widget chat di situs klien terlihat lebih modern dan pengunjung tahu bahwa jawaban pertama bisa datang dari bot. **Hanya tampilan yang berubah.** Alur, fitur, teks, API, dan ukuran serta sudut kotak panel (16px) tetap sama.
+  - **Warna** mengikuti tema dan logo SmartSales:
+    - warna default (biru logo `#5479EE`) memakai gradasi biru ke arah hijau logo (`#5BC557`, dicampur 45% supaya teks putih tetap terbaca);
+    - klien yang memilih warna sendiri di pengaturan Web Widget mendapat gradasi dari warna itu saja (gelap ke terang), tanpa dicampur warna lain.
+  - **Penanda bot:**
+    - di header, label **"Bot"** di sebelah nama bot. Label hilang begitu agen mengambil chat (header sudah berganti ke nama perusahaan);
+    - ikon robot di avatar header (seperti sebelumnya) dan di samping jawaban bot;
+    - avatar robot hanya muncul di pesan yang ditandai BE sebagai jawaban bot (`answer_feedback`, `offer_agent`, `suggestions`) dan di sapaan awal. Balasan agen tidak pernah mendapat robot, melainkan inisial perusahaan (atau ikon orang bila tidak ada nama).
+  - **Tampilan lain:**
+    - tombol launcher bergradasi dengan ikon chat, ada lingkaran halus yang berdenyut, dan berubah jadi panah bawah saat panel terbuka;
+    - header bergradasi dengan kilau halus dan titik online yang berdenyut;
+    - Home: latar gradasi lembut, judul bergradasi gelap ke warna brand, kartu quick action ditata vertikal supaya teks tidak berdesakan;
+    - gelembung chat lebih bulat dan berbayang tipis, pesan pengunjung bergradasi;
+    - kolom ketik menjadi satu kotak bulat dengan cahaya fokus;
+    - kartu saran, kartu agen, tombol 👍/👎, dan scrollbar tipis ikut dirapikan.
+  - **Form nama + email** (sebelum chat pertama):
+    - bagian pembuka memakai teks yang sudah ada di Home: "Halo!", judul form, dan "Tim kami siap membantu Anda";
+    - emoji 👋 dihapus dari sapaan "Halo!" / "Hi there!" (satu teks `greetingHi`, jadi berlaku di form dan Home);
+    - kolom Nama dan Email ada di dalam kartu, dengan ikon orang dan amplop di dalam kolom. Label dan ikon berubah ke warna brand saat kolom aktif, dan kolom aktif diberi cahaya fokus;
+    - latar biru/kuning dari autofill browser dihilangkan supaya kolom tetap seragam;
+    - kolom yang salah berwarna merah dan bergetar sekali, lalu pesan error muncul halus;
+    - tombol "Mulai chat" diberi panah yang bergeser saat di-hover;
+    - teks privasi dari pengaturan widget (yang sudah tampil di Home) juga tampil di bawah form. Pembuatnya digabung ke satu fungsi `buildPrivacyFooter()` untuk Home dan form.
+    - Isi kolom, validasi, dan alurnya tidak berubah.
+  - **Animasi saat interaksi:**
+    - panel muncul dan menutup dengan animasi singkat;
+    - halaman (form, Home, chat) muncul dengan fade, dan kartu Home muncul satu per satu;
+    - pesan baru meluncur masuk (dari kanan untuk pengunjung, dari kiri untuk tim);
+    - kartu saran, kartu agen, garis status, dan indikator mengetik muncul halus;
+    - menu ⋮ muncul dengan animasi, badge pesan belum dibaca "memantul";
+    - tombol dan kartu sedikit mengecil saat ditekan, kartu terangkat saat di-hover.
+    - Riwayat chat yang dimuat saat panel tertutup tidak dianimasikan. Pengguna dengan pengaturan "kurangi gerakan" di perangkatnya tidak mendapat animasi.
+  - **Catatan teknis:**
+    - `renderMessages` menggambar ulang seluruh thread setiap kali ada perubahan (mengirim pesan memicu gambar ulang begitu server membalas). Karena itu setiap pesan dan kartu dicatat waktu pertama tampilnya. Selama 0,7 detik setelahnya, animasinya dilanjutkan dari posisi terakhir lewat `--ss-skip`, tidak terpotong dan tidak mengulang.
+    - Pesan pengunjung tidak menyimpan `id` dari server, jadi kuncinya memakai urutan + isi supaya salinan dari server tidak dianimasikan dua kali.
+    - Logika toggle panel tidak berubah; hanya penyembunyiannya ditunda 160ms (`showPanel`) untuk animasi tutup.
+  - File: `widget/src/widget.ts`.
+  - **Rilis:** `public/widget.js` dibangun ulang saat `npm run build`, jadi tampilan baru langsung berlaku di semua situs klien begitu versi ini naik. Tidak perlu perubahan BE.
+
+- **🧪 Testing:**
+  - Bundel widget dibangun dengan esbuild (seperti `build:widget`), lalu dibuka di halaman tiruan situs klien di Chrome headless dengan API mock. Skenario yang dicek:
+    - form nama + email: kosong, dikirim kosong (kedua kolom merah dengan pesan error), dan kolom Email sedang aktif;
+    - Home (atas, bawah, kartu di-hover) dan chat berisi jawaban bot dengan 👍/👎, saran, dan kartu agen;
+    - chat yang sudah diambil agen: label "Bot" hilang, pesan agen memakai inisial "S", jawaban bot tetap robot;
+    - warna brand klien hijau `#16A34A`: gradasi hijau saja;
+    - layar mobile 390px: panel layar penuh seperti sebelumnya.
+  - Animasi:
+    - riwayat yang dimuat saat panel tertutup: 0 elemen beranimasi;
+    - setelah mengirim pesan: gelembung baru beranimasi dan berlanjut melewati gambar ulang (`--ss-skip: -10ms`, opacity 0,76 di tengah animasi);
+    - menutup panel: kelas `closing` lalu tersembunyi;
+    - membuka lagi: tidak ada animasi pesan yang terulang.
+  - tsc dan lint bersih.
+  - Belum dites manual di situs sungguhan dengan BE DEV, dan belum dicek di Safari/Firefox.
+
+---
+
+## [1.151.3] - 2026-11-26
+
+### Detail Versi 1.151.3
+
+#### 💄 Scrollbar Sidebar Utama dan Sidebar Settings Lebih Rapi, Hanya Muncul Saat Di-hover
+
+- **Deskripsi:**
+  - **Masalah:** saat menu sidebar lebih tinggi dari layar (layar pendek atau grup menu dibuka), muncul scrollbar bawaan browser yang tebal dan selalu terlihat. Ini terjadi di sidebar utama dan di sidebar Settings (misalnya saat grup Sales dibuka).
+  - **Perbaikan:**
+    - utilitas baru `scrollbar-on-hover` di `app/globals.css`: scrollbar tipis 6px, ujung bulat, tanpa track;
+    - scrollbar hanya terlihat saat kursor ada di area sidebar (termasuk area logo di sidebar utama), lewat penanda `scrollbar-hover-zone` di `<aside>`, dan sedikit lebih gelap saat scrollbar-nya sendiri di-hover;
+    - lebar scrollbar tetap dipesan walau tidak terlihat, jadi menu tidak bergeser saat scrollbar muncul. Scroll dengan roda mouse, touch dan keyboard tetap jalan.
+  - **Catatan teknis:** penanda `scrollbar-hover-zone` harus ada di elemen induk, bukan di elemen yang di-scroll. Chrome tidak menggambar ulang scrollbar saat `:hover` ada di elemen yang di-scroll itu sendiri (sudah dicoba, termasuk bentuk CSS hasil build), tetapi menggambar ulang saat `:hover` ada di induknya.
+    - Karena itu `<aside>` Settings tidak lagi di-scroll sendiri. Menunya sekarang di-scroll di `<div>` di dalamnya, sama seperti sidebar utama. Tampilan menu tidak berubah.
+  - Warnanya memakai `--color-slate-300`/`--color-slate-400`, jadi otomatis gelap di mode gelap.
+  - Firefox (tanpa `::-webkit-scrollbar`) memakai `scrollbar-width: thin` dan `scrollbar-color` dengan aturan hover yang sama.
+  - File: `app/globals.css`, `components/layout/Sidebar.tsx`, `components/settings/SettingsSidebar.tsx`.
+
+- **🧪 Testing:** Chrome headless, tinggi window dibuat pendek supaya menu ter-scroll:
+  - **Sidebar utama** (window 380px): lebar scrollbar 6px.
+    - **Terang:** kursor di luar sidebar, scrollbar tidak terlihat. Kursor di logo sidebar, scrollbar abu-abu muda. Kursor di scrollbar, warnanya lebih gelap.
+    - **Gelap:** sama, dengan abu-abu gelap yang tetap terlihat di sidebar gelap.
+  - **Sidebar Settings** (`/settings/sales/pipeline-stages`, window 520px, semua izin Settings, grup Sales terbuka): lebar scrollbar 6px. Kursor di luar tidak terlihat, kursor di item menu terlihat, kursor di scrollbar lebih gelap, di terang dan gelap.
+  - Hasil build CSS (lightningcss) sudah dicek: nesting dan `@supports` jadi selector biasa.
+  - Lint dan tsc bersih.
+  - Belum dites manual dan belum dicek di Firefox.
+
+---
+
+## [1.151.2] - 2026-11-26
+
+### Detail Versi 1.151.2
+
+#### ✨ Mode Gelap: Menu Profil di Topbar dan Analytics Dashboard (Masih Disembunyikan)
+
+- **Deskripsi:**
+  - **Masalah:** di mode gelap, menu profil (klik avatar di Topbar) masih memakai warna terang yang ditulis di `sx`:
+    - baris My Profile / My Inbox menjadi putih saat di-hover (`#f5f7fc`), sehingga teksnya tidak terbaca;
+    - kotak ikon pucat (`#e7e9fc`);
+    - badge paket ("EXCLUSIVE", "TRIAL") memakai `success.light`/`warning.light` bawaan MUI, yang di mode gelap berupa pastel menyala.
+  - **Perbaikan** (`components/layout/ProfileDropdown.tsx`):
+    - hover baris memakai `themed("raised")`, kotak ikon `themed("tint")`;
+    - ikon memakai biru brand terang (`--dk-accent`) di mode gelap;
+    - badge paket memakai `darkChip` (hijau untuk paket berbayar, oranye untuk Trial).
+  - **Analytics Dashboard** (`components/analytics/AnalyticsDashboardClient.tsx`, hex di `sx` diganti `themed()` seperti di Dashboard):
+    - tombol Export dan tombol periode Last 30 days / This Month;
+    - kotak legend total per orang di Sales Trend dan teks totalnya;
+    - lintasan progress bar Team Performance Overview;
+    - header tabel Performance Ranking (`bg-[#EEF2FD]!`, tidak tercakup aturan global karena ada `!`) ditambah `dark:bg-[var(--dk-tint)]!`, dan hover barisnya;
+    - kotak item Recent Activity.
+
+    Grafik, kartu statistik dan kolom input sudah gelap lewat aturan dan komponen bersama.
+  - **Rilis:** aman naik selama `HIDDEN_FEATURES.themeSwitch` masih `true`. Mode terang tidak berubah.
+
+- **🧪 Testing:** lint dan tsc bersih. Chrome dengan API mock, menu dibuka dan baris di-hover dengan mouse, paket Exclusive dan Trial:
+  - **Gelap:** kotak ikon `rgb(26, 35, 64)`, ikon `rgb(143, 164, 243)`, hover baris `rgb(31, 41, 55)`, badge Exclusive hijau 18% dengan teks hijau terang, badge Trial oranye 18% dengan teks oranye terang.
+  - **Terang:** semua nilainya sama dengan aslinya (kotak `#E7E9FC`, ikon `#4C5CFF`, hover `#F5F7FC`, badge `#4CAF50`/`#1B5E20` dan `#FF9800`/`#E65100`).
+  - Analytics Dashboard (data tiruan untuk kelima endpoint, baris Ranking di-hover dengan mouse):
+    - **Gelap:** tombol periode `rgb(11, 17, 32)` dengan yang terpilih `rgb(31, 41, 55)`; kotak legend `rgb(11, 17, 32)` bergaris `rgb(55, 65, 81)` dengan total `rgb(243, 244, 246)`; lintasan progress `rgb(31, 41, 55)`; header Ranking `rgb(26, 35, 64)`; hover baris `rgb(31, 41, 55)`; kotak Recent Activity `rgb(11, 17, 32)`.
+    - **Terang:** semua nilainya sama dengan aslinya (`#F0F2F5`, `#FFF`, `#F9FAFB`/`#F0F0F0`, `#374151`, `#F5F5F5`, `#EEF2FD`, `#F8F9FA`, `#FAFAFA`).
+    - Lint 0 error (2 warning `react-hooks/exhaustive-deps` lama di baris yang tidak diubah).
+  - Belum dites manual.
+
+---
+
 ## [1.151.1] - 2026-11-24
 
 ### Detail Versi 1.151.1

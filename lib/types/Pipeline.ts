@@ -115,4 +115,15 @@ export interface PageHeaderProps {
    * top-right of the header next to the title. Takes precedence over
    * `image` when both are supplied - a header shows one or the other. */
   actions?: React.ReactNode;
+  /** Shows a back arrow left of the title that links here. The list's last
+   * page/search/sort is restored, the same way a breadcrumb link does it. */
+  backHref?: string;
+  /** Use instead of backHref when leaving must be confirmed first (unsaved
+   * changes). Wins over backHref. */
+  onBack?: () => void;
+  /** Tooltip and screen-reader text of the back arrow. Defaults to "Back". */
+  backLabel?: string;
+  /** Extra content inside the card, under the title and description (chips,
+   * status badges, a parent link...). */
+  children?: React.ReactNode;
 }

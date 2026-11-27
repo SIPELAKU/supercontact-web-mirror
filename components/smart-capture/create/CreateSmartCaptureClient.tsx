@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, FileText, Layers, MessageSquare, Code, CheckCircle2 } from 'lucide-react';
+import { FileText, Layers, MessageSquare, Code, CheckCircle2 } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 import { AppButton } from '@/components/ui/app-button';
+import PageHeader from '@/components/ui/page-header';
 import RewardSetupTab from './RewardSetupTab';
 import DynamicFormTab from './DynamicFormTab';
 import OutreachHookTab from './OutreachHookTab';
@@ -111,46 +112,36 @@ export default function CreateSmartCaptureClient({
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6 pb-20">
 
-      {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <AppButton
-            variantStyle="outline"
-            startIcon={<ArrowLeft size={16} />}
-            onClick={() => router.push('/smart-capture')}
-            className="rounded-lg shadow-sm"
-          >
-            Back
-          </AppButton>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              {mode === 'edit' ? 'Edit Smart Capture' : 'Add Smart Capture'}
-            </h1>
-            <p className="text-gray-500 text-xs mt-0.5">
-              Lead Magnets
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <AppButton
-            variantStyle="outline"
-            color="primary"
-            className="rounded-lg"
-            onClick={() => handleSave('draft')}
-            disabled={isLoading}
-          >
-            {isLoading && formData.action === 'draft' ? "Saving..." : "Save As Draft"}
-          </AppButton>
-          <AppButton
-            variantStyle="primary"
-            className="rounded-lg"
-            onClick={() => handleSave('publish')}
-            disabled={isLoading}
-          >
-            {isLoading && formData.action === 'publish' ? "Publishing..." : "Publish And Finish"}
-          </AppButton>
-        </div>
-      </div>
+      <PageHeader
+        title={mode === 'edit' ? 'Edit Smart Capture' : 'Add Smart Capture'}
+        description="Lead Magnets"
+        backHref="/smart-capture"
+        breadcrumbs={[
+          { label: 'Smart Capture', href: '/smart-capture' },
+          { label: mode === 'edit' ? 'Edit' : 'Add' },
+        ]}
+        actions={
+          <>
+            <AppButton
+              variantStyle="outline"
+              color="primary"
+              className="rounded-lg"
+              onClick={() => handleSave('draft')}
+              disabled={isLoading}
+            >
+              {isLoading && formData.action === 'draft' ? "Saving..." : "Save As Draft"}
+            </AppButton>
+            <AppButton
+              variantStyle="primary"
+              className="rounded-lg"
+              onClick={() => handleSave('publish')}
+              disabled={isLoading}
+            >
+              {isLoading && formData.action === 'publish' ? "Publishing..." : "Publish And Finish"}
+            </AppButton>
+          </>
+        }
+      />
 
       {/* Main Content Layout */}
       <div className="flex flex-col md:flex-row gap-6 items-start">

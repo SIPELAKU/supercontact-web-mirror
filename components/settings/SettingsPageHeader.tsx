@@ -3,6 +3,7 @@
 import { Menu } from "lucide-react";
 import { useSettingsSidebar } from "@/lib/context/SettingsSidebarContext";
 import SettingsBreadcrumb from "./SettingsBreadcrumb";
+import { BackButton } from "@/components/ui/back-button";
 import type { BreadcrumbItem } from "@/lib/types/Pipeline";
 
 interface SettingsPageHeaderProps {
@@ -10,12 +11,16 @@ interface SettingsPageHeaderProps {
   description?: string;
   breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
+  /** Back arrow left of the title, the same control PageHeader uses, for
+   * detail pages under Settings (one record of a Settings list). */
+  backHref?: string;
+  backLabel?: string;
 }
 
 // Deliberately not a wrapper around components/ui/page-header.tsx - that
 // component is the bordered-card-with-image-slot the spec explicitly says
 // to remove for Settings. Compact, no border/shadow, 8px-grid spacing.
-export default function SettingsPageHeader({ title, description, breadcrumbs, actions }: SettingsPageHeaderProps) {
+export default function SettingsPageHeader({ title, description, breadcrumbs, actions, backHref, backLabel }: SettingsPageHeaderProps) {
   const { toggleMobile } = useSettingsSidebar();
 
   return (
@@ -30,9 +35,12 @@ export default function SettingsPageHeader({ title, description, breadcrumbs, ac
       </button>
       {breadcrumbs && breadcrumbs.length > 0 && <SettingsBreadcrumb items={breadcrumbs} />}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-          {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+        <div className="flex min-w-0 items-center gap-3">
+          {backHref && <BackButton href={backHref} label={backLabel} />}
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+            {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+          </div>
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
       </div>

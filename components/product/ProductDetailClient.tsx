@@ -28,8 +28,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Chip } from "@mui/material";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import PageHeader from "@/components/ui/page-header";
 import { AppTabs } from "@/components/ui/app-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
@@ -156,13 +157,31 @@ export default function ProductDetailClient({ productId }: { productId: string }
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-start sm:justify-between">
+    // space-y (not flex gap) so PageHeader's own bottom margin collapses into
+    // the spacing, as on every other page.
+    <div className="space-y-5">
+      <PageHeader
+        title={
+          <span className="inline-flex flex-wrap items-baseline gap-x-2">
+            {product.product_name}
+            <span className="font-mono text-xs font-normal tracking-normal text-gray-500">{product.sku}</span>
+          </span>
+        }
+        backHref="/sales/product"
+        backLabel="Daftar produk"
+        breadcrumbs={[
+          { label: "Sales" },
+          { label: "Product Catalog", href: "/sales/product" },
+          { label: product.product_name },
+        ]}
+        actions={
+          <AppButton variantStyle="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1.5 h-4 w-4" />
+            Ubah produk
+          </AppButton>
+        }
+      >
         <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">{product.product_name}</h2>
-            <span className="font-mono text-xs text-gray-500">{product.sku}</span>
-          </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <Chip
               label={PRODUCT_STATUS_LABELS[product.status] ?? product.status}
@@ -209,20 +228,7 @@ export default function ProductDetailClient({ productId }: { productId: string }
             </div>
           )}
         </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Link href="/sales/product">
-            <AppButton variantStyle="outline">
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Daftar produk
-            </AppButton>
-          </Link>
-          <AppButton variantStyle="outline" onClick={() => setEditOpen(true)}>
-            <Pencil className="mr-1.5 h-4 w-4" />
-            Ubah produk
-          </AppButton>
-        </div>
-      </div>
+      </PageHeader>
 
       <AppTabs<TabValue> value={tab} onChange={setTab} tabs={tabs} />
 

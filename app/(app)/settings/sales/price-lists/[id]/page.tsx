@@ -24,6 +24,8 @@ export default function PriceListDetailPage() {
                     { label: "Daftar Harga", href: "/settings/sales/price-lists" },
                     { label: "Detail" },
                 ]}
+                backHref="/settings/sales/price-lists"
+                backLabel="Kembali ke Daftar Harga"
             />
             <PriceListDetail priceListId={id} />
         </div>

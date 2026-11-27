@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { CalendarToday, CheckCircle, Email, LocationOn, Phone, Schedule, Star, Work } from "@mui/icons-material";
-import { ArrowLeft } from "lucide-react";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { ProfileHeroCard } from "@/components/profile/ProfileHeroCard";
 import { ProfileInfoCard } from "@/components/profile/ProfileInfoCard";
@@ -48,16 +46,16 @@ export default function KeyPersonProfileClient({ id }: { id: string }) {
     { label: person?.name || "Profile" },
   ];
 
-  const back = (
-    <Link href="/settings/general/company/key-people" className="inline-flex items-center gap-1 text-sm text-[#5479EE] hover:underline">
-      <ArrowLeft className="h-4 w-4" /> Key People
-    </Link>
-  );
+  // The header's back arrow, the same one every other detail page uses.
+  const backProps = {
+    backHref: "/settings/general/company/key-people",
+    backLabel: "Back to Key People",
+  };
 
   if (isLoading) {
     return (
       <div>
-        <SettingsPageHeader title="Profile" breadcrumbs={breadcrumbs} />
+        <SettingsPageHeader title="Profile" breadcrumbs={breadcrumbs} {...backProps} />
         <Stack spacing={4} mt={2}>
           <Skeleton variant="rounded" height={280} />
           <Skeleton variant="rounded" height={220} />
@@ -69,9 +67,8 @@ export default function KeyPersonProfileClient({ id }: { id: string }) {
   if (isError || !person) {
     return (
       <div>
-        <SettingsPageHeader title="Profile" breadcrumbs={breadcrumbs} />
+        <SettingsPageHeader title="Profile" breadcrumbs={breadcrumbs} {...backProps} />
         <div className="mt-4 space-y-3">
-          {back}
           <p className="text-sm text-red-500">This profile could not be loaded. The person may no longer be an active Admin or Manager.</p>
         </div>
       </div>
@@ -84,8 +81,7 @@ export default function KeyPersonProfileClient({ id }: { id: string }) {
 
   return (
     <div>
-      <SettingsPageHeader title={person.name} breadcrumbs={breadcrumbs} />
-      <div className="mt-4">{back}</div>
+      <SettingsPageHeader title={person.name} breadcrumbs={breadcrumbs} {...backProps} />
       <Stack spacing={4} mt={2}>
         <ProfileHeroCard
           name={person.name}

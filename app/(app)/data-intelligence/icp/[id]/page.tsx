@@ -52,6 +52,8 @@ export default function IcpProfileDetailPage() {
                     { label: "ICP Builder", href: "/data-intelligence/icp" },
                     { label: profile.name },
                 ]}
+                backHref="/data-intelligence/icp"
+                backLabel="Back to ICP Builder"
             />
 
             {profile.description && <p className="text-sm text-gray-500">{profile.description}</p>}

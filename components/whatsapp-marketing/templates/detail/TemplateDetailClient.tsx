@@ -21,7 +21,7 @@ import AddVariableSamplesModal from '../create/AddVariableSamplesModal';
 import { AppSelect } from '@/components/ui/app-select';
 import { BroadcastTemplateType, BroadcastTemplateCategory } from '@/lib/types/whatsapp-marketing';
 import { templatesListHref } from '@/lib/hooks/useSelectedWaAccount';
-import { ArrowLeft, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 const APPROVAL_CATEGORY_OPTIONS: { value: BroadcastTemplateCategory; label: string }[] = [
@@ -169,9 +169,10 @@ export default function TemplateDetailClient() {
           { label: 'Template Broadcasting', href: templatesListHref(template.account_id) },
           { label: template.friendly_name },
         ]}
+        backHref={templatesListHref(template.account_id)}
+        backLabel="Back to Templates"
       />
 
-      <AppButton onClick={() => router.push(templatesListHref(template?.account_id))} sx={{ my: 2 }} variantStyle='text' startIcon={<ArrowLeft />}>Back to Templates</AppButton>
       <Grid container spacing={3}>
         <Grid item xs={12} md={7} lg={8}>
           <Stack spacing={3}>

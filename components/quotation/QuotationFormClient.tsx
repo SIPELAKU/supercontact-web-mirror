@@ -1396,7 +1396,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   ]);
 
   return (
-    <div className="p-6">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-6">
       <PageHeader
         title={isNew ? "Quotation Builder" : quotation.quotation_number}
         breadcrumbs={[
@@ -1404,6 +1404,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           { label: "Quotation Builder", href: "/sales/quotation" },
           { label: isNew ? "Add Quotation" : quotation.quotation_number },
         ]}
+        backHref="/sales/quotation"
+        backLabel="Back to Quotations"
         actions={
           quotation ? (
             <QuotationStatusChip

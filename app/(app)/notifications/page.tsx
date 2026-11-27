@@ -117,7 +117,7 @@ export default function NotificationPage() {
     };
 
     return (
-        <div className="w-full flex flex-col p-4 md:p-8 min-h-screen overflow-y-scroll">
+        <div className="w-full flex flex-col px-4 sm:px-6 md:px-8 pt-6 pb-4 md:pb-8 min-h-screen overflow-y-scroll">
             <PageHeader
                 title="Notifications"
                 breadcrumbs={[{ label: "Home", href: "/" }, { label: "Notification" }]}

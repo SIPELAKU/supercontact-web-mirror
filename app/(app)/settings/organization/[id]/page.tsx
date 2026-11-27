@@ -286,6 +286,8 @@ export default function DetailDepartments() {
           { label: "Organization", href: "/settings/organization" },
           { label: `Department ${departmentData.department}` },
         ]}
+        backHref="/settings/organization"
+        backLabel="Back to Organization"
       />
 
       <div className="my-5">

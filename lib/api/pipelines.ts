@@ -257,6 +257,98 @@ export async function createPipeline(data: CreatePipelineRequest) {
     }
 }
 
+/** One product the API suggests for a lead (Add Deal, AI Recommendation). */
+export interface RecommendedProduct {
+    product_id: string;
+    sku: string;
+    product_name: string;
+    /** One sentence, in Indonesian, why it fits this lead. */
+    reason: string;
+}
+
+export interface RecommendedProductsResponse {
+    lead_id: string;
+    /** "ai_hybrid" = AI reranked; "rule_fallback" = AI unavailable, DB scoring only. */
+    source: "ai_hybrid" | "rule_fallback";
+    recommendations: RecommendedProduct[];
+}
+
+/** The API accepts 1-20 recommendations per call. */
+export const RECOMMENDATION_LIMIT = { min: 1, max: 20, default: 3 } as const;
+
+/**
+ * GET /pipelines/recommended-products. `refresh` skips the API's 1-hour cache.
+ * Throws on any failure: the caller shows a note and the form keeps working.
+ */
+export async function fetchRecommendedProducts(
+    leadId: string,
+    options: { limit?: number; refresh?: boolean } = {},
+): Promise<RecommendedProductsResponse> {
+    const response = await api.get("/pipelines/recommended-products", {
+        params: {
+            lead_id: leadId,
+            limit: options.limit ?? RECOMMENDATION_LIMIT.default,
+            ...(options.refresh ? { refresh: true } : {}),
+        },
+    });
+    return response.data?.data;
+}
+
+export interface CreatePipelineItem {
+    product_id: string;
+    deal_stage: string;
+    expected_close_date: string;
+    quantity: number;
+    probability_of_close: number;
+    notes: string | null;
+}
+
+/** One client/lead, many products: each item becomes its own pipeline card. */
+export interface CreatePipelinesBulkRequest {
+    client_account: string;
+    lead_id: string;
+    assigned_to?: string;
+    items: CreatePipelineItem[];
+}
+
+/** What the API names when one item fails (e.g. a product that is gone). */
+export interface BulkErrorDetails {
+    field?: string;
+    index?: number;
+    product_id?: string;
+}
+
+export interface CreatePipelinesBulkResult {
+    success: boolean;
+    total?: number;
+    error?: string;
+    /** 422 field errors; loc like ["body", "items", 0, "quantity"]. */
+    validation?: ValidationItem[];
+    /** A 4xx that names one item by its index. */
+    details?: BulkErrorDetails;
+}
+
+/** POST /pipelines/bulk. All or nothing: when one item fails, no card is saved. */
+export async function createPipelinesBulk(data: CreatePipelinesBulkRequest): Promise<CreatePipelinesBulkResult> {
+    try {
+        const response = await api.post("/pipelines/bulk", data);
+        return { success: true, total: response.data?.data?.total ?? data.items.length };
+    } catch (error) {
+        const axiosErr = error as AxiosError<any>;
+        const errorData = axiosErr.response?.data?.error;
+        if (errorData) {
+            const details = typeof errorData === "object" ? errorData.details : undefined;
+            return {
+                success: false,
+                error: typeof errorData === "object" ? errorData.message : errorData,
+                validation: Array.isArray(details) ? details : undefined,
+                details: details && !Array.isArray(details) ? details : undefined,
+            };
+        }
+        return { success: false, error: axiosErr.message ?? "Failed to create deals" };
+    }
+}
+
 /**
  * Update an existing pipeline
  */

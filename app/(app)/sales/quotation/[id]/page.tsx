@@ -49,7 +49,7 @@ export default function QuotationDetailPage() {
 
     if (loading) {
         return (
-            <div className="p-6">
+            <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-6">
                 <div className="flex items-center justify-center min-h-[400px]">
                     <Loader2 className="h-8 w-8 animate-spin text-[#5479EE]" />
                 </div>
@@ -59,7 +59,7 @@ export default function QuotationDetailPage() {
 
     if (error || !quotation) {
         return (
-            <div className="p-6">
+            <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-6">
                 <PageHeader
                     title="Quotation Not Found"
                     breadcrumbs={[

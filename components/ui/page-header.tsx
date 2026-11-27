@@ -1,31 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
 import { PageHeaderProps } from "@/lib/types/Pipeline";
 import { cn } from "@/lib/utils";
-import { resolveListHref } from "@/components/ui/super-table";
+import { BackButton, useResolvedHref } from "@/components/ui/back-button";
 import Image from "next/image";
 import Link from "next/link";
 
-/**
- * A breadcrumb href is a bare path, so pressing "Contacts" from a contact
- * detail page used to land on page 1 of an unfiltered list - losing the page,
- * search, sort and filters the user had set before they clicked in.
- *
- * SuperTable parks the list's real URL under its pathname (useListCursor);
- * this hands it back. Resolved in an effect with the plain href as the initial
- * value, so the server and the first client render agree and a visitor with no
- * stored cursor simply gets today's behaviour.
- */
-function useResolvedHref(href?: string) {
-  const [resolved, setResolved] = useState(href);
-
-  useEffect(() => {
-    setResolved(href ? resolveListHref(href) : href);
-  }, [href]);
-
-  return resolved;
-}
-
+// The breadcrumb links resolve through the list cursor (see useResolvedHref).
 function BreadcrumbLink({ href, label }: { href: string; label: string }) {
   const resolved = useResolvedHref(href);
   return (
@@ -48,7 +28,17 @@ export default function PageHeader({
   imageHeight = 160,
   className,
   actions,
+  backHref,
+  onBack,
+  backLabel = "Back",
+  children,
 }: PageHeaderProps) {
+  const back = onBack ? (
+    <BackButton onClick={onBack} label={backLabel} />
+  ) : backHref ? (
+    <BackButton href={backHref} label={backLabel} />
+  ) : null;
+
   return (
     <div
       className={cn(
@@ -57,37 +47,41 @@ export default function PageHeader({
       )}
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex-1">
-          {/* Breadcrumbs at the top */}
-          {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav
-              className="flex items-center gap-2 mb-1"
-              aria-label="Breadcrumb"
-            >
-              {breadcrumbs.map((item, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  {item.href ? (
-                    <BreadcrumbLink href={item.href} label={item.label} />
-                  ) : (
-                    <span className="text-sm text-gray-400">{item.label}</span>
-                  )}
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {back}
+          <div className="min-w-0 flex-1">
+            {/* Breadcrumbs at the top */}
+            {breadcrumbs && breadcrumbs.length > 0 && (
+              <nav
+                className="flex items-center gap-2 mb-1"
+                aria-label="Breadcrumb"
+              >
+                {breadcrumbs.map((item, i) => (
+                  <span key={i} className="flex items-center gap-2">
+                    {item.href ? (
+                      <BreadcrumbLink href={item.href} label={item.label} />
+                    ) : (
+                      <span className="text-sm text-gray-400">{item.label}</span>
+                    )}
 
-                  {i < breadcrumbs.length - 1 && (
-                    <span className="text-gray-300 text-xs">•</span>
-                  )}
-                </span>
-              ))}
-            </nav>
-          )}
+                    {i < breadcrumbs.length - 1 && (
+                      <span className="text-gray-300 text-xs">•</span>
+                    )}
+                  </span>
+                ))}
+              </nav>
+            )}
 
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            {title}
-          </h1>
-          {description && (
-            <p className="text-muted-foreground text-sm mt-1">
-              {description}
-            </p>
-          )}
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              {title}
+            </h1>
+            {description && (
+              <p className="text-muted-foreground text-sm mt-1">
+                {description}
+              </p>
+            )}
+            {children && <div className="mt-3">{children}</div>}
+          </div>
         </div>
 
         {/* actions takes precedence over the illustration image - a header

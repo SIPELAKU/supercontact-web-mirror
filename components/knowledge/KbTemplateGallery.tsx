@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import PageHeader from "@/components/ui/page-header";
 import { AppInput } from "@/components/ui/app-input";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -718,7 +719,6 @@ function KbTemplateInstallWizard({
 // ---- Gallery -----------------------------------------------------------------
 
 export default function KbTemplateGallery() {
-  const router = useRouter();
   const { data: packs = [], isLoading, isError, refetch } = useKbTemplates();
 
   const [previewPack, setPreviewPack] = useState<KbTemplatePack | null>(null);
@@ -730,25 +730,17 @@ export default function KbTemplateGallery() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 md:px-8">
-      {/* Header (subpage pattern, matching Categories & sections) */}
-      <div className="mb-6 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.push("/knowledge-base")}
-          aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Template Gallery</h1>
-          <p className="text-[12.5px] text-gray-400">
-            Industry starter packs — install a ready-made help center skeleton, then edit and
-            publish.
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-full px-4 pb-16 pt-6 sm:px-6 md:px-8">
+      <PageHeader
+        title="Template Gallery"
+        description="Industry starter packs — install a ready-made help center skeleton, then edit and publish."
+        backHref="/knowledge-base"
+        breadcrumbs={[
+          { label: "Support" },
+          { label: "Knowledge Base", href: "/knowledge-base" },
+          { label: "Template Gallery" },
+        ]}
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400">

@@ -123,6 +123,8 @@ export default function ProspectProfileClient({ personId }: ProspectProfileClien
                     { label: "Prospecting", href: "/data-intelligence/prospecting" },
                     { label: person.full_name },
                 ]}
+                backHref="/data-intelligence/prospecting"
+                backLabel="Back to Prospecting"
                 actions={
                     <div className="flex items-center gap-3">
                         <CreditBalancePill available={availableCredits} unlimited={unlimitedCredits} />

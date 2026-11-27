@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   ChevronRight,
   FolderPlus,
   Loader2,
@@ -13,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import PageHeader from "@/components/ui/page-header";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { Switch } from "@/components/ui/switch";
@@ -137,7 +136,6 @@ const emptyCategory: CategoryForm = {
 };
 
 export default function KnowledgeCategoriesClient() {
-  const router = useRouter();
   const { canManage } = useKbPermissions();
   const { confirm, confirmationPopup } = useConfirmationPopup();
 
@@ -334,28 +332,24 @@ export default function KnowledgeCategoriesClient() {
   const savingSection = createSection.isPending || updateSection.isPending;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-16">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/knowledge-base")}
-            aria-label="Back"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Categories & sections</h1>
-            <p className="text-[12.5px] text-gray-400">Organize your help center content.</p>
-          </div>
-        </div>
-        {canManage && (
-          <AppButton startIcon={<Plus size={16} />} onClick={openNewCategory}>
-            New category
-          </AppButton>
-        )}
-      </div>
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-16">
+      <PageHeader
+        title="Categories & sections"
+        description="Organize your help center content."
+        backHref="/knowledge-base"
+        breadcrumbs={[
+          { label: "Support" },
+          { label: "Knowledge Base", href: "/knowledge-base" },
+          { label: "Categories & sections" },
+        ]}
+        actions={
+          canManage ? (
+            <AppButton startIcon={<Plus size={16} />} onClick={openNewCategory}>
+              New category
+            </AppButton>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400">

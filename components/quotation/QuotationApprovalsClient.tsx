@@ -309,7 +309,7 @@ export default function QuotationApprovalsClient() {
   if (!allowed) return <AccessDenied />;
 
   return (
-    <div className="p-6">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-6">
       <PageHeader
         title="Persetujuan Quotation"
         breadcrumbs={[

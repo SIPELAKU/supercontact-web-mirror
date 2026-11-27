@@ -22,7 +22,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, Save, Send } from "lucide-react";
+import { Save, Send } from "lucide-react";
 
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
@@ -196,8 +196,8 @@ export function CampaignComposer({
   };
 
   const backHref = "/email-marketing/campaigns";
-  // Resolved at click time, not render time: the breadcrumb beside this button
-  // already returns to the list the user left, and Back losing that position
+  // Resolved at click time, not render time: the breadcrumb above the back
+  // arrow already returns to the list the user left, and Back losing that position
   // while the breadcrumb keeps it is the kind of split behaviour nobody can
   // predict. sessionStorage is client-only, so it has to be read on the click.
   const leave = () => router.push(resolveListHref(backHref));
@@ -244,16 +244,9 @@ export function CampaignComposer({
           { label: "Campaigns", href: backHref },
           { label: mode === "create" ? "New" : "Edit" },
         ]}
-        actions={
-          <AppButton
-            variantStyle="outline"
-            color="gray"
-            startIcon={<ArrowLeft size={16} />}
-            onClick={handleBack}
-          >
-            Back
-          </AppButton>
-        }
+        // onBack, not backHref: leaving with unsaved changes asks first.
+        onBack={handleBack}
+        backLabel="Back to Campaigns"
       />
 
       {restoredDraft && (

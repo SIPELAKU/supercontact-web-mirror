@@ -440,7 +440,7 @@ export default function OmnichannelClient() {
     };
 
     return (
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-8">
             {/* Header */}
             <PageHeader
                 title="Omnichannel Inbox"

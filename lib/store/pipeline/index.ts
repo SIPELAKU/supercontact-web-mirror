@@ -116,6 +116,11 @@ interface GetState {
     validation?: ValidationItem[];
   }>;
 
+  /** Add Deal with many products: one card per item, then the board reloads. */
+  postBulkPipelines: (
+    body: pipelineAPI.CreatePipelinesBulkRequest
+  ) => Promise<pipelineAPI.CreatePipelinesBulkResult>;
+
   /**
    * Saves the stage, then reloads the board quietly. Resolves true when the
    * reloaded board (with the move) is in the store; throws when the save fails.
@@ -342,6 +347,16 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  postBulkPipelines: async (body) => {
+    const response = await pipelineAPI.createPipelinesBulk(body);
+    if (response.success) {
+      // Every new card lands in its own stage column; the assignee may be new
+      // to the Assigned To filter.
+      await Promise.all([get().fetchPipeline(), get().fetchActiveUser()]);
+    }
+    return response;
   },
 
   updateStagePipeline: async (id: string, stage: string) => {

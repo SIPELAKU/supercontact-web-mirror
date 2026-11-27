@@ -123,6 +123,8 @@ export default function CreateTemplateClient() {
           { label: 'Template Broadcasting', href: '/whatsapp-marketing/template-broadcasting' },
           { label: 'Create Template' },
         ]}
+        backHref="/whatsapp-marketing/template-broadcasting"
+        backLabel="Back to Templates"
       />
 
       <Grid container spacing={3}>

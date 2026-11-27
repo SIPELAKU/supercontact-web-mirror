@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { AppTabs } from '@/components/ui/app-tabs';
 import { format } from 'date-fns';
-import { ArrowLeft, Upload, Plus, Eye, Send, Users, History } from 'lucide-react';
+import { Upload, Plus, Eye, Send, Users, History } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
@@ -183,7 +183,7 @@ const GroupBroadcastDetailPage = () => {
     if (!groupBroadcast) return null;
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-6">
             <PageHeader
                 title={groupBroadcast.name}
                 breadcrumbs={[
@@ -191,19 +191,9 @@ const GroupBroadcastDetailPage = () => {
                     { label: "Group Broadcasting", href: "/whatsapp-marketing/group-broadcasting" },
                     { label: groupBroadcast.name }
                 ]}
+                backHref="/whatsapp-marketing/group-broadcasting"
+                backLabel="Back to Group Broadcasting"
             />
-
-            <Box sx={{ mb: 3 }}>
-                <AppButton
-                    variantStyle="outline"
-                    color="primary"
-                    startIcon={<ArrowLeft size={18} />}
-                    onClick={() => router.push('/whatsapp-marketing/group-broadcasting')}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Back to Group Broadcasting
-                </AppButton>
-            </Box>
 
             <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>

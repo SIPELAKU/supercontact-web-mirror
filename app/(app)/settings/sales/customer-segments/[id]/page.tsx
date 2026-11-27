@@ -24,6 +24,8 @@ export default function CustomerSegmentDetailPage() {
                     { label: "Segmen Pelanggan", href: "/settings/sales/customer-segments" },
                     { label: "Detail" },
                 ]}
+                backHref="/settings/sales/customer-segments"
+                backLabel="Kembali ke Segmen Pelanggan"
             />
             <CustomerSegmentDetail segmentId={id} />
         </div>

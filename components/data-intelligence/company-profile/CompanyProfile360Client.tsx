@@ -474,6 +474,8 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     { label: "Company Search", href: "/data-intelligence/companies?tab=discover" },
                     { label: profile.name },
                 ]}
+                backHref="/data-intelligence/companies?tab=discover"
+                backLabel="Back to Company Search"
             />
 
             <div className="flex flex-wrap items-center gap-3">

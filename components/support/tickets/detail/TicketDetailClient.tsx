@@ -173,6 +173,8 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                     { label: "Tickets", href: "/support/tickets" },
                     { label: ticket.ticket_code || ticket.id },
                 ]}
+                backHref="/support/tickets"
+                backLabel="Back to Tickets"
             />
 
             {ticket.merged_into_ticket_id && (

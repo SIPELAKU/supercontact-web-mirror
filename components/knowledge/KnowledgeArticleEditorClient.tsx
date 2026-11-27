@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Archive,
   History,
   Loader2,
@@ -15,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import PageHeader from "@/components/ui/page-header";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { Switch } from "@/components/ui/switch";
@@ -239,113 +239,106 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-16">
-      {/* Header / actions */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/knowledge-base")}
-            aria-label="Back"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900">
-                {isNew ? "New article" : "Edit article"}
-              </h1>
-              {status && <KbStatusBadge status={status} />}
-              {readOnly && (
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
-                  Read only
-                </span>
-              )}
-            </div>
-            {!isNew && article && (
-              <p className="mt-0.5 text-[12px] text-gray-400">
-                {article.view_count} views · {article.helpful_count} helpful ·{" "}
-                {article.not_helpful_count} not helpful
-              </p>
+      <PageHeader
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2 align-middle">
+            {isNew ? "New article" : "Edit article"}
+            {status && <KbStatusBadge status={status} />}
+            {readOnly && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold tracking-normal text-gray-500">
+                Read only
+              </span>
             )}
-          </div>
-        </div>
+          </span>
+        }
+        description={
+          !isNew && article
+            ? `${article.view_count} views · ${article.helpful_count} helpful · ${article.not_helpful_count} not helpful`
+            : undefined
+        }
+        backHref="/knowledge-base"
+        breadcrumbs={[
+          { label: "Support" },
+          { label: "Knowledge Base", href: "/knowledge-base" },
+          { label: isNew ? "New article" : "Edit article" },
+        ]}
+        actions={
+          <>
+            {!isNew && (
+              <AppButton
+                variantStyle="outline"
+                color="gray"
+                startIcon={<History size={16} />}
+                onClick={() => setShowVersions(true)}
+              >
+                History
+              </AppButton>
+            )}
 
-        <div className="flex flex-wrap items-center gap-2">
-          {!isNew && (
-            <AppButton
-              variantStyle="outline"
-              color="gray"
-              startIcon={<History size={16} />}
-              onClick={() => setShowVersions(true)}
-            >
-              History
-            </AppButton>
-          )}
+            {/* Publish / Unpublish / Archive - gated on knowledge:publish. */}
+            {!isNew && canPublish && status !== "published" && (
+              <AppButton
+                variantStyle="primary"
+                color="success"
+                startIcon={<Send size={16} />}
+                disabled={statusChanging}
+                onClick={() => {
+                  const left = unfilledPlaceholders(article?.body);
+                  if (left.length > 0) {
+                    setBlockedPublish([{ id: articleId!, title: article?.title || title, placeholders: left }]);
+                    return;
+                  }
+                  runStatus(() => publishMutation.mutateAsync(articleId!), "Article published");
+                }}
+              >
+                Publish
+              </AppButton>
+            )}
+            {!isNew && canPublish && status === "published" && (
+              <AppButton
+                variantStyle="outline"
+                startIcon={<Undo2 size={16} />}
+                disabled={statusChanging}
+                onClick={() => runStatus(() => unpublishMutation.mutateAsync(articleId!), "Article unpublished")}
+              >
+                Unpublish
+              </AppButton>
+            )}
+            {!isNew && canPublish && status !== "archived" && (
+              <AppButton
+                variantStyle="outline"
+                color="gray"
+                startIcon={<Archive size={16} />}
+                disabled={statusChanging}
+                onClick={() => runStatus(() => archiveMutation.mutateAsync(articleId!), "Article archived")}
+              >
+                Archive
+              </AppButton>
+            )}
 
-          {/* Publish / Unpublish / Archive - gated on knowledge:publish. */}
-          {!isNew && canPublish && status !== "published" && (
-            <AppButton
-              variantStyle="primary"
-              color="success"
-              startIcon={<Send size={16} />}
-              disabled={statusChanging}
-              onClick={() => {
-                const left = unfilledPlaceholders(article?.body);
-                if (left.length > 0) {
-                  setBlockedPublish([{ id: articleId!, title: article?.title || title, placeholders: left }]);
-                  return;
-                }
-                runStatus(() => publishMutation.mutateAsync(articleId!), "Article published");
-              }}
-            >
-              Publish
-            </AppButton>
-          )}
-          {!isNew && canPublish && status === "published" && (
-            <AppButton
-              variantStyle="outline"
-              startIcon={<Undo2 size={16} />}
-              disabled={statusChanging}
-              onClick={() => runStatus(() => unpublishMutation.mutateAsync(articleId!), "Article unpublished")}
-            >
-              Unpublish
-            </AppButton>
-          )}
-          {!isNew && canPublish && status !== "archived" && (
-            <AppButton
-              variantStyle="outline"
-              color="gray"
-              startIcon={<Archive size={16} />}
-              disabled={statusChanging}
-              onClick={() => runStatus(() => archiveMutation.mutateAsync(articleId!), "Article archived")}
-            >
-              Archive
-            </AppButton>
-          )}
+            {canWrite && (
+              <AppButton
+                startIcon={savingDraft ? undefined : <Save size={16} />}
+                isLoading={savingDraft}
+                onClick={handleSave}
+              >
+                {isNew ? "Save draft" : "Save"}
+              </AppButton>
+            )}
 
-          {canWrite && (
-            <AppButton
-              startIcon={savingDraft ? undefined : <Save size={16} />}
-              isLoading={savingDraft}
-              onClick={handleSave}
-            >
-              {isNew ? "Save draft" : "Save"}
-            </AppButton>
-          )}
-
-          {!isNew && canManage && (
-            <AppButton
-              variantStyle="outline"
-              color="danger"
-              startIcon={<Trash2 size={16} />}
-              onClick={handleDelete}
-            >
-              Delete
-            </AppButton>
-          )}
-        </div>
-      </div>
+            {!isNew && canManage && (
+              <AppButton
+                variantStyle="outline"
+                color="danger"
+                startIcon={<Trash2 size={16} />}
+                onClick={handleDelete}
+              >
+                Delete
+              </AppButton>
+            )}
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main column */}

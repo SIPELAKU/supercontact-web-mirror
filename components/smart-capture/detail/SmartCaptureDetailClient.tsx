@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Share2 } from "lucide-react";
-import { Box, Divider, CircularProgress } from "@mui/material";
+import { Divider, CircularProgress } from "@mui/material";
 
 import { AppButton } from "@/components/ui/app-button";
 import PageHeader from "@/components/ui/page-header";
@@ -74,21 +73,13 @@ export const SmartCaptureDetailClient = () => {
                     { label: "Smart Capture", href: "/smart-capture" },
                     { label: data.name },
                 ]}
+                backHref="/smart-capture"
+                backLabel="Back to Magnets"
             />
 
-            {/* Top Navigation Bar */}
-            <div className="flex items-center justify-between">
-                <Box>
-                    <AppButton
-                        onClick={() => router.push('/smart-capture')}
-                        variantStyle="outline"
-                        startIcon={<ArrowLeft size={18} />}
-                        className="border-none! bg-transparent! hover:bg-white! dark:hover:bg-[var(--dk-raised)]! shadow-none text-gray-600"
-                    >
-                        Back to Magnets
-                    </AppButton>
-                </Box>
-                {/* <AppButton
+            {/* "Share Magnet" is switched off. To bring it back, pass it as the
+                PageHeader's `actions`:
+                <AppButton
                     onClick={handleShare}
                     variantStyle="outline"
                     startIcon={<Share2 size={16} />}
@@ -96,7 +87,6 @@ export const SmartCaptureDetailClient = () => {
                 >
                     Share Magnet
                 </AppButton> */}
-            </div>
 
             <Divider className="opacity-50" />
 

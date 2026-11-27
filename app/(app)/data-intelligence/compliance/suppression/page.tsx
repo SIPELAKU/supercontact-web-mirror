@@ -84,7 +84,7 @@ export default function SuppressionListPage() {
     );
 
     return (
-        <div className="w-full flex flex-col gap-4 p-4 md:p-8">
+        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
             <PageHeader
                 title="Compliance · Suppression List"
                 breadcrumbs={[{ label: "Data Intelligence" }, { label: "Compliance" }, { label: "Suppression List" }]}

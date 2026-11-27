@@ -17,6 +17,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { AddDealModal } from "@/components/pipeline/AddDealModal"
+import { AddDealsDialog } from "@/components/pipeline/add-deal/AddDealsDialog"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
@@ -88,7 +89,9 @@ export default function PipelineBoard() {
     loadMoreDeals,
     scopeUserId,
     needsSetup,
-    boardLoadFailed
+    boardLoadFailed,
+    // The deal a card opened; empty = "Add Deal".
+    id: editDealId
   } = useGetPipelineStore();
   // Only an Admin sets up and manages stages (gear, column menu, setup +).
   const { userProfile, userRole } = useAuth()
@@ -363,7 +366,13 @@ export default function PipelineBoard() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
-      <AddDealModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      {/* Add Deal = one client, many products (one card each); a card opens
+          Update Pipeline for that one deal. */}
+      {editDealId ? (
+        <AddDealModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      ) : (
+        <AddDealsDialog open={isModalOpen} onOpenChange={setIsModalOpen} />
+      )}
       <ConfirmationPopup
         isOpen={Boolean(pendingClose)}
         onClose={() => {

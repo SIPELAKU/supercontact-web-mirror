@@ -10,8 +10,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import PageHeader from "@/components/ui/page-header";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { useContentGaps } from "@/lib/hooks/useBotPlayground";
 import { articlesFromGaps } from "@/lib/utils/kbPlaceholders";
@@ -29,30 +29,23 @@ const VIEWS: { value: View; label: string }[] = [
 ];
 
 export default function KnowledgePlaceholdersClient() {
-  const router = useRouter();
   const { can } = usePermission();
   // Content Gaps is gated on omnichannel:setup, filling on knowledge:publish.
   const allowed = can("omnichannel:setup") && can("knowledge:publish");
   const [view, setView] = useState<View>("placeholder");
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-16">
-      <div className="mb-6 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.push("/knowledge-base")}
-          aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Fill placeholders</h1>
-          <p className="text-[12.5px] text-gray-400">
-            Replace the {"{{…}}"} left in your articles with real values.
-          </p>
-        </div>
-      </div>
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-16">
+      <PageHeader
+        title="Fill placeholders"
+        description="Replace the {{…}} left in your articles with real values."
+        backHref="/knowledge-base"
+        breadcrumbs={[
+          { label: "Support" },
+          { label: "Knowledge Base", href: "/knowledge-base" },
+          { label: "Fill placeholders" },
+        ]}
+      />
 
       {!allowed ? (
         <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">

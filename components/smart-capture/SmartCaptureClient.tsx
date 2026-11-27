@@ -103,19 +103,15 @@ export default function SmartCaptureClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
 
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <PageHeader
-          title="Smart Capture"
-          description="Manage your forms and soft-selling assets to get validated prospects."
-          breadcrumbs={[
-            {
-              label: "Smart Capture",
-              href: "/smart-capture",
-            },
-          ]}
-        />
-      </div>
+      {/* PageHeader sits directly in the page column, like every other page.
+          It used to be wrapped in a flex-row div, which shrank the card to the
+          width of its text and doubled the gap below it (a flex item's margin
+          does not collapse into space-y). */}
+      <PageHeader
+        title="Smart Capture"
+        description="Manage your forms and soft-selling assets to get validated prospects."
+        breadcrumbs={[{ label: "Smart Capture", href: "/smart-capture" }]}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -247,6 +247,8 @@ export default function MailingListDetailClient() {
           { label: 'Mailing Lists', href: '/email-marketing/mailing-lists' },
           { label: mailingList.name },
         ]}
+        backHref="/email-marketing/mailing-lists"
+        backLabel="Back to Mailing Lists"
         actions={
           activeTab === 'subscribers' ? (
             <>

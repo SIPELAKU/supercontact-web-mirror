@@ -468,3 +468,72 @@
   background-color: var(--dk-surface) !important;
   border-color: var(--dk-line) !important;
 }
+
+/* ---- AI surfaces (Add Deal › AI Recommendation Product) -------------------
+   The logo's blue into its green. The green end keeps some blue (35/65) so
+   white text on it stays readable; pure logo green is too light for it. */
+@utility ai-gradient {
+  background-image: linear-gradient(
+    110deg,
+    var(--brand) 0%,
+    color-mix(in srgb, var(--brand) 60%, var(--brand-green)) 55%,
+    color-mix(in srgb, var(--brand) 35%, var(--brand-green)) 100%
+  );
+}
+@utility ai-gradient-text {
+  background-image: linear-gradient(110deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 45%, var(--brand-green)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* A blue-green light sweeping across a placeholder while the AI works. */
+@utility ai-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--brand) 16%, transparent) 42%,
+    color-mix(in srgb, var(--brand-green) 20%, transparent) 58%,
+    transparent 80%
+  );
+  background-size: 220% 100%;
+  animation: ai-shimmer 1.5s linear infinite;
+}
+/* Spinning blue-green ring behind the "thinking" icon. */
+@utility ai-orbit {
+  background-image: conic-gradient(from 0deg, var(--brand), var(--brand-green), color-mix(in srgb, var(--brand) 20%, transparent), var(--brand));
+  animation: ai-spin 1.4s linear infinite;
+}
+/* One result arriving; stagger with an inline animation-delay. */
+@utility ai-rise {
+  animation: ai-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes ai-shimmer {
+  from {
+    background-position: 160% 0;
+  }
+  to {
+    background-position: -60% 0;
+  }
+}
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ai-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-shimmer,
+  .ai-orbit,
+  .ai-rise {
+    animation: none;
+  }
+}

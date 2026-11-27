@@ -196,6 +196,8 @@ export const ContactDetailClient = () => {
             <PageHeader
                 title={contact.name}
                 breadcrumbs={[{ label: "Contacts", href: "/contact" }, { label: contact.name }]}
+                backHref="/contact"
+                backLabel="Back to Contacts"
             />
 
             <ContactHeader contact={contact} onEdit={() => setOpenEdit(true)} />

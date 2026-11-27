@@ -1,32 +1,25 @@
 "use client";
 
+// Update Pipeline: one existing deal (card). Adding deals - one client, many
+// products - is AddDealsDialog (add-deal/), which shares the field parts.
 
 import {
   Dialog,
   DialogContent
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useGetProductStore } from "@/lib/store/product";
 import type { DealForm, reqBody } from "@/lib/store/pipeline";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 import { AddDealModalProps } from "@/lib/types/Pipeline";
 import { useAuth } from "@/lib/context/AuthContext";
-import { useUsers } from "@/lib/hooks/useUsers";
-import { useDebounce } from "@/lib/hooks/useDebounce";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { canAssignDeals } from "./dealAssignment";
-import { toLeadOption, type LeadOption } from "./dealLeadOptions";
 import { isCloseDateAllowed, PAST_CLOSE_DATE_MESSAGE } from "./dealCloseDate";
 import { AppInput } from "../ui/app-input";
 import { AppDatePicker } from "../ui/app-datepicker";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
-import { AppAutocomplete } from "../ui/app-autocomplete";
 import { AppSelect } from "../ui/app-select";
-import { Spinner } from "../ui/spinner";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import * as pipelineAPI from "@/lib/api/pipelines";
@@ -34,15 +27,24 @@ import { isClosedOutcome } from "@/lib/helper/transformPipeline";
 import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
 import { format, startOfToday } from "date-fns";
 import { Lock } from "lucide-react";
+import { DealAssigneePicker, FieldLabel, LockedField, type PickerOption } from "./add-deal/DealFormParts";
+import { PROBABILITY_OPTIONS, toApiDate } from "./add-deal/dealItems";
 
-
+const EMPTY_FORM: DealForm = {
+  client_account: "",
+  product_id: "",
+  deal_stage: "",
+  expected_close_date: undefined,
+  quantity: 1,
+  probability_of_close: "0",
+  notes: "",
+  assigned_to: "",
+  lead_id: ""
+};
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
-  // The picker slice (page 1, limit 100, active) - never the product page's
-  // list, whose page/search/status/sort would otherwise leak in here (S3-1).
-  const { catalogue: listProduct, fetchCatalogue, catalogueLoading } = useGetProductStore();
-  const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline, setStage } = useGetPipelineStore();
+  const { listPipeline, id, setEditId, updateFormPipeline, setStage } = useGetPipelineStore();
   // The company's active stages, for the Deal Stage picker.
   const { data: stagesData } = usePipelineStages(false);
   const catalogue = useMemo(() => stagesData?.data?.data ?? [], [stagesData]);
@@ -61,84 +63,26 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   // Confirmation before saving a deal as Won/Lost (see handleSubmit).
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [formData, setFormData] = useState<DealForm>({
-    client_account: "",
-    product_id: "",
-    deal_stage: "",
-    expected_close_date: undefined,
-    quantity: 1,
-    probability_of_close: "0",
-    notes: "",
-    assigned_to: "",
-    lead_id: ""
-  });
+  const [formData, setFormData] = useState<DealForm>(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [fetchedDeal, setFetchedDeal] = useState<any>(null);
-  const [persistedProduct, setPersistedProduct] = useState<{ value: string; label: string } | null>(null);
-  const [persistedAssignee, setPersistedAssignee] = useState<{ value: string; label: string } | null>(null);
-  const [assigneeSearch, setAssigneeSearch] = useState("");
-  const debouncedAssigneeSearch = useDebounce(assigneeSearch);
-  const { data: usersResponse, isLoading: loadingUsers } = useUsers(1, 20, debouncedAssigneeSearch || undefined);
+  const [persistedAssignee, setPersistedAssignee] = useState<PickerOption | null>(null);
   const { userProfile, userRole } = useAuth();
-  // Managers pick the assignee; the sales team is locked to the lead's
-  // assignee (Add Deal) or to the deal's current assignee (Update Pipeline).
+  // Managers pick the assignee; the sales team is locked to the deal's
+  // current assignee.
   const canAssign = canAssignDeals(userProfile?.role ?? userRole);
 
-  // The client always comes from a LEAD (BO): a lead has exactly one contact
-  // (the deal's client) and one assignee, which "Assign To" starts from.
-  const [selectedLead, setSelectedLead] = useState<LeadOption | null>(null);
-  const [leadSearch, setLeadSearch] = useState("");
-  // Searches only once the user has stopped typing for a second.
-  const debouncedLeadSearch = useDebounce(leadSearch, 1000);
-  // Admin/Manager pick any lead; everyone else only their own, so
-  // the deal they create is theirs and stays on their kanban.
-  const leadOwner = canAssign ? undefined : userProfile?.id;
-  // Update Pipeline keeps the deal's client, so it never needs the list.
-  // A sales user waits for their id, so they never see others' leads.
-  const leadsEnabled = open && !id && (canAssign || Boolean(leadOwner));
-  const { data: leads = [], isLoading: loadingLeads } = useQuery({
-    queryKey: ["deal-leads", debouncedLeadSearch, leadOwner],
-    queryFn: () => pipelineAPI.fetchDealLeads(debouncedLeadSearch, leadOwner),
-    enabled: leadsEnabled,
-  });
-
-  // Add Deal is ready once the first SKU and lead lists have loaded. Later
-  // searches show the field's own spinner, not the whole-form skeleton.
-  const [addListsReady, setAddListsReady] = useState(false);
-  useEffect(() => {
-    if (!open) {
-      setAddListsReady(false);
-      return;
-    }
-    if (leadsEnabled && !catalogueLoading && !loadingLeads) setAddListsReady(true);
-  }, [open, leadsEnabled, catalogueLoading, loadingLeads]);
-
   const reset = () => {
-    setFormData({
-      client_account: "",
-      product_id: "",
-      deal_stage: "",
-      expected_close_date: undefined,
-      quantity: 1,
-      probability_of_close: "0",
-      notes: "",
-      assigned_to: "",
-      lead_id: ""
-    });
-    setSelectedLead(null);
-    setLeadSearch("");
-    setPersistedProduct(null);
+    setFormData(EMPTY_FORM);
     setPersistedAssignee(null);
-    setAssigneeSearch("");
   };
 
   const deal = fetchedDeal;
 
-  // Update Pipeline waits for THIS deal's detail - checking the id also
-  // covers the first frame, before the fetch effect has even started.
-  const loadingDeal = Boolean(id) && (loadingDetails || fetchedDeal?.id !== id);
-  const isInitialLoading = id ? loadingDeal : !addListsReady;
+  // Waits for THIS deal's detail - checking the id also covers the first
+  // frame, before the fetch effect has even started.
+  const isInitialLoading = Boolean(id) && (loadingDetails || fetchedDeal?.id !== id);
   // Won/Lost is final: the deal can still be opened and read, but every field
   // and the save button are disabled. Judged by the SAVED stage, not the form.
   const isClosedDeal =
@@ -151,16 +95,12 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     if (current && !options.some((o) => o.value === current)) options.push({ value: current, label: current });
     return options;
   }, [catalogue, deal?.deal_stage]);
-  // The close date the deal has now (Update only): it may stay as it is even
-  // when it has passed (an expired deal).
-  const savedCloseDate = id && deal?.expected_close_date ? new Date(deal.expected_close_date) : undefined;
+  // The close date the deal has now: it may stay as it is even when it has
+  // passed (an expired deal).
+  const savedCloseDate = deal?.expected_close_date ? new Date(deal.expected_close_date) : undefined;
 
   useEffect(() => {
     async function fetchDetails() {
-      if (!id) {
-        setFetchedDeal(null);
-        return;
-      }
       try {
         setLoadingDetails(true);
         const response = await pipelineAPI.fetchPipelineById(id);
@@ -219,95 +159,14 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     }
   }, [id, setStage, onOpenChange, setEditId]);
 
-  useEffect(() => {
-    if (open) {
-      // Phase 5 (spec I9, M-e): variants are the sellable rows, and the list is
-      // top-level only without this.
-      fetchCatalogue({ includeVariants: true });
-    }
-  }, [open, fetchCatalogue]);
-
-  const leadOptions = useMemo(() => {
-    const listOpts = leads.map(toLeadOption);
-    // Keep the picked lead selectable when a new search no longer returns it.
-    if (selectedLead && !listOpts.find(o => o.value === selectedLead.value)) {
-      return [selectedLead, ...listOpts];
-    }
-    return listOpts;
-  }, [leads, selectedLead]);
-
-  // Update Pipeline shows the deal's client as it is; it cannot be changed.
+  // Update Pipeline shows the deal's client and product as they are; neither
+  // can be changed.
   const dealClientName = deal?.contact?.name || deal?.contact?.company || deal?.company?.name || "";
-
-  const selectedProductOption = useMemo(() => {
-    // Priority 1: Fetched deal detail
-    if (deal?.product && deal.product.id === formData.product_id) {
-      return {
-        value: deal.product.id,
-        label: deal.product.sku,
-      };
-    }
-    // Priority 2: List product
-    if (formData.product_id) {
-      const found = listProduct.find(p => p.id === formData.product_id);
-      if (found) return { value: found.id, label: found.sku };
-
-      // Priority 3: Persisted product
-      if (persistedProduct && persistedProduct.value === formData.product_id) {
-        return persistedProduct;
-      }
-    }
-    return null;
-  }, [deal, formData.product_id, listProduct, persistedProduct]);
-
-  const productOptions = useMemo(() => {
-    const listOpts = listProduct.map(p => ({
-      value: p.id,
-      label: p.sku
-    }));
-
-    if (selectedProductOption && !listOpts.find(o => o.value === selectedProductOption.value)) {
-      return [selectedProductOption, ...listOpts];
-    }
-    return listOpts;
-
-  }, [listProduct, selectedProductOption]);
-
-  // Get selected product for displaying product name
-  const selectedProduct = useMemo(() => {
-    if (!formData.product_id) return null;
-
-    // Check if fetched deal has this product (likely if just loaded)
-    if (deal?.product && deal.product.id === formData.product_id) return deal.product;
-
-    return listProduct.find(p => p.id === formData.product_id) || null;
-  }, [formData.product_id, listProduct, deal]);
-
-  const assigneeOptions = useMemo(() => {
-    const listOpts = (usersResponse?.data?.users ?? []).map(u => ({
-      value: u.id,
-      label: u.fullname,
-    }));
-
-    // Keep the current assignee selectable even when the search results
-    // (first 20 users, or a search) do not include them.
-    if (persistedAssignee && persistedAssignee.value === formData.assigned_to
-      && !listOpts.find(o => o.value === persistedAssignee.value)) {
-      return [persistedAssignee, ...listOpts];
-    }
-    return listOpts;
-  }, [usersResponse, persistedAssignee, formData.assigned_to]);
+  const dealSku = deal?.product?.sku || "";
+  const dealProductName = deal?.product?.product_name || "";
 
   const validateForm = (data: DealForm): FormErrors => {
     const errs: FormErrors = {};
-
-    if (!data.client_account) {
-      errs.client_account = "Client is required";
-    }
-
-    if (!data.product_id) {
-      errs.product_id = "Product is required";
-    }
 
     if (!data.assigned_to) {
       errs.assigned_to = "Assign To is required";
@@ -339,17 +198,6 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     return errs;
   };
 
-  function toApiDate(date?: Date): string {
-    if (!date) return "";
-
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-
-    return `${y}-${m}-${d}`;
-  }
-
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -372,6 +220,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   const submitDeal = async () => {
     setIsSubmitting(true);
 
+    // The lead and client stay as they are on an update.
     const body: reqBody = {
       client_account: formData.client_account,
       product_id: formData.product_id,
@@ -381,77 +230,38 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       probability_of_close: Number(formData.probability_of_close),
       notes: formData.notes,
       assigned_to: formData.assigned_to,
-      // The lead is chosen on create only; an update keeps the deal's lead.
-      ...(!id && formData.lead_id ? { lead_id: formData.lead_id } : {})
     };
 
-    if (!id) {
-      // Create
-      const response = await postFormPipeline(body)
+    const response = await updateFormPipeline(body, id)
 
-      if (response.success) {
-        notify.success("Pipeline created successfully!");
-        setTimeout(() => (
-          onOpenChange(false)
-        ), 500)
-        setIsSubmitting(false);
-        reset();
-        setErrors({})
-        setEditId("")
-      } else {
-        setIsSubmitting(false);
-        // Show error notification
-        const errorMessage = typeof response.error === 'string'
-          ? response.error
-          : (response.error as any)?.message || "An error occurred";
-
-        notify.error("Failed to create pipeline", {
-          description: errorMessage
-        });
-
-        // If there are validation errors, show them in the form
-        if (response.validation && response.validation.length > 0) {
-          const validationErrors: FormErrors = {};
-          response.validation.forEach(err => {
-            const field = err.loc[err.loc.length - 1] as keyof reqBody;
-            validationErrors[field] = err.msg;
-          });
-          setErrors(validationErrors);
-        }
-      }
+    if (response.success) {
+      notify.success("Pipeline updated successfully!");
+      setTimeout(() => (
+        onOpenChange(false)
+      ), 500)
+      setIsSubmitting(false);
+      reset();
+      setErrors({})
+      setEditId("")
     } else {
-      // Update
-      const response = await updateFormPipeline(body, id)
+      setIsSubmitting(false);
+      // Show error notification
+      const errorMessage = typeof response.error === 'string'
+        ? response.error
+        : (response.error as any)?.message || "An error occurred";
 
-      if (response.success) {
-        notify.success("Pipeline updated successfully!");
-        setTimeout(() => (
-          onOpenChange(false)
-        ), 500)
-        setIsSubmitting(false);
-        reset();
-        setErrors({})
-        setEditId("")
-      } else {
-        setIsSubmitting(false);
-        // Show error notification
-        const errorMessage = typeof response.error === 'string'
-          ? response.error
-          : (response.error as any)?.message || "An error occurred";
+      notify.error("Failed to update pipeline", {
+        description: errorMessage
+      });
 
-        notify.error("Failed to update pipeline", {
-          description: errorMessage
+      // If there are validation errors, show them in the form
+      if (response.validation && response.validation.length > 0) {
+        const validationErrors: FormErrors = {};
+        response.validation.forEach(err => {
+          const field = err.loc[err.loc.length - 1] as keyof reqBody;
+          validationErrors[field] = err.msg;
         });
-
-        // If there are validation errors, show them in the form
-        if (response.validation && response.validation.length > 0) {
-          const validationErrors: FormErrors = {};
-          response.validation.forEach(err => {
-            const field = err.loc[err.loc.length - 1] as keyof reqBody;
-            validationErrors[field] = err.msg;
-          });
-          setErrors(validationErrors);
-        }
+        setErrors(validationErrors);
       }
     }
   };
@@ -473,17 +283,17 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
         <DialogContent
           className="
-          max-w-205 
-          w-full 
-          px-10 py-8 
-          rounded-3xl 
+          max-w-205
+          w-full
+          px-10 py-8
+          rounded-3xl
           bg-white
           border border-gray-200
         "
         >
           <div className="mt-2">
             <h2 className="text-2xl font-semibold text-[#5479EE]">
-              {id === "" ? "Add Deal" : "Update Pipeline"}
+              Update Pipeline
             </h2>
             {isClosedDeal && !isInitialLoading && (
               <div className="mt-3 flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
@@ -503,188 +313,48 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      SKU <span className="text-red-500">*</span>
-                    </label>
-                    {id ? (
-                      <LockedField value={selectedProductOption?.label || ""} />
-                    ) : (
-                      <AppAutocomplete
-                        isBgWhite
-                        height="48px"
-                        rounded="8px"
-                        value={productOptions.find(p => p.value === formData.product_id) || null}
-                        options={productOptions}
-                        getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                        onChange={(_, newValue) => {
-                          if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                            const val = newValue as { value: string; label: string };
-                            setFormData({ ...formData, product_id: val.value });
-                            setPersistedProduct(val);
-                          } else if (!newValue) {
-                            setFormData({ ...formData, product_id: "" });
-                            setPersistedProduct(null);
-                          }
-                        }}
-                        onInputChange={(_, inputValue) => {
-                          // COMMERCIAL Phase 5 (spec I9, M-e). `GET /products` became
-                          // TOP-LEVEL ONLY by default (E5.1), so without
-                          // `includeVariants` every VARIANT would silently become
-                          // unpickable on the deal form - and a deal names the
-                          // sellable thing, which after A8 is the variant.
-                          const keyword = inputValue.trim();
-                          if (keyword.length < 1) {
-                            fetchCatalogue({ includeVariants: true });
-                            return;
-                          }
-                          fetchCatalogue({ search: keyword, includeVariants: true });
-                        }}
-                        isOptionEqualToValue={(option, value) => {
-                          if (!value) return false;
-                          if (typeof option === 'string' || typeof value === 'string') return option === value;
-                          return (option as any).value === (value as any).value;
-                        }}
-                        placeholder="Search by SKU"
-                        error={Boolean(errors.product_id)}
-                        helperText={errors.product_id}
-                      />
-                    )}
+                    <FieldLabel required>SKU</FieldLabel>
+                    <LockedField value={dealSku} />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Product Name</label>
+                    <FieldLabel>Product Name</FieldLabel>
                     <LockedField
                       placeholder="Product name will appear here"
-                      value={selectedProduct?.product_name || ""}
+                      value={dealProductName}
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Client/Account <span className="text-red-500">*</span>
-                    </label>
-                    {id ? (
-                      <LockedField value={dealClientName} />
-                    ) : (
-                      <AppAutocomplete
-                        isBgWhite
-                        height="48px"
-                        rounded="8px"
-                        loading={loadingLeads}
-                        value={selectedLead}
-                        options={leadOptions}
-                        getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                        // The list is already the API's search result.
-                        filterOptions={(options) => options}
-                        renderOption={(props, option) => {
-                          const { key, ...optionProps } = props as typeof props & { key: string };
-                          return (
-                            <li key={option.value} {...optionProps}>
-                              <div className="flex flex-col">
-                                <span>{option.label}</span>
-                                {option.detail && (
-                                  <span className="text-xs text-gray-500">{option.detail}</span>
-                                )}
-                              </div>
-                            </li>
-                          );
-                        }}
-                        onChange={(_, newValue) => {
-                          // Picking a lead sets the client and starts "Assign To"
-                          // from that lead's assignee.
-                          if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                            const lead = newValue as LeadOption;
-                            setSelectedLead(lead);
-                            setFormData({
-                              ...formData,
-                              client_account: lead.contactId,
-                              lead_id: lead.value,
-                              assigned_to: lead.assignedTo,
-                            });
-                            setPersistedAssignee(
-                              lead.assignedTo ? { value: lead.assignedTo, label: lead.assigneeName } : null
-                            );
-                          } else if (!newValue) {
-                            setSelectedLead(null);
-                            setFormData({ ...formData, client_account: "", lead_id: "", assigned_to: "" });
-                            setPersistedAssignee(null);
-                          }
-                        }}
-                        onInputChange={(_, inputValue, reason) => {
-                          // Only what the user types searches; picking a lead also
-                          // fills the input and must not become the search.
-                          if (reason === "input") setLeadSearch(inputValue.trim());
-                          else if (reason === "clear") setLeadSearch("");
-                        }}
-                        isOptionEqualToValue={(option, value) => {
-                          if (!value) return false;
-                          if (typeof option === 'string' || typeof value === 'string') return option === value;
-                          return (option as any).value === (value as any).value;
-                        }}
-                        noOptionsText="No Contacted or Qualified leads found"
-                        placeholder="Select Client"
-                        error={Boolean(errors.client_account)}
-                        helperText={errors.client_account}
-                      />
-                    )}
+                    <FieldLabel required>Client/Account</FieldLabel>
+                    <LockedField value={dealClientName} />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Assign To <span className="text-red-500">*</span>
-                    </label>
-                    {/* Locked (by role, or no client yet): the same disabled input as
-                        Product Name and Client/Account, not a greyed-out dropdown. */}
-                    {!canAssign || !formData.client_account || isClosedDeal ? (
+                    <FieldLabel required>Assign To</FieldLabel>
+                    {/* Locked (by role, or a closed deal): the same disabled input
+                        as Product Name and Client/Account, not a greyed-out dropdown. */}
+                    {!canAssign || isClosedDeal ? (
                       <LockedField
-                        value={assigneeOptions.find(u => u.value === formData.assigned_to)?.label || ""}
-                        placeholder={!formData.client_account ? "Select a client/account first" : ""}
+                        value={persistedAssignee?.label || ""}
                         error={Boolean(errors.assigned_to)}
                         helperText={errors.assigned_to || (!canAssign && !isClosedDeal ? "Only an Admin or Manager can change the assignee" : undefined)}
                       />
                     ) : (
-                      <AppAutocomplete
-                        isBgWhite
-                        height="48px"
-                        rounded="8px"
-                        loading={loadingUsers}
-                        value={assigneeOptions.find(u => u.value === formData.assigned_to) || null}
-                        options={assigneeOptions}
-                        getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                        // The list is already the API's search result.
-                        filterOptions={(options) => options}
-                        onChange={(_, newValue) => {
-                          if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                            const val = newValue as { value: string; label: string };
-                            setFormData({ ...formData, assigned_to: val.value });
-                            setPersistedAssignee(val);
-                          } else if (!newValue) {
-                            setFormData({ ...formData, assigned_to: "" });
-                            setPersistedAssignee(null);
-                          }
+                      <DealAssigneePicker
+                        value={formData.assigned_to}
+                        current={persistedAssignee}
+                        onChange={(opt) => {
+                          setFormData({ ...formData, assigned_to: opt?.value ?? "" });
+                          setPersistedAssignee(opt);
                         }}
-                        onInputChange={(_, inputValue, reason) => {
-                          // Only what the user types searches; selecting an option
-                          // also fills the input and must not become the search.
-                          if (reason === "input") setAssigneeSearch(inputValue.trim());
-                          else if (reason === "clear") setAssigneeSearch("");
-                        }}
-                        isOptionEqualToValue={(option, value) => {
-                          if (!value) return false;
-                          if (typeof option === 'string' || typeof value === 'string') return option === value;
-                          return (option as any).value === (value as any).value;
-                        }}
-                        placeholder="Select User"
-                        error={Boolean(errors.assigned_to)}
-                        helperText={errors.assigned_to}
+                        error={errors.assigned_to}
                       />
                     )}
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Deal Stage <span className="text-red-500">*</span>
-                    </label>
+                    <FieldLabel required>Deal Stage</FieldLabel>
                     {isClosedDeal ? (
                       <LockedField
                         value={formData.deal_stage}
@@ -705,9 +375,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Expected Close Date <span className="text-red-500">*</span>
-                    </label>
+                    <FieldLabel required>Expected Close Date</FieldLabel>
                     {isClosedDeal ? (
                       <LockedField
                         value={formData.expected_close_date ? format(formData.expected_close_date, "dd MMM yyyy") : ""}
@@ -720,7 +388,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                           setFormData({ ...formData, expected_close_date: value ?? undefined });
                         }}
                         placeholder="Select close date"
-                        // No past dates on an open deal (Add and Update).
+                        // No past dates on an open deal.
                         minDate={startOfToday()}
                         isBgWhite
                         error={Boolean(errors.expected_close_date)}
@@ -730,9 +398,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Quantity <span className="text-red-500">*</span>
-                    </label>
+                    <FieldLabel required>Quantity</FieldLabel>
                     {isClosedDeal ? (
                       <LockedField value={String(formData.quantity)} />
                     ) : (
@@ -753,9 +419,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Probability of Close Won (%) <span className="text-red-500">*</span>
-                    </label>
+                    <FieldLabel required>Probability of Close Won (%)</FieldLabel>
                     {isClosedDeal ? (
                       <LockedField value={`${formData.probability_of_close}%`} />
                     ) : (
@@ -765,13 +429,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                           setFormData({ ...formData, probability_of_close: e.target.value as string })
                         }
                         placeholder="0"
-                        options={[
-                          { label: "20%", value: "20" },
-                          { label: "40%", value: "40" },
-                          { label: "60%", value: "60" },
-                          { label: "80%", value: "80" },
-                          { label: "100%", value: "100" },
-                        ]}
+                        options={PROBABILITY_OPTIONS}
                         isBgWhite
                         height="48px"
                         rounded="8px"
@@ -784,15 +442,11 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Notes</Label>
+                  {/* Notes are read-only on update, so an empty box shows no
+                      "add notes" prompt that suggests it can be typed in. */}
                   <AppTextarea
-                    disabled={id ? true : false}
-                    // Notes are read-only on update, so an empty box shows no
-                    // "add notes" prompt that suggests it can be typed in.
-                    placeholder={id ? undefined : "Add any relevant notes here..."}
+                    disabled
                     value={formData.notes}
-                    onChange={(e) =>
-                      setFormData({ ...formData, notes: e.target.value })
-                    }
                     isBgWhite
                     rounded="8px"
                   />
@@ -817,7 +471,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 isLoading={isSubmitting}
                 disabled={isInitialLoading || isClosedDeal}
               >
-                {id ? "Update Deal" : "Save Deal"}
+                Update Deal
               </AppButton>
             </div>
           </form>
@@ -849,35 +503,6 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         variant="warning"
       />
     </>
-  );
-}
-
-// The one look for every read-only field (the Product Name style), whatever the
-// editable control would have been - a dropdown, select or date picker each
-// greys out differently, so a locked field never renders as one of those.
-function LockedField({
-  value,
-  placeholder,
-  error,
-  helperText,
-}: {
-  value: string;
-  placeholder?: string;
-  error?: boolean;
-  helperText?: string;
-}) {
-  return (
-    <AppInput
-      disabled={true}
-      value={value}
-      placeholder={placeholder}
-      isBgWhite
-      height="48px"
-      rounded="8px"
-      readOnly
-      error={error}
-      helperText={helperText}
-    />
   );
 }
 

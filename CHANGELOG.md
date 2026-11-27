@@ -9,6 +9,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.153.0] - 2026-11-27
+
+### Detail Versi 1.153.0
+
+#### ✨ Add Deal Multi-Produk + Rekomendasi Produk AI
+
+- **Deskripsi:**
+  - **Tujuan:** satu Client/Lead bisa langsung mendapat banyak produk dalam satu kali simpan. Setiap produk menjadi kartu pipeline sendiri di kolom stage masing-masing. Produk bisa diambil dari rekomendasi AI untuk lead tersebut.
+  - **Alur baru Add Deal** (tombol **Add Deal** di Pipeline):
+    1. **Step 1 – Client:** pilih Client/Account (lead Contacted/Qualified, sama seperti sebelumnya) dan Assign To (terisi otomatis dari PIC lead; hanya Admin/Manager yang bisa mengganti), lalu **Next step**.
+    2. **Step 2 – Products:**
+       - tombol **AI Recommendation Product** membuka dropdown berisi input **jumlah rekomendasi** (1–20, default 3) dengan tombol panah → untuk mengambil rekomendasi. Setiap rekomendasi menampilkan nama produk, SKU, dan alasannya, dengan tombol **Add**. Di bawahnya ada keterangan sumber (diurutkan AI, atau berdasarkan riwayat penjualan bila AI sedang tidak tersedia) dan tombol **Refresh** untuk menghitung ulang tanpa cache;
+       - tombol **+ Add Product** membuka form produk (SKU, Product Name, Deal Stage, Expected Close Date, Quantity, Probability of Close Won, Notes) dengan aturan yang sama seperti form lama. **Cancel** kembali ke daftar, **Add to deal** memasukkan produk ke daftar (belum disimpan);
+       - produk yang ditambahkan dari rekomendasi AI langsung masuk ke daftar, tetapi baru berisi produknya. Barisnya diberi tanda kuning **"Complete the data: Deal Stage, Expected Close Date, Probability"** sampai datanya dilengkapi. Klik baris (atau ikon pensil) untuk mengedit, ikon tempat sampah untuk menghapus;
+       - satu produk hanya bisa masuk sekali: di dropdown AI tombolnya berubah menjadi "Added", dan di pilihan SKU produk itu bertanda "Already added" dan tidak bisa dipilih;
+       - **Save deals** baru mengirim data jika semua produk sudah lengkap. Jika ada yang belum lengkap, baris tersebut diberi garis kuning dan muncul pesan "Complete the marked products first".
+    3. Setelah berhasil: muncul "N deals created", board dimuat ulang sehingga semua kartu baru langsung tampil, dan dialog tertutup.
+  - **Tampilan AI** (warna logo SmartSales, biru `#5479EE` ke hijau `#5BC557`; ujung hijaunya tetap dicampur biru supaya teks putih terbaca):
+    - tombol **AI Recommendation Product** dan tombol panah → bergradasi biru-hijau; garis tipis biru-hijau di atas dropdown;
+    - **saat memproses:** cincin biru-hijau berputar dengan ikon ✨, judul "AI is finding the best products…", dan baris status yang berganti sesuai yang memang dibaca BE (profil lead, chat terakhir, deal Won di perusahaan serupa, katalog, lalu pemeringkatan). Kartu placeholder disapu cahaya biru-hijau, garis atas dropdown berjalan seperti progress bar, dan tombol utama ikut berkilau;
+    - **hasil:** kartu muncul satu per satu (naik dan memudar masuk). Hasil AI diberi judul "AI picks for this lead" dan tepi kiri kartu bergradasi;
+    - **bila AI tidak dipakai** (`source: "rule_fallback"`): muncul kotak kuning "AI is unavailable right now, so these are ranked from your sales history and catalogue. Use Refresh to try the AI again.", dan tepi kartu abu-abu. Menurut kode BE, ini terjadi bila LLM perusahaan belum dikonfigurasi, panggilan AI gagal/timeout, atau jawabannya tidak valid; penyebab persisnya tidak dikirim ke FE. Hasil fallback ikut ter-cache 1 jam, jadi Refresh berguna untuk mencoba AI lagi;
+    - **di HP:** padding dialog dan judul lebih kecil; tombol AI Recommendation Product dan + Add Product selebar layar dan bertumpuk, teksnya tetap satu baris; nama client dan "Assigned to …" di dua baris dengan "Change" tetap di kanan; tombol Cancel/Next step dan Back/Save deals sama lebar. Mulai ukuran tablet (`sm`) tata letaknya seperti di desktop;
+    - semua animasi mati untuk pengguna yang mengaktifkan "kurangi gerakan" (`prefers-reduced-motion`). Utilitasnya (`ai-gradient`, `ai-gradient-text`, `ai-shimmer`, `ai-orbit`, `ai-rise`) ada di `app/globals.css`.
+  - **Aturan yang tetap dijaga:** tanggal close tidak boleh di masa lalu; jika ada produk dengan stage Won/Lost, muncul satu konfirmasi sebelum disimpan; menutup dialog yang sudah berisi client/produk meminta konfirmasi; maksimal 50 produk per simpan (batas BE).
+  - **Jika simpan gagal:** BE menyimpan semua atau tidak sama sekali. Error yang menyebut produk tertentu (misalnya produk tidak ditemukan, atau error validasi per item) ditampilkan di baris produk itu; error lain ditampilkan di atas daftar. Rekomendasi yang gagal dimuat tidak memblokir form: produk tetap bisa ditambah lewat + Add Product.
+  - **Update Pipeline** (klik kartu) tetap form satu deal seperti sebelumnya. Bagian khusus Add di form itu (pemilih lead dan pencarian SKU) dipindahkan ke komponen bersama, sehingga Add dan Update memakai field yang sama.
+  - **API:** `GET /pipelines/recommended-products?lead_id=&limit=&refresh=` dan `POST /pipelines/bulk` (`client_account`, `lead_id`, `assigned_to`, `items[]`).
+  - File: `components/pipeline/add-deal/` (baru: `AddDealsDialog.tsx`, `AiRecommendationButton.tsx`, `DealItemForm.tsx`, `DealItemList.tsx`, `DealFormParts.tsx`, `dealItems.ts` + test), `components/pipeline/AddDealModal.tsx` (kini khusus Update), `components/pipeline/pipeline-board/PipelineBoard.tsx`, `lib/api/pipelines.ts`, `lib/store/pipeline/index.ts`, `app/globals.css` (utilitas `ai-*`).
+  - **Rilis:** membutuhkan API **≥ 1.172.0** di environment tujuan (DEV sudah 1.172.0 sejak 27 Nov 2026 sore).
+
+- **🧪 Testing:**
+  - Vitest `dealItems.test.ts`: 12 tes lulus (produk dari AI wajib dilengkapi, tanggal hari ini boleh dan kemarin tidak, qty bilangan bulat > 0, probability wajib, produk ganda, bentuk body bulk termasuk `assigned_to` kosong dan notes kosong → null, format tanggal lokal, batas jumlah rekomendasi 1–20, pemetaan error 422 per `loc`, 404 per `details.index`, dan error umum).
+  - Chrome headless dengan API mock, 20/20 cek lulus: step 1 dan error "Client is required", Assign To terisi dari lead, step 2 kosong, dropdown memanggil `limit=3` lalu `limit=5` dan Refresh mengirim `refresh=true`, input 25 menonaktifkan panah, alasan dan keterangan sumber tampil, tombol Added, Escape hanya menutup dropdown, baris AI meminta data yang kurang, Save deals tertahan (tidak ada POST) dan baris bergaris kuning, Delete, Edit Product menampilkan field yang kurang, Cancel, form + Add Product menampilkan error wajib, dan SKU yang sudah ada tertanda "Already added".
+  - tsc bersih, lint file yang diubah bersih, vitest 1241/1242 (yang gagal `theme.test.ts` karena `themeSwitch: false` sengaja di dev, tidak terkait).
+  - Tampilan AI dicek dengan screenshot Chrome (API mock, jawaban AI diperlambat 3,5 detik): kondisi memproses, hasil AI, dan hasil fallback.
+  - Belum dites: simpan sampai `201` di browser dengan data nyata (bentuk body dicek di vitest) dan tes manual dengan data DEV.
+
+---
+
+## [1.152.3] - 2026-11-27
+
+### Detail Versi 1.152.3
+
+#### 💄 Tombol Kembali Seragam di Semua Halaman Detail
+
+- **Deskripsi:**
+  - **Masalah:** halaman detail/turunan punya tombol kembali dengan bentuk dan posisi berbeda-beda: tombol "← Back" di kanan header (Email Campaign detail, New/Edit), baris tombol sendiri di bawah header ("← Back to Magnets" di Smart Capture detail, "← Back to Templates" di WA Template detail, "← Back to Group Broadcasting" di WA Group Broadcasting detail), link biru "← Key People" di profil Key People, sementara halaman detail lain tidak punya tombol kembali sama sekali (hanya breadcrumb).
+  - **Perbaikan:**
+    - komponen baru `components/ui/back-button.tsx` (`BackButton` + `useResolvedHref`): panah ← kotak 36px dengan tooltip. Bila berupa link, daftar yang dituju kembali ke halaman/pencarian/urutan terakhir (sama seperti breadcrumb). Bila halaman harus bertanya dulu (perubahan belum disimpan), memakai `onBack`;
+    - `PageHeader` memakai `BackButton` dan mendapat prop `onBack`; `SettingsPageHeader` mendapat `backHref`/`backLabel` dengan panah yang sama;
+    - tombol kembali lama diganti panah di header: Email Campaign detail, Email Campaign New/Edit (konfirmasi perubahan belum disimpan tetap muncul), Smart Capture detail, WA Template detail, WA Group Broadcasting detail (padding halamannya juga disamakan dengan halaman standar), Settings › Key People profil;
+    - panah baru di halaman detail yang sebelumnya hanya punya breadcrumb: Contact detail, Ticket detail, Mailing List detail, Quotation builder/detail, WA Create Template, Settings › Organization detail, Segmen Pelanggan detail, Daftar Harga detail, serta Data Intelligence ICP detail, Company profile, dan Prospect profile.
+  - **Tidak diubah:** tombol "Back to …" di tampilan error/tidak ditemukan (itu tombol utama di sana), layar kerja penuh (Omnichannel conversation, Flow Studio, Workspace di HP), dan link keluar wizard ICP.
+  - File: `components/ui/back-button.tsx` (baru), `components/ui/page-header.tsx`, `lib/types/Pipeline.ts`, `components/settings/SettingsPageHeader.tsx`, `components/email-marketing/campaigns/{CampaignDetailClient,CampaignComposer}.tsx`, `components/email-marketing/mailing-lists/MailingListDetailClient.tsx`, `components/smart-capture/detail/SmartCaptureDetailClient.tsx`, `components/whatsapp-marketing/templates/{detail/TemplateDetailClient,create/CreateTemplateClient}.tsx`, `app/(app)/whatsapp-marketing/group-broadcasting/[id]/page.tsx`, `components/omnichannel/key-people/KeyPersonProfileClient.tsx`, `app/(app)/settings/{organization/[id],sales/customer-segments/[id],sales/price-lists/[id]}/page.tsx`, `components/contact/detail/ContactDetailClient.tsx`, `components/support/tickets/detail/TicketDetailClient.tsx`, `components/quotation/QuotationFormClient.tsx`, `app/(app)/data-intelligence/icp/[id]/page.tsx`, `components/data-intelligence/{company-profile/CompanyProfile360Client,prospecting/ProspectProfileClient}.tsx`.
+
+- **🧪 Testing:**
+  - tsc bersih; lint pada file yang diubah tidak ada temuan baru.
+  - Cek otomatis di browser untuk tombol kembali dihentikan di tengah jalan (terlalu lama), jadi belum ada hasil browser untuk versi ini.
+  - Belum dites manual.
+
+---
+
+## [1.152.2] - 2026-11-27
+
+### Detail Versi 1.152.2
+
+#### 💄 Header Halaman Seragam: Smart Capture, Knowledge Base, Product Detail, dan Jarak Halaman Lain
+
+- **Deskripsi:**
+  - **Masalah:** header halaman Smart Capture berbeda dari halaman lain. Kartunya hanya selebar teks judul, tidak selebar halaman, dan jarak ke kartu statistik di bawahnya dua kali lebih besar. Saat diperiksa ke semua halaman, beberapa halaman lain juga tidak memakai header standar (`PageHeader`) dan membuat header sendiri tanpa kartu, serta beberapa halaman memakai padding yang berbeda.
+  - **Akar masalah:**
+    - Smart Capture: `PageHeader` dibungkus `div` flex-row. Di layar `sm` ke atas kartu menyusut ke lebar isinya, dan margin bawah kartu (24px) tidak bisa bergabung dengan jarak `space-y-6` karena ada di dalam flex, jadi jaraknya 48px. Dari 53 file yang memakai `PageHeader`, hanya ini yang dibungkus seperti itu;
+    - Smart Capture Add/Edit, KB Categories & sections, KB Fill placeholders, KB Template Gallery, KB New/Edit article, dan Product detail membuat header sendiri: judul lebih kecil, tanpa kartu, tanpa breadcrumb (kecuali Product), dan KB Categories/Placeholders/Template Gallery memakai lebar maksimal sendiri (`max-w-4xl`/`max-w-6xl`);
+    - Quotation (detail, form, approvals) memakai `p-6`, Omnichannel `py-8`, Notifications `p-4 md:p-8`, dan 4 halaman Data Intelligence (Compliance DSR, Suppression, Import Center, Data Sources) memakai `flex gap-4 p-4 md:p-8` sehingga jarak di bawah header 40px.
+  - **Perbaikan:**
+    - `PageHeader` mendapat dua prop opsional: `backHref`/`backLabel` (tombol panah kembali di kiri judul, di dalam kartu; daftar yang dituju kembali ke halaman/pencarian/urutan terakhir seperti link breadcrumb) dan `children` (isi tambahan di dalam kartu, di bawah judul). Halaman lama yang tidak memakainya tidak berubah;
+    - Smart Capture: pembungkus flex dihapus, kartu selebar halaman dan jarak ke kartu statistik 24px seperti halaman lain;
+    - semua halaman di atas sekarang memakai `PageHeader` dengan breadcrumb. **Tidak ada yang dihilangkan:** tombol kembali tetap ada (menjadi panah di kartu), subjudul, tombol aksi (Save As Draft, Publish And Finish, New category, History, Publish/Unpublish/Archive, Save, Delete, Ubah produk), badge status artikel, label "Read only", angka views/helpful artikel, SKU, chip produk (status, tipe, harga, satuan, kategori, jumlah varian), dan link "Varian dari" tetap tampil;
+    - KB Categories, Fill placeholders, dan Template Gallery sekarang selebar halaman seperti daftar KB;
+    - padding halaman Quotation, Omnichannel, Notifications, dan 4 halaman Data Intelligence disamakan dengan halaman standar (`px-4 sm:px-6 md:px-8 pt-6`), jadi posisi kartu header dan jarak di bawahnya sama di semua halaman.
+  - **Tidak diubah (memang berbeda):** halaman Settings (header sendiri di samping menu Settings), Support Workspace, Flow Studio, dan tampilan percakapan Omnichannel (layar kerja penuh tanpa header halaman). Tombol "Back to Magnets" di detail Smart Capture juga dibiarkan.
+  - File: `components/ui/page-header.tsx`, `lib/types/Pipeline.ts` (`PageHeaderProps`), `components/smart-capture/SmartCaptureClient.tsx`, `components/smart-capture/create/CreateSmartCaptureClient.tsx`, `components/knowledge/{KnowledgeCategoriesClient,KnowledgePlaceholdersClient,KbTemplateGallery,KnowledgeArticleEditorClient}.tsx`, `components/product/ProductDetailClient.tsx`, `app/(app)/sales/quotation/[id]/page.tsx`, `components/quotation/{QuotationApprovalsClient,QuotationFormClient}.tsx`, `components/omnichannel/OmnichannelClient.tsx`, `app/(app)/notifications/page.tsx`, `app/(app)/data-intelligence/compliance/{dsr,suppression}/page.tsx`, `components/data-intelligence/{imports/ImportCenterClient,sources/DataSourcesClient}.tsx`.
+
+- **🧪 Testing:**
+  - Chrome headless dengan API mock, 14 halaman, diukur terhadap halaman pembanding WhatsApp › Recipients (kartu selebar kolom, 24px di bawah topbar, jarak 24px ke blok berikutnya): Smart Capture, Smart Capture Add, KB Categories, Fill placeholders, Template Gallery, New article, Edit article, Product detail, Quotation approvals, Omnichannel, Notifications, Data Sources semuanya sama. Notifications 15px lebih sempit karena scrollbar yang memang selalu tampil di halaman itu (`overflow-y-scroll`, tidak diubah).
+  - Dicek di halaman yang sama: tombol panah, breadcrumb, deskripsi, semua tombol aksi, badge "Draft", angka views/helpful, dan 6 chip produk tampil. Mode gelap dicek untuk Smart Capture, Smart Capture Add, dan KB Categories.
+  - tsc bersih, `npm run build` berhasil, vitest 1229/1230 lulus (yang gagal `theme.test.ts` "switch is hidden", karena `themeSwitch: false` sengaja di dev, tidak terkait).
+  - Lint pada file yang diubah: tidak ada temuan baru (4 temuan `'` dan 3 warning hooks yang muncul sudah ada sebelumnya di baris yang tidak diubah).
+  - Belum dites manual dengan data DEV.
+
+---
+
 ## [1.152.1] - 2026-11-26
 
 ### Detail Versi 1.152.1
